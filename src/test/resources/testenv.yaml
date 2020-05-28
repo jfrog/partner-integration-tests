@@ -1,0 +1,6 @@
+artifactory:
+  url: OVERWRITE
+  external_ip: OVERWRITE
+  distribution: artifactory_ha
+  rt_username: OVERWRITE
+  rt_password: OVERWRITE
