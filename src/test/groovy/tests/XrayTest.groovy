@@ -48,9 +48,6 @@ class XrayTest extends XraySteps{
         randomIndex = random.nextInt(10000000)
         policyName = "security_policy_${randomIndex}"
         watchName = "all-repositories_${randomIndex}"
-    }
-    @BeforeTest(groups=["xray"])
-    def testSetUp() {
         RestAssured.baseURI = "http://${artifactoryURL}/xray/api"
     }
 
