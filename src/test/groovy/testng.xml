@@ -22,4 +22,9 @@
             <class name="tests.XrayTest"/>
         </classes>
     </test>
+    <test name="tests.TerraformTest">
+        <classes>
+            <class name="tests.TerraformTest"/>
+        </classes>
+    </test>
 </suite>

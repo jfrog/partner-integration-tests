@@ -159,6 +159,16 @@ class SecuritytSteps {
                 .extract().response()
     }
 
+    def getInstalledCerts() {
+        return given()
+                .header("Cache-Control", "no-cache")
+                .header("content-Type", "application/json")
+                .when()
+                .get("/api/system/security/certificates")
+                .then()
+                .extract().response()
+    }
+
 
     // Data providers
 

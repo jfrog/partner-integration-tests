@@ -45,6 +45,16 @@ class RepositorySteps {
                 .extract().response()
 
     }
+    // https://www.jfrog.com/confluence/display/JFROG/Artifactory+REST+API#ArtifactoryRESTAPI-RepositoryConfiguration
+    def getRepoConfig(repoName) {
+        return given()
+                .header("Cache-Control", "no-cache")
+                .when()
+                .get("/api/repositories/${repoName}")
+                .then()
+                .extract().response()
+
+    }
     // https://www.jfrog.com/confluence/display/JFROG/Artifactory+REST+API#ArtifactoryRESTAPI-DeleteRepository
     def deleteRepository(repoName, username, password) {
         return given()
@@ -133,6 +143,17 @@ class RepositorySteps {
                 .header("Content-Type", "application/json")
                 .when()
                 .get("/api/docker/${repoKey}/v2/${imageName}/tags/list?n=${listSize}&last=${endTag}")
+                .then()
+                .extract().response()
+
+    }
+    // https://www.jfrog.com/confluence/display/JFROG/Artifactory+REST+API#ArtifactoryRESTAPI-GetRepositoryReplicationConfiguration
+    def getReplicationConfig(repoName) {
+        return given()
+                .header("Cache-Control", "no-cache")
+                .header("Content-Type", "application/json")
+                .when()
+                .get("/api/replications/" + repoName)
                 .then()
                 .extract().response()
 

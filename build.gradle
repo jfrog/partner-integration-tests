@@ -83,3 +83,14 @@ task artifactory_jcr_docker_test(type: Test) {
     }
 }
 
+task terraform_provider_test(type: Test) {
+    useTestNG() {
+        useDefaultListeners = true
+        suites 'src/test/groovy/testng.xml'
+        includeGroups('terraform')
+    }
+    testLogging {
+        showStandardStreams = true
+    }
+}
+
