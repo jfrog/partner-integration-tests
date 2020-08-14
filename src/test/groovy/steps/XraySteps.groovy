@@ -6,7 +6,7 @@ import static io.restassured.RestAssured.given
 
 class XraySteps {
 
-    def createIssueEvent(issueID, cve, summary, description, username, password) {
+    def createIssueEvent(issueID, cve, summary, description, username, password, url) {
         return given()
                 .auth()
                 .preemptive()
@@ -42,12 +42,12 @@ class XraySteps {
                         "    ]\n" +
                         "}")
                 .when()
-                .post("/v1/events")
+                .post(url + "/v1/events")
                 .then()
                 .extract().response()
     }
 
-    def updateIssueEvent(issueID, cve, summary, description, username, password) {
+    def updateIssueEvent(issueID, cve, summary, description, username, password, url) {
         return given()
                 .auth()
                 .preemptive()
@@ -82,12 +82,12 @@ class XraySteps {
                         "    ]\n" +
                         "}")
                 .when()
-                .put("/v1/events/${issueID}")
+                .put(url + "/v1/events/${issueID}")
                 .then()
                 .extract().response()
     }
 
-    def createPolicy(policyName, username, password) {
+    def createPolicy(policyName, username, password, url) {
         return given()
                 .auth()
                 .preemptive()
@@ -120,12 +120,12 @@ class XraySteps {
                         "  ]\n" +
                         "}")
                 .when()
-                .post("/v1/policies")
+                .post(url + "/v1/policies")
                 .then()
                 .extract().response()
     }
 
-    def updatePolicy(policyName, description, username, password) {
+    def updatePolicy(policyName, description, username, password, url) {
         return given()
                 .auth()
                 .preemptive()
@@ -158,12 +158,12 @@ class XraySteps {
                         "  ]\n" +
                         "}")
                 .when()
-                .put("/v1/policies/${policyName}")
+                .put(url +"/v1/policies/${policyName}")
                 .then()
                 .extract().response()
     }
 
-    def getPolicy(policyName, username, password) {
+    def getPolicy(policyName, username, password, url) {
         return given()
                 .auth()
                 .preemptive()
@@ -171,12 +171,12 @@ class XraySteps {
                 .header("Cache-Control", "no-cache")
                 .header("content-Type", "application/json")
                 .when()
-                .get("/v1/policies/${policyName}")
+                .get(url + "/v1/policies/${policyName}")
                 .then()
                 .extract().response()
     }
 
-    def getPolicies(username, password) {
+    def getPolicies(username, password, url) {
         return given()
                 .auth()
                 .preemptive()
@@ -184,12 +184,12 @@ class XraySteps {
                 .header("Cache-Control", "no-cache")
                 .header("content-Type", "application/json")
                 .when()
-                .get("/v1/policies")
+                .get(url + "/v1/policies")
                 .then()
                 .extract().response()
     }
 
-    def deletePolicy(policyName, username, password) {
+    def deletePolicy(policyName, username, password, url) {
         return given()
                 .auth()
                 .preemptive()
@@ -197,12 +197,12 @@ class XraySteps {
                 .header("Cache-Control", "no-cache")
                 .header("content-Type", "application/json")
                 .when()
-                .delete("/v1/policies/${policyName}")
+                .delete(url + "/v1/policies/${policyName}")
                 .then()
                 .extract().response()
     }
 
-    def getIssueEvent(issueID, username, password) {
+    def getIssueEvent(issueID, username, password, url) {
         return given()
                 .auth()
                 .preemptive()
@@ -210,12 +210,12 @@ class XraySteps {
                 .header("Cache-Control", "no-cache")
                 .header("content-Type", "application/json")
                 .when()
-                .get("/v1/events/${issueID}")
+                .get(url + "/v1/events/${issueID}")
                 .then()
                 .extract().response()
     }
 
-    def createWatchEvent(watchName, policyName, username, password) {
+    def createWatchEvent(watchName, policyName, username, password, url) {
         return given()
                 .auth()
                 .preemptive()
@@ -253,12 +253,12 @@ class XraySteps {
                         "    ]\n" +
                         "}")
                 .when()
-                .post("/v2/watches")
+                .post(url+ "/v2/watches")
                 .then()
                 .extract().response()
     }
 
-    def updateWatchEvent(watchName, description, policyName, username, password) {
+    def updateWatchEvent(watchName, description, policyName, username, password, url) {
         return given()
                 .auth()
                 .preemptive()
@@ -296,12 +296,12 @@ class XraySteps {
                         "    ]\n" +
                         "}")
                 .when()
-                .put("/v2/watches/${watchName}")
+                .put(url + "/v2/watches/${watchName}")
                 .then()
                 .extract().response()
     }
 
-    def getWatchEvent(watchName, username, password) {
+    def getWatchEvent(watchName, username, password, url) {
         return given()
                 .auth()
                 .preemptive()
@@ -309,12 +309,12 @@ class XraySteps {
                 .header("Cache-Control", "no-cache")
                 .header("content-Type", "application/json")
                 .when()
-                .get("/v2/watches/${watchName}")
+                .get(url + "/v2/watches/${watchName}")
                 .then()
                 .extract().response()
     }
 
-    def deleteWatchEvent(watchName, username, password) {
+    def deleteWatchEvent(watchName, username, password, url) {
         return given()
                 .auth()
                 .preemptive()
@@ -322,12 +322,12 @@ class XraySteps {
                 .header("Cache-Control", "no-cache")
                 .header("content-Type", "application/json")
                 .when()
-                .delete("/v2/watches/${watchName}")
+                .delete(url + "/v2/watches/${watchName}")
                 .then()
                 .extract().response()
     }
 
-    def assignPolicy(watchName, policyName, username, password) {
+    def assignPolicy(watchName, policyName, username, password, url) {
         return given()
                 .auth()
                 .preemptive()
@@ -340,12 +340,12 @@ class XraySteps {
                         "    ]\n" +
                         "}")
                 .when()
-                .post("/v1/policies/${policyName}/assign")
+                .post(url+ "/v1/policies/${policyName}/assign")
                 .then()
                 .extract().response()
     }
 
-    def getIntegrationConfiguration(username, password) {
+    def getIntegrationConfiguration(username, password, url) {
         return given()
                 .auth()
                 .preemptive()
@@ -353,12 +353,12 @@ class XraySteps {
                 .header("Cache-Control", "no-cache")
                 .header("content-Type", "application/json")
                 .when()
-                .get("/v1/integration")
+                .get(url + "/v1/integration")
                 .then()
                 .extract().response()
     }
 
-    def addtIntegrationConfiguration(username, password, vendorName) {
+    def addtIntegrationConfiguration(username, password, vendorName, url) {
         return given()
                 .auth()
                 .preemptive()
@@ -375,12 +375,12 @@ class XraySteps {
                         "  \"test_url\": \"https://saas.whitesourcesoftware.com/xray/api/checkauth\"\n" +
                         "}")
                 .when()
-                .post("/v1/integration")
+                .post(url + "/v1/integration")
                 .then()
                 .extract().response()
     }
 
-    def postSystemParameters(username, password, body) {
+    def postSystemParameters(username, password, body, url) {
         return given()
                 .auth()
                 .preemptive()
@@ -389,12 +389,12 @@ class XraySteps {
                 .header("content-Type", "application/json")
                 .body(body)
                 .when()
-                .put("/v1/configuration/systemParameters")
+                .put(url + "/v1/configuration/systemParameters")
                 .then()
                 .extract().response()
     }
 
-    def getSystemParameters(username, password) {
+    def getSystemParameters(username, password, url) {
         return given()
                 .auth()
                 .preemptive()
@@ -402,12 +402,12 @@ class XraySteps {
                 .header("Cache-Control", "no-cache")
                 .header("content-Type", "application/json")
                 .when()
-                .get("/v1/configuration/systemParameters")
+                .get(url+ "/v1/configuration/systemParameters")
                 .then()
                 .extract().response()
     }
 
-    def getBinaryManager(username, password) {
+    def getBinaryManager(username, password, url) {
         return given()
                 .auth()
                 .preemptive()
@@ -415,13 +415,13 @@ class XraySteps {
                 .header("Cache-Control", "no-cache")
                 .header("content-Type", "application/json")
                 .when()
-                .get("/v1/binMgr/default")
+                .get(url + "/v1/binMgr/default")
                 .then()
                 .extract().response()
     }
 
 
-    def getIndexingConfiguration(username, password) {
+    def getIndexingConfiguration(username, password, url) {
         return given()
                 .auth()
                 .preemptive()
@@ -429,12 +429,12 @@ class XraySteps {
                 .header("Cache-Control", "no-cache")
                 .header("content-Type", "application/json")
                 .when()
-                .get("/v1/binMgr/default/repos")
+                .get(url + "/v1/binMgr/default/repos")
                 .then()
                 .extract().response()
     }
 
-    def updateIndexingConfiguration(username, password) {
+    def updateIndexingConfiguration(username, password, url) {
         return given()
                 .auth()
                 .preemptive()
@@ -457,13 +457,13 @@ class XraySteps {
                         "    \"non_indexed_repos\": []\n" +
                         "}")
                 .when()
-                .put("/v1/binMgr/default/repos")
+                .put(url + "/v1/binMgr/default/repos")
                 .then()
                 .extract().response()
     }
 
 
-    def forceReindex(username, password) {
+    def forceReindex(username, password, url) {
         return given()
                 .auth()
                 .preemptive()
@@ -480,14 +480,14 @@ class XraySteps {
                         "    ]\n" +
                         "}")
                 .when()
-                .post("/v1/forceReindex")
+                .post(url + "/v1/forceReindex")
                 .then()
                 .extract().response()
     }
 
 
 
-    def startScan(username, password, componentID) {
+    def startScan(username, password, componentID, url) {
         return given()
                 .auth()
                 .preemptive()
@@ -498,13 +498,13 @@ class XraySteps {
                         " \"componentID\": \"${componentID}\"\n" +
                         "}")
                 .when()
-                .post("/v1/scanArtifact")
+                .post(url + "/v1/scanArtifact")
                 .then()
                 .extract().response()
     }
 
 
-    def artifactSummary(username, password, artifactPath) {
+    def artifactSummary(username, password, artifactPath, url) {
         return given()
                 .auth()
                 .preemptive()
@@ -520,12 +520,12 @@ class XraySteps {
                         "  ]\n" +
                         "}")
                 .when()
-                .post("/v1/summary/artifact")
+                .post(url + "/v1/summary/artifact")
                 .then()
                 .extract().response()
     }
 
-    def createSupportBundle(username, password, name, startDate, endDate) {
+    def createSupportBundle(username, password, name, startDate, endDate, url) {
         return given()
                 .auth()
                 .preemptive()
@@ -550,13 +550,13 @@ class XraySteps {
                         "   }\n" +
                         "}")
                 .when()
-                .post("/v1/system/support/bundle")
+                .post(url+ "/v1/system/support/bundle")
                 .then()
                 .extract().response()
 
     }
 
-    def getSystemMonitoringStatus(username, password) {
+    def getSystemMonitoringStatus(username, password, url) {
         return given()
                 .auth()
                 .preemptive()
@@ -564,12 +564,12 @@ class XraySteps {
                 .header("Cache-Control", "no-cache")
                 .header("Content-Type", "application/json")
                 .when()
-                .get("/v1/monitor")
+                .get(url + "/v1/monitor")
                 .then()
                 .extract().response()
     }
 
-    def xrayPingRequest(username, password) {
+    def xrayPingRequest(username, password, url) {
         return given()
                 .auth()
                 .preemptive()
@@ -577,12 +577,12 @@ class XraySteps {
                 .header("Cache-Control", "no-cache")
                 .header("Content-Type", "application/json")
                 .when()
-                .get("/v1/system/ping")
+                .get(url + "/v1/system/ping")
                 .then()
                 .extract().response()
     }
 
-    def xrayGetVersion(username, password) {
+    def xrayGetVersion(username, password, url) {
         return given()
                 .auth()
                 .preemptive()
@@ -590,7 +590,7 @@ class XraySteps {
                 .header("Cache-Control", "no-cache")
                 .header("Content-Type", "application/json")
                 .when()
-                .get("/v1/system/version")
+                .get(url + "/v1/system/version")
                 .then()
                 .extract().response()
     }
