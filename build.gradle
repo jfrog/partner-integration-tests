@@ -14,6 +14,8 @@ dependencies {
     testCompile 'io.rest-assured:rest-assured:4.1.1'
     testCompile 'org.testng:testng:6.14.3'
     testCompile 'org.yaml:snakeyaml:1.17'
+    testCompile group: 'org.awaitility', name: 'awaitility', version: '3.0.0'
+
 }
 
 test {
@@ -88,6 +90,17 @@ task terraform_provider_test(type: Test) {
         useDefaultListeners = true
         suites 'src/test/groovy/testng.xml'
         includeGroups('terraform')
+    }
+    testLogging {
+        showStandardStreams = true
+    }
+}
+
+task splunk_test(type: Test) {
+    useTestNG() {
+        useDefaultListeners = true
+        suites 'src/test/groovy/testng.xml'
+        includeGroups('splunk')
     }
     testLogging {
         showStandardStreams = true
