@@ -90,8 +90,26 @@ class TerraformTest {
                 "created successfully by Terraform Provider", true)
     }
 
+    // Permission Targets
+    @Test(priority=4, groups=["terraform"], testName = "Verify permission target created successfully by Terraform Provider")
+    void getPermissionTargetTest(){
+        def repoName = tfConfig.local_repo.repoName
+        def parmTergetName = tfConfig.permission_target.name
+        def includesPattern = tfConfig.permission_target.includesPattern
+        def excludesPattern = tfConfig.permission_target.excludesPattern
+        Response response = securitySteps.getPermissionTargetDetails(parmTergetName)
+        response.then().statusCode(200).
+                body("name", Matchers.equalTo(parmTergetName)).
+                body("includesPattern", Matchers.equalTo(includesPattern)).
+                body("excludesPattern", Matchers.equalTo(excludesPattern)).
+                body("repositories", Matchers.hasItems(repoName))
+
+        Reporter.log("- Terraform. Verify permission target. Permission target '${parmTergetName}' was " +
+                "created successfully by Terraform Provider", true)
+    }
+
     //Remote Repositories
-    @Test(priority=4, groups=["terraform"], testName = "Verify remote repository was created successfully by Terraform Provider")
+    @Test(priority=5, groups=["terraform"], testName = "Verify remote repository was created successfully by Terraform Provider")
     void verifyRemoteRepoTest(){
         def repoName = tfConfig.remote_repo.repoName
         def packageType = tfConfig.remote_repo.package_type
@@ -108,8 +126,27 @@ class TerraformTest {
                 "created successfully by Terraform Provider", true)
     }
 
+    // Replication Configurations - 6
+    @Test(priority=6, groups=["terraform"], testName = "Verify replication configuration between two local repos. Terraform Provider")
+    void verifyReplicationTest(){
+        def sourceRepoName = tfConfig.replication.sourceRepoName
+        def destRepoName = tfConfig.replication.destRepoName
+        def cronExp = tfConfig.replication.cronExp
+        Response sourceResponse = repositorySteps.getReplicationConfig(sourceRepoName)
+        sourceResponse.then().statusCode(200).
+                body("[0].cronExp",  Matchers.equalTo(cronExp)).
+                body("[0].repoKey",  Matchers.equalTo(sourceRepoName)).
+                body("[0].username",  Matchers.equalTo(username))
+        Response destResponse = repositorySteps.getReplicationConfig(destRepoName)
+        destResponse.then().statusCode(404).
+                body("errors[0].status",  Matchers.equalTo(404))
+
+        Reporter.log("- Terraform. Verify replication between two local repos. " +
+                "Replication configuration was created", true)
+    }
+
     //Single Replication Configurations
-    @Test(priority=5, groups=["terraform"], testName = "Verify single replication configuration between two local repos. Terraform Provider")
+    @Test(priority=7, groups=["terraform"], testName = "Verify single replication configuration between two local repos. Terraform Provider")
     void verifySingleReplicationTest(){
         def sourceRepoName = tfConfig.single_replication.sourceRepoName
         def destRepoName = tfConfig.single_replication.destRepoName
@@ -128,7 +165,7 @@ class TerraformTest {
     }
 
     //Virtual Repositories. Provider creates 2 local repos, then adds them to one virtual repo
-    @Test(priority=6, groups=["terraform"], testName = "Verify virtual repository was created successfully by Terraform Provider")
+    @Test(priority=8, groups=["terraform"], testName = "Verify virtual repository was created successfully by Terraform Provider")
     void verifyVirtualTest(){
         def repoName = tfConfig.virtual_repo.repoName
         def packageType = tfConfig.virtual_repo.package_type
@@ -146,7 +183,7 @@ class TerraformTest {
     }
 
     //Certificates
-    @Test(priority=7, groups=["terraform"], testName = "Verify certificate can be added by Terraform Provider")
+    @Test(priority=9, groups=["terraform"], testName = "Verify certificate can be added by Terraform Provider")
     void verifyCertificateTest(){
         def repoName = tfConfig.certificate.repoName
         def certAlias = tfConfig.certificate.alias
@@ -161,8 +198,8 @@ class TerraformTest {
                 "and assigned to the remote repo '${repoName}' by Terraform Provider", true)
     }
 
-    // Unable to run Terraform providers due to errors in the Provider:
-    // Permission Targets
-    // Replication Configurations
+    // File
+    // FileInfo
+
 
 }

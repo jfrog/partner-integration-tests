@@ -4,3 +4,9 @@ artifactory:
   distribution: artifactory_ha
   rt_username: OVERWRITE
   rt_password: OVERWRITE
+splunk:
+  protocol: https://
+  url: OVERWRITE
+  port: 8089
+  username: OVERWRITE
+  password: OVERWRITE

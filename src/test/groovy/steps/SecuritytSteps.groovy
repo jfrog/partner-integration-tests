@@ -169,6 +169,26 @@ class SecuritytSteps {
                 .extract().response()
     }
 
+    def getPermissionTargetDetails(parmTergetName) {
+        return given()
+                .header("Cache-Control", "no-cache")
+                .header("content-Type", "application/json")
+                .when()
+                .get("/api/security/permissions/${parmTergetName}")
+                .then()
+                .extract().response()
+    }
+
+    def generateError500(){
+        return given()
+                .header("Cache-Control", "no-cache")
+                .header("content-Type", "application/json")
+                .when()
+                .post("/api/system/usage")
+                .then()
+                .extract().response()
+    }
+
 
     // Data providers
 
