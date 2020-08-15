@@ -52,10 +52,9 @@ class SplunkTest extends SplunkSteps{
     }
 
     // Artifactory Log Errors Past 24 Hours
-    @Test(priority=1, groups=["splunk"], testName = "Verify Artifactory Log Errors Past 24 Hours")
+    @Test(priority=1, groups=["splunk"], testName = "Verify Artifactory HTTP 500 Errors")
     void waitTest() throws Exception {
 
-        def search_string = 'search=search * | spath log_source | search log_source="jfrog.rt.artifactory.service" | spath log_level | search log_level="ERROR" | timechart count by log_level&output_mode=json'
         // Generate error 500 - post callhome data
         int count = 1
         int calls = 50
@@ -65,18 +64,18 @@ class SplunkTest extends SplunkSteps{
             count++
         }
         // Create a search job in Splunk with given parameters, return Search ID
+        def search_string = 'search=search log_source="jfrog.rt.artifactory.request" return_status="5*" | timechart count by return_status&output_mode=json'
         Response createSearch = createSearch(splunk_username, splunk_password, splunk_url, search_string)
         createSearch.then().statusCode(201)
         def searchID = createSearch.then().extract().path("sid")
         println "Search ID is " + searchID
 
-        Awaitility.await().atMost(90, TimeUnit.SECONDS).until(() ->
+        Awaitility.await().atMost(120, TimeUnit.SECONDS).until(() ->
                 (getSearchResults(splunk_username, splunk_password, splunk_url, searchID)).then().extract().statusCode() == 200)
 
         Response response = getSearchResults(splunk_username, splunk_password, splunk_url, searchID)
-        response.then().log().everything()
         int size = response.then().extract().body().path("results.size()")
-        String errorCount = response.then().extract().body().path("results[${size-1}].ERROR")
+        String errorCount = response.then().extract().body().path("results[${size-1}].500")
         Assert.assertTrue((Integer.parseInt(errorCount)) >= calls)
 
         Reporter.log("- Splunk. Splunk successfully detects the number of errors in the past " +
