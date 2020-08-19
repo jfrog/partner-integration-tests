@@ -97,6 +97,18 @@ class RepositorySteps {
 
     }
 
+    def downloadArtifact(repoName, directoryName, filename) {
+        return given()
+                .header("Cache-Control", "no-cache")
+                .header("Content-Type", "application/octet-stream")
+                .when()
+                .get("/api/download/" + repoName + "/" + directoryName + "/" + filename)
+                .then()
+                .extract().response()
+    }
+
+
+
     def addChecksumToArtifact(repoName, directoryName, filename) {
         return given()
                 .header("Cache-Control", "no-cache")
