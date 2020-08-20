@@ -1,7 +1,7 @@
 package tests
 
-import com.apple.eawt.Application
 import io.restassured.RestAssured
+import io.restassured.path.json.JsonPath
 import io.restassured.response.Response
 import org.awaitility.Awaitility
 import org.hamcrest.Matchers
@@ -14,7 +14,6 @@ import steps.RepositorySteps
 import utils.Utils
 import steps.SecuritytSteps
 import steps.SplunkSteps
-import java.text.SimpleDateFormat
 import java.util.concurrent.TimeUnit
 
 
@@ -62,8 +61,10 @@ class SplunkTest extends SplunkSteps{
         int count = 1
         int calls = 20
         http500(count, calls)
+        Thread.sleep(30000)
         // Create a search job in Splunk with given parameters, return Search ID
-        def search_string = 'search=search log_source="jfrog.rt.artifactory.request" return_status="5*" | timechart count by return_status&output_mode=json'
+        // 'earliest=' and 'span=' added to the original query to optimize the output
+        def search_string = 'search=search sourcetype="jfrog.rt.artifactory.request" return_status="5*" earliest=-10m | timechart span=300 count by return_status&output_mode=json'
         Response createSearch = createSearch(splunk_username, splunk_password, splunk_url, search_string)
         createSearch.then().statusCode(201)
         def searchID = createSearch.then().extract().path("sid")
@@ -71,18 +72,19 @@ class SplunkTest extends SplunkSteps{
 
         Awaitility.await().atMost(120, TimeUnit.SECONDS).until(() ->
                 (getSearchResults(splunk_username, splunk_password, splunk_url, searchID)).then().extract().statusCode() == 200)
-        // Verify Splunk response
         // Verify the number of errors in the report is => the number of API calls sent
         Response response = getSearchResults(splunk_username, splunk_password, splunk_url, searchID)
-        int size = response.then().extract().body().path("results.size()")
-        String errorCount = response.then().extract().body().path("results[${size-1}].500")
-        Assert.assertTrue((Integer.parseInt(errorCount)) >= calls)
+        JsonPath jsonPathEvaluator = response.jsonPath()
+        List<Integer> errorCounts = jsonPathEvaluator.getList("results.500", Integer.class)
+        Assert.assertTrue((errorCounts.sum()) >= calls)
+
         // Verify the last record in the response has current date
+        int size = response.then().extract().body().path("results.size()")
         String date = response.then().extract().body().path("results[${size-1}]._time")
         Assert.assertTrue((date.substring(0,10)) == utils.getDateAsString())
 
         Reporter.log("- Splunk. Splunk successfully detects the number of errors in the past " +
-                "24 hours in the Artifactory log. Number of errors: ${errorCount} date: ${date.substring(0,10)}", true)
+                "24 hours in the Artifactory log. Number of errors: ${errorCounts.sum()} date: ${date.substring(0,10)}", true)
     }
 
     @Test(priority=2, groups=["splunk"], testName = "Artifactory. HTTP Response Codes")
@@ -96,9 +98,10 @@ class SplunkTest extends SplunkSteps{
         http403(count, calls)
         http404(count, calls)
         http500(count, calls)
-
+        Thread.sleep(30000)
         // Create a search job in Splunk with given parameters, return Search ID
-        def search_string = 'search=search log_source="jfrog.rt.artifactory.request" | timechart count by return_status&output_mode=json'
+        // 'earliest=' and 'span=' added to the original query to optimize the output
+        def search_string = 'search=search sourcetype="jfrog.rt.artifactory.request" earliest=-10m | timechart span=300 count by return_status&output_mode=json'
         Response createSearch = createSearch(splunk_username, splunk_password, splunk_url, search_string)
         createSearch.then().statusCode(201)
         def searchID = createSearch.then().extract().path("sid")
@@ -107,20 +110,21 @@ class SplunkTest extends SplunkSteps{
                 (getSearchResults(splunk_username, splunk_password, splunk_url, searchID)).then().extract().statusCode() == 200)
         // Verify Splunk response
         Response response = getSearchResults(splunk_username, splunk_password, splunk_url, searchID)
-        int size = response.then().extract().body().path("results.size()")
-        String count200 = response.then().extract().body().path("results[${size-1}].200")
-        Assert.assertTrue((Integer.parseInt(count200)) >= calls)
-        String count201 = response.then().extract().body().path("results[${size-1}].201")
-        Assert.assertTrue((Integer.parseInt(count201)) >= calls)
-        String count204 = response.then().extract().body().path("results[${size-1}].204")
-        Assert.assertTrue((Integer.parseInt(count204)) >= calls)
-        String count403 = response.then().extract().body().path("results[${size-1}].403")
-        Assert.assertTrue((Integer.parseInt(count403)) >= calls)
-        String count404 = response.then().extract().body().path("results[${size-1}].404")
-        Assert.assertTrue((Integer.parseInt(count404)) >= calls)
-        String count500 = response.then().extract().body().path("results[${size-1}].500")
-        Assert.assertTrue((Integer.parseInt(count500)) >= calls)
+        JsonPath jsonPathEvaluator = response.jsonPath()
+        List<Integer> count200 = jsonPathEvaluator.getList("results.200", Integer.class)
+        Assert.assertTrue((count200.sum()) >= calls)
+        List<Integer> count201 = jsonPathEvaluator.getList("results.201", Integer.class)
+        Assert.assertTrue((count201.sum()) >= calls)
+        List<Integer> count204 = jsonPathEvaluator.getList("results.204", Integer.class)
+        Assert.assertTrue((count204.sum()) >= calls)
+        List<Integer> count403 = jsonPathEvaluator.getList("results.403", Integer.class)
+        Assert.assertTrue((count403.sum()) >= calls)
+        List<Integer> count404 = jsonPathEvaluator.getList("results.404", Integer.class)
+        Assert.assertTrue((count404.sum()) >= calls)
+        List<Integer> count500 = jsonPathEvaluator.getList("results.500", Integer.class)
+        Assert.assertTrue((count500.sum()) >= calls)
         // Verify the last record in the response has current date
+        int size = response.then().extract().body().path("results.size()")
         String date = response.then().extract().body().path("results[${size-1}]._time")
         def todayAsString = utils.getDateAsString()
         Assert.assertTrue((date.substring(0,10)) == todayAsString)
@@ -134,7 +138,7 @@ class SplunkTest extends SplunkSteps{
         int calls = 20
         uploadIntoRepo(count, calls)
         // Create a search job in Splunk with given parameters, return Search ID
-        def search_string = 'search=search log_source="jfrog.rt.artifactory.request" response_content_length!="-1" | eval gb=response_content_length/1073741824 | stats sum(gb) as upload_size by remote_address | top limit=10 remote_address,upload_size | fields - count,percent&output_mode=json'
+        def search_string = 'search=search sourcetype="jfrog.rt.artifactory.request" response_content_length!="-1" | eval gb=response_content_length/1073741824 | stats sum(gb) as upload_size by remote_address | top limit=10 remote_address,upload_size | fields - count,percent&output_mode=json'
         Response createSearch = createSearch(splunk_username, splunk_password, splunk_url, search_string)
         createSearch.then().statusCode(201)
         def searchID = createSearch.then().extract().path("sid")
@@ -146,7 +150,7 @@ class SplunkTest extends SplunkSteps{
         Response response = getSearchResults(splunk_username, splunk_password, splunk_url, searchID)
         response.then().
                 body("results.remote_address", Matchers.hasItems(Matchers.matchesRegex(IPv4andIPv6Regex))).
-                body("results.size()",  Matchers.equalTo(10))
+                body("results.upload_size", Matchers.notNullValue())
 
         Reporter.log("- Splunk. Top 10 IPs By Uploads verified", true)
     }
@@ -154,10 +158,10 @@ class SplunkTest extends SplunkSteps{
     @Test(priority=4, groups=["splunk"], testName = "Artifactory. Top 10 IPs By Downloads")
     void top10ipDownloadTest() throws Exception {
         int count = 1
-        int calls = 5
+        int calls = 20
         downloadArtifact(count, calls)
         // Create a search job in Splunk with given parameters, return Search ID
-        def search_string = 'search=search log_source="jfrog.rt.artifactory.request" request_content_length!="-1" | eval gb=request_content_length/1073741824 | stats sum(gb) as download_size by remote_address | top limit=10 remote_address,download_size | fields - count,percent'
+        def search_string = 'search=search sourcetype="jfrog.rt.artifactory.request" request_content_length!="-1" | eval gb=request_content_length/1073741824 | stats sum(gb) as download_size by remote_address | top limit=10 remote_address,download_size | fields - count,percent'
         Response createSearch = createSearch(splunk_username, splunk_password, splunk_url, search_string)
         createSearch.then().statusCode(201)
         def searchID = createSearch.then().extract().path("sid")
@@ -169,7 +173,7 @@ class SplunkTest extends SplunkSteps{
         Response response = getSearchResults(splunk_username, splunk_password, splunk_url, searchID)
         response.then().
                 body("results.remote_address", Matchers.hasItems(Matchers.matchesRegex(IPv4andIPv6Regex))).
-                body("results.size()",  Matchers.equalTo(10))
+                body("results.upload_size", Matchers.notNullValue())
 
         Reporter.log("- Splunk. Top 10 IPs By Downloads verified", true)
     }
@@ -178,12 +182,12 @@ class SplunkTest extends SplunkSteps{
     @Test(priority=5, groups=["splunk_xray"], testName = "Xray. Log Volume")
     void logVolumeTest() throws Exception {
         int count = 1
-        int calls = 50
+        int calls = 5
         // Generate xray calls
         xray200(count, calls)
         xray201(count, calls)
         // Create a search job in Splunk with given parameters, return Search ID
-        def search_string = 'search=search log_source!="NULL" | timechart count by log_source'
+        def search_string = 'search=search sourcetype!="NULL" | timechart count by log_source'
         Response createSearch = createSearch(splunk_username, splunk_password, splunk_url, search_string)
         createSearch.then().statusCode(201)
         def searchID = createSearch.then().extract().path("sid")
@@ -220,7 +224,8 @@ class SplunkTest extends SplunkSteps{
         xray200(count, calls)
         xray500(count, calls)
         // Create a search job in Splunk with given parameters, return Search ID
-        def search_string = 'search=search log_source="jfrog.xray.*.service" log_level="ERROR" | timechart count by log_level'
+        // 'earliest=' and 'span=' added to the original query to optimize the output
+        def search_string = 'search=search sourcetype="jfrog.xray.*.service" log_level="ERROR" earliest=-10m | timechart span=300 count by log_level'
         Response createSearch = createSearch(splunk_username, splunk_password, splunk_url, search_string)
         createSearch.then().statusCode(201)
         def searchID = createSearch.then().extract().path("sid")
@@ -229,12 +234,12 @@ class SplunkTest extends SplunkSteps{
         Awaitility.await().atMost(120, TimeUnit.SECONDS).until(() ->
                 (getSearchResults(splunk_username, splunk_password, splunk_url, searchID)).then().extract().statusCode() == 200)
         Response response = getSearchResults(splunk_username, splunk_password, splunk_url, searchID)
-
+        JsonPath jsonPathEvaluator = response.jsonPath()
+        List<Integer> errorCount = jsonPathEvaluator.getList("results.ERROR", Integer.class)
+        Assert.assertTrue((errorCount.sum()) >= calls)
         int size = response.then().extract().body().path("results.size()")
         String date = response.then().extract().body().path("results[${size-1}]._time")
         Assert.assertTrue((date.substring(0,10)) == utils.getDateAsString())
-        String errorCount = response.then().extract().body().path("results[${size-1}].ERROR")
-        Assert.assertTrue((Integer.parseInt(errorCount)) >= calls)
 
         Reporter.log("- Splunk. Xray, Log Errors verification. Splunk shows errors generated by Xray" +
                 " during the test", true)
@@ -243,11 +248,13 @@ class SplunkTest extends SplunkSteps{
     @Test(priority=6, groups=["splunk_xray"], testName = "Xray. HTTP 500 Errors")
     void error500Test() throws Exception {
         int count = 1
-        int calls = 50
+        int calls = 20
         // Generate xray calls
         xray500(count, calls)
+        Thread.sleep(30000)
         // Create a search job in Splunk with given parameters, return Search ID
-        def search_string = 'search=search log_source="jfrog.xray.xray.request" return_status="5*" | timechart count by return_status'
+        // 'earliest=' and 'span=' added to the original query to optimize the output
+        def search_string = 'search=search sourcetype="jfrog.xray.xray.request" return_status="5*" earliest=-10m | timechart span=300 count by return_status'
         Response createSearch = createSearch(splunk_username, splunk_password, splunk_url, search_string)
         createSearch.then().statusCode(201)
         def searchID = createSearch.then().extract().path("sid")
@@ -256,12 +263,12 @@ class SplunkTest extends SplunkSteps{
         Awaitility.await().atMost(120, TimeUnit.SECONDS).until(() ->
                 (getSearchResults(splunk_username, splunk_password, splunk_url, searchID)).then().extract().statusCode() == 200)
         Response response = getSearchResults(splunk_username, splunk_password, splunk_url, searchID)
-
         int size = response.then().extract().body().path("results.size()")
         String date = response.then().extract().body().path("results[${size-1}]._time")
         Assert.assertTrue((date.substring(0,10)) == utils.getDateAsString())
-        String errorCount = response.then().extract().body().path("results[${size-1}].500")
-        Assert.assertTrue((Integer.parseInt(errorCount)) >= calls)
+        JsonPath jsonPathEvaluator = response.jsonPath()
+        List<Integer> errorCount = jsonPathEvaluator.getList("results.500", Integer.class)
+        Assert.assertTrue((errorCount.sum()) >= calls)
 
         Reporter.log("- Splunk. Xray, HTTP 500 Errors verification. Splunk shows errors generated by Xray" +
                 " during the test", true)
@@ -270,14 +277,16 @@ class SplunkTest extends SplunkSteps{
     @Test(priority=7, groups=["splunk_xray"], testName = "Xray. HTTP Response Codes")
     void httpResponsesTest() throws Exception {
         int count = 1
-        int calls = 50
+        int calls = 20
         // Generate xray calls
         xray200(count, calls)
         xray201(count, calls)
         xray409(count, calls)
         xray500(count, calls)
+        Thread.sleep(30000)
         // Create a search job in Splunk with given parameters, return Search ID
-        def search_string = 'search=search log_source="jfrog.xray.xray.request" | timechart count by return_status'
+        // 'earliest=' and 'span=' added to the original query to optimize the output
+        def search_string = 'search=search sourcetype="jfrog.xray.xray.request" earliest=-10m | timechart span=300 count by return_status'
         Response createSearch = createSearch(splunk_username, splunk_password, splunk_url, search_string)
         createSearch.then().statusCode(201)
         def searchID = createSearch.then().extract().path("sid")
@@ -286,21 +295,22 @@ class SplunkTest extends SplunkSteps{
         Awaitility.await().atMost(120, TimeUnit.SECONDS).until(() ->
                 (getSearchResults(splunk_username, splunk_password, splunk_url, searchID)).then().extract().statusCode() == 200)
         Response response = getSearchResults(splunk_username, splunk_password, splunk_url, searchID)
-
         int size = response.then().extract().body().path("results.size()")
         String date = response.then().extract().body().path("results[${size-1}]._time")
         Assert.assertTrue((date.substring(0,10)) == utils.getDateAsString())
-        String count200 = response.then().extract().body().path("results[${size-1}].200")
-        Assert.assertTrue((Integer.parseInt(count200)) >= calls)
-        String count201 = response.then().extract().body().path("results[${size-1}].201")
-        Assert.assertTrue((Integer.parseInt(count201)) >= calls)
-        String count409 = response.then().extract().body().path("results[${size-1}].409")
-        Assert.assertTrue((Integer.parseInt(count409)) >= calls)
-        String errorCount = response.then().extract().body().path("results[${size-1}].500")
-        Assert.assertTrue((Integer.parseInt(errorCount)) >= calls)
+        JsonPath jsonPathEvaluator = response.jsonPath()
+        List<Integer> count200 = jsonPathEvaluator.getList("results.200", Integer.class)
+        Assert.assertTrue((count200.sum()) >= calls)
+        List<Integer> count201 = jsonPathEvaluator.getList("results.201", Integer.class)
+        Assert.assertTrue((count201.sum()) >= calls)
+        List<Integer> count409 = jsonPathEvaluator.getList("results.409", Integer.class)
+        Assert.assertTrue((count409.sum()) >= calls)
+        List<Integer> count500 = jsonPathEvaluator.getList("results.500", Integer.class)
+        Assert.assertTrue((count500.sum()) >= calls)
 
         Reporter.log("- Splunk. Xray, HTTP Response Codes verification. Splunk shows responses generated by Xray" +
-                " during the test", true)
+                " during the test. 200: ${count200.sum()}, 201:${count201.sum()}, " +
+                "409: ${count409.sum()}, 500: ${count500.sum()}", true)
     }
 
 }
