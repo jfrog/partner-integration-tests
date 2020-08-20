@@ -19,8 +19,8 @@ import java.util.concurrent.TimeUnit
 
 /**
  PTRENG-975 Splunk log analytic integration tests.
- Test will generate traffic on the Artifactory instance, then verify Splunk can parse the logs and return correct
- response thru it's API
+ Test will generate traffic on the Artifactory instance (with or without Xray installed), then verify Splunk
+ can parse the logs. Splunk API is used to verify the same Splunk search queries, used in the UI charts.
  */
 
 class SplunkTest extends SplunkSteps{

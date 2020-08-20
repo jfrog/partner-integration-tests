@@ -13,8 +13,10 @@ import steps.SecuritytSteps
 
 /**
  PTRENG-983, Create automated tests for Terraform provider
- Test won't run Terraform provider itself. It will verify output of the provider after the execution.
+ Test won't run Terraform provider itself. It will verify outcome of the provider run after the execution on the
+ Artifactory instance.
  Provider's Repo https://github.com/atlassian/terraform-provider-artifactory/blob/master/website/docs/index.html.markdown
+ Terraform must be installed first to run the providers.
   */
 
 class TerraformTest {

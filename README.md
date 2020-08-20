@@ -21,14 +21,26 @@ Run Gradle wrapper to invoke Gradle task:
 ./gradlew <task_name>
 ```
 
-### Available tasks
+### Tasks for Artifactory testing
 ```
 artifactory_jcr_test
 artifactory_ha_test
 unified_test
 artifactory_ha_docker_test
 artifactory_jcr_docker_test
+terraform_provider_test
+splunk_test
 ```
+### Tasks for Terraform provider testing
+```
+terraform_provider_test
+```
+
+### Tasks for Data analytics integration testing
+```
+splunk_test
+```
+
 Docker tests require SSL setup which is not always needed or available.
 For this reason they are moved to the separate tasks. 
 
