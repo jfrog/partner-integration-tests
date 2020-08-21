@@ -81,6 +81,8 @@ class SplunkSteps {
             def sha256 = "34444087e37a6d1b8e0d30690f7ded539ba8f52da95ec17bc9ef4091bd1668f1"
             def sha1 = "cbca9c7ae0f02b67b26a307f312fed1a23b3e407"
             def md5 = "be7560fcfb06dd942d28bf0c9c764728"
+            def body = repoListHA
+            repoSteps.createRepositories(body, username, password)
             repoSteps.deployArtifact(repoName, directoryName, artifact, filename, sha256, sha1, md5)
 
             Response http204 = repoSteps.deleteItem(path)
