@@ -100,7 +100,7 @@ task splunk_test(type: Test) {
     useTestNG() {
         useDefaultListeners = true
         suites 'src/test/groovy/testng.xml'
-        includeGroups('splunk')
+        includeGroups('splunk','splunk_xray')
     }
     testLogging {
         showStandardStreams = true
