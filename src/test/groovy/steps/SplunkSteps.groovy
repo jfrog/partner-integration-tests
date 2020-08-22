@@ -1,7 +1,10 @@
 package steps
 
 import io.restassured.response.Response
+import org.awaitility.Awaitility
 import org.yaml.snakeyaml.Yaml
+
+import java.util.concurrent.TimeUnit
 
 import static io.restassured.RestAssured.given
 
@@ -48,6 +51,15 @@ class SplunkSteps {
                 .get(splunk_url + "/services/search/jobs/" + search_id + "/results")
                 .then()
                 .extract().response()
+    }
+
+
+    def getSplunkSearchID(splunk_username, splunk_password, splunk_url, search_string){
+        Response createSearch = createSearch(splunk_username, splunk_password, splunk_url, search_string)
+        createSearch.then().statusCode(201)
+        def searchID = createSearch.then().extract().path("sid")
+        println "Search ID is " + searchID
+        return searchID
     }
 
 

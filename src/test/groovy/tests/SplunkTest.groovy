@@ -1,9 +1,12 @@
 package tests
 
+import com.sun.org.apache.xerces.internal.impl.xpath.regex.Match
 import io.restassured.RestAssured
+import io.restassured.matcher.ResponseAwareMatcher
 import io.restassured.path.json.JsonPath
 import io.restassured.response.Response
 import org.awaitility.Awaitility
+import org.hamcrest.Matcher
 import org.hamcrest.Matchers
 import org.testng.Assert
 import org.testng.Reporter
@@ -33,6 +36,7 @@ class SplunkTest extends SplunkSteps{
     def securitySteps = new SecuritytSteps()
     def utils = new Utils()
     def artifactoryURL
+    def dockerURL
     def distribution
     def username
     def password
@@ -44,6 +48,7 @@ class SplunkTest extends SplunkSteps{
     @BeforeSuite(groups=["splunk", "splunk_xray"])
     def setUp() {
         artifactoryURL = config.artifactory.external_ip
+        dockerURL = config.artifactory.url
         distribution = config.artifactory.distribution
         username = config.artifactory.rt_username
         password = config.artifactory.rt_password
@@ -77,11 +82,10 @@ class SplunkTest extends SplunkSteps{
         JsonPath jsonPathEvaluator = response.jsonPath()
         List<Integer> errorCounts = jsonPathEvaluator.getList("results.500", Integer.class)
         Assert.assertTrue((errorCounts.sum()) >= calls)
-
         // Verify the last record in the response has current date
         int size = response.then().extract().body().path("results.size()")
         String date = response.then().extract().body().path("results[${size-1}]._time")
-        Assert.assertTrue((date.substring(0,10)) == utils.getUTCdate())
+        utils.verifySplunkDate(date)
 
         Reporter.log("- Splunk. Splunk successfully detects the number of errors in the past " +
                 "24 hours in the Artifactory log. Number of errors: ${errorCounts.sum()} date: ${date.substring(0,10)}", true)
@@ -111,18 +115,12 @@ class SplunkTest extends SplunkSteps{
         // Verify Splunk response
         Response response = getSearchResults(splunk_username, splunk_password, splunk_url, searchID)
         JsonPath jsonPathEvaluator = response.jsonPath()
-        List<Integer> count200 = jsonPathEvaluator.getList("results.200", Integer.class)
-        Assert.assertTrue((count200.sum()) >= calls)
-        List<Integer> count201 = jsonPathEvaluator.getList("results.201", Integer.class)
-        Assert.assertTrue((count201.sum()) >= calls)
-        List<Integer> count204 = jsonPathEvaluator.getList("results.204", Integer.class)
-        Assert.assertTrue((count204.sum()) >= calls)
-        List<Integer> count403 = jsonPathEvaluator.getList("results.403", Integer.class)
-        Assert.assertTrue((count403.sum()) >= calls)
-        List<Integer> count404 = jsonPathEvaluator.getList("results.404", Integer.class)
-        Assert.assertTrue((count404.sum()) >= calls)
-        List<Integer> count500 = jsonPathEvaluator.getList("results.500", Integer.class)
-        Assert.assertTrue((count500.sum()) >= calls)
+
+        def responseCodes = ["200","201","204","403","404","500"]
+        for (responseCode in responseCodes) {
+            List<Integer> respCount = jsonPathEvaluator.getList("results.${responseCode}", Integer.class)
+            Assert.assertTrue((respCount.sum()) >= calls)
+        }
         // Verify the last record in the response has current date
         int size = response.then().extract().body().path("results.size()")
         String date = response.then().extract().body().path("results[${size-1}]._time")
@@ -177,8 +175,99 @@ class SplunkTest extends SplunkSteps{
         Reporter.log("- Splunk. Top 10 IPs By Downloads verified", true)
     }
 
+    @Test(priority=5, groups=["splunk"], testName = "Artifactory. Accessed Docker Images")
+    void accessedImagesTest() throws Exception {
+        def image = "busybox"
+        def numberOfImages = 5
+        def repos = ["docker-dev-local", "docker-local"]
+        // Docker login, pull busybox, generate and push multiple dummy images
+        utils.dockerLogin(username, password, dockerURL)
+        utils.dockerPullImage(image)
+        utils.dockerGenerateImages(repos, numberOfImages, image, dockerURL)
+        Thread.sleep(60000)
+        // Create a search job in Splunk with given parameters, return Search ID
+        def search_string = 'search=search sourcetype="jfrog.rt.artifactory.request" request_url="/api/docker/*" repo!="NULL" image!="NULL" repo!="" image!="" repo!="latest" earliest=-10m | timechart span=300 count by image'
+        def searchID = getSplunkSearchID(splunk_username, splunk_password, splunk_url, search_string)
 
-    @Test(priority=5, groups=["splunk_xray"], testName = "Xray. Log Volume")
+        Awaitility.await().atMost(120, TimeUnit.SECONDS).until(() ->
+                (getSearchResults(splunk_username, splunk_password, splunk_url, searchID)).then().extract().statusCode() == 200)
+        Response response = getSearchResults(splunk_username, splunk_password, splunk_url, searchID)
+        JsonPath jsonPathEvaluator = response.jsonPath()
+        for (int i = 1; i <= numberOfImages; i++) {
+            List<Integer> result = jsonPathEvaluator.getList("results.${image}${i}", Integer.class)
+            Assert.assertTrue((result.sum()) >= numberOfImages)
+        }
+        int size = response.then().extract().body().path("results.size()")
+        String date = response.then().extract().body().path("results[${size-1}]._time")
+        utils.verifySplunkDate(date)
+
+        Reporter.log("- Splunk. Accessed Docker Images information is verified", true)
+    }
+
+    @Test(priority=6, groups=["splunk"], testName = "Artifactory. Accessed Docker Repos")
+    void accessedReposTest() throws Exception {
+        def repos = ["${dockerURL}/docker-dev-local/busybox1:1.1", "${dockerURL}/docker-local/busybox1:1.1"]
+        utils.dockerLogin(username, password, dockerURL)
+        for(i in repos) {
+            utils.dockerPullImage(i)
+        }
+        Thread.sleep(30000)
+        def search_string = 'search=search sourcetype="jfrog.rt.artifactory.request" request_url="/api/docker/*" repo!="NULL" image!="NULL" repo!="" image!="" repo!="latest" earliest=-10m | timechart span=300 count by repo'
+        def searchID = getSplunkSearchID(splunk_username, splunk_password, splunk_url, search_string)
+
+        Awaitility.await().atMost(120, TimeUnit.SECONDS).until(() ->
+                (getSearchResults(splunk_username, splunk_password, splunk_url, searchID)).then().extract().statusCode() == 200)
+        Response response = getSearchResults(splunk_username, splunk_password, splunk_url, searchID)
+        JsonPath jsonPathEvaluator = response.jsonPath()
+        def repoNames = ["docker-dev-local", "docker-local"]
+        for (i in repoNames) {
+            List<Integer> result = jsonPathEvaluator.getList("results.${i}", Integer.class)
+            Assert.assertTrue((result.sum()) > 0)
+        }
+        int size = response.then().extract().body().path("results.size()")
+        String date = response.then().extract().body().path("results[${size-1}]._time")
+        utils.verifySplunkDate(date)
+
+        Reporter.log("- Splunk. Accessed Docker Repos information is verified", true)
+    }
+
+    @Test(priority=7, groups=["splunk"], testName = "Artifactory. Data Transfers (GBs) Uploads By Repo")
+    void dataTransferUploadeTest() throws Exception {
+
+        def search_string = 'search=search sourcetype="jfrog.rt.artifactory.request" request_url="/api/docker/*" repo!="NULL" image!="NULL" repo!="" image!="" repo!="latest" | eval gb=response_content_length/1073741824 | stats sum(gb) as GB by repo | where GB > 0'
+        def searchID = getSplunkSearchID(splunk_username, splunk_password, splunk_url, search_string)
+
+        Awaitility.await().atMost(120, TimeUnit.SECONDS).until(() ->
+                (getSearchResults(splunk_username, splunk_password, splunk_url, searchID)).then().extract().statusCode() == 200)
+        Response response = getSearchResults(splunk_username, splunk_password, splunk_url, searchID)
+        List<String> repoNames = ["docker-dev-local", "docker-local"]
+        for(repo in repoNames) {
+            response.then().
+                    body("results.repo", Matchers.hasItems(repo)).
+                    body("results.GB", Matchers.notNullValue())
+        }
+        Reporter.log("- Splunk. Data Transfers (GBs) Uploads By Repo information is verified", true)
+    }
+
+    @Test(priority=8, groups=["splunk"], testName = "Artifactory. Data Transfers (GBs) Downloads By Repo")
+    void dataTransferDownloadsTest() throws Exception {
+
+        def search_string = 'search=search sourcetype="jfrog.rt.artifactory.request" request_url="/api/docker/*" repo!="NULL" image!="NULL" repo!="" image!="" repo!="latest" | eval gb=request_content_length/1073741824 | stats sum(gb) by repo'
+        def searchID = getSplunkSearchID(splunk_username, splunk_password, splunk_url, search_string)
+
+        Awaitility.await().atMost(120, TimeUnit.SECONDS).until(() ->
+                (getSearchResults(splunk_username, splunk_password, splunk_url, searchID)).then().extract().statusCode() == 200)
+        Response response = getSearchResults(splunk_username, splunk_password, splunk_url, searchID)
+        List<String> repoNames = ["docker-dev-local", "docker-local"]
+        for(repo in repoNames) {
+            response.then().
+                    body("results.repo", Matchers.hasItems(repo))
+        }
+
+        Reporter.log("- Splunk. Data Transfers (GBs) Downloads By Repo information is verified", true)
+    }
+
+    @Test(priority=9, groups=["splunk_xray"], testName = "Xray. Log Volume")
     void logVolumeTest() throws Exception {
         int count = 1
         int calls = 5
@@ -215,13 +304,14 @@ class SplunkTest extends SplunkSteps{
     }
 
 
-    @Test(priority=6, groups=["splunk_xray"], testName = "Xray. Log Errors")
+    @Test(priority=10, groups=["splunk_xray"], testName = "Xray. Log Errors")
     void logErrorsTest() throws Exception {
         int count = 1
         int calls = 5
         // Generate xray calls
         xray200(count, calls)
         xray500(count, calls)
+        Thread.sleep(20000)
         // Create a search job in Splunk with given parameters, return Search ID
         // 'earliest=' and 'span=' added to the original query to optimize the output
         def search_string = 'search=search sourcetype="jfrog.xray.*.service" log_level="ERROR" earliest=-10m | timechart span=300 count by log_level'
@@ -244,7 +334,7 @@ class SplunkTest extends SplunkSteps{
                 " during the test", true)
     }
 
-    @Test(priority=6, groups=["splunk_xray"], testName = "Xray. HTTP 500 Errors")
+    @Test(priority=11, groups=["splunk_xray"], testName = "Xray. HTTP 500 Errors")
     void error500Test() throws Exception {
         int count = 1
         int calls = 20
@@ -273,7 +363,7 @@ class SplunkTest extends SplunkSteps{
                 " during the test", true)
     }
 
-    @Test(priority=7, groups=["splunk_xray"], testName = "Xray. HTTP Response Codes")
+    @Test(priority=12, groups=["splunk_xray"], testName = "Xray. HTTP Response Codes")
     void httpResponsesTest() throws Exception {
         int count = 1
         int calls = 20
@@ -298,18 +388,15 @@ class SplunkTest extends SplunkSteps{
         String date = response.then().extract().body().path("results[${size-1}]._time")
         Assert.assertTrue((date.substring(0,10)) == utils.getUTCdate())
         JsonPath jsonPathEvaluator = response.jsonPath()
-        List<Integer> count200 = jsonPathEvaluator.getList("results.200", Integer.class)
-        Assert.assertTrue((count200.sum()) >= calls)
-        List<Integer> count201 = jsonPathEvaluator.getList("results.201", Integer.class)
-        Assert.assertTrue((count201.sum()) >= calls)
-        List<Integer> count409 = jsonPathEvaluator.getList("results.409", Integer.class)
-        Assert.assertTrue((count409.sum()) >= calls)
-        List<Integer> count500 = jsonPathEvaluator.getList("results.500", Integer.class)
-        Assert.assertTrue((count500.sum()) >= calls)
+
+        def responseCodes = ["200","201","409","500"]
+        for (responseCode in responseCodes) {
+            List<Integer> respCount = jsonPathEvaluator.getList("results.${responseCode}", Integer.class)
+            Assert.assertTrue((respCount.sum()) >= calls)
+        }
 
         Reporter.log("- Splunk. Xray, HTTP Response Codes verification. Splunk shows responses generated by Xray" +
-                " during the test. 200: ${count200.sum()}, 201:${count201.sum()}, " +
-                "409: ${count409.sum()}, 500: ${count500.sum()}", true)
+                " during the test.", true)
     }
 
 }
