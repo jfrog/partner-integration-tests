@@ -51,6 +51,15 @@ class SplunkSteps {
     }
 
 
+    def getSplunkSearchID(splunk_username, splunk_password, splunk_url, search_string){
+        Response createSearch = createSearch(splunk_username, splunk_password, splunk_url, search_string)
+        createSearch.then().statusCode(201)
+        def searchID = createSearch.then().extract().path("sid")
+        println "Search ID is " + searchID
+        return searchID
+    }
+
+
     // Generate HTTP responses to test Log Analytics
 
     def http200(count, calls){

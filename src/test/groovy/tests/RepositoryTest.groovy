@@ -331,7 +331,7 @@ class RepositoryTest extends RepositorySteps{
 
     @Test(priority=15, groups=["docker"], testName = "Docker login")
     void dockerLoginTest(){
-        def proc = "docker login -u=${username} -p=${password} https://${dockerURL}".execute()
+        def proc = "docker login -u=${username} -p=${password} ${dockerURL}".execute()
         proc.waitForProcessOutput(System.out, System.err)
         Assert.assertTrue(proc.exitValue().equals(0))
 
