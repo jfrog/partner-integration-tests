@@ -1,10 +1,7 @@
 package steps
 
 import io.restassured.response.Response
-import org.awaitility.Awaitility
 import org.yaml.snakeyaml.Yaml
-
-import java.util.concurrent.TimeUnit
 
 import static io.restassured.RestAssured.given
 
