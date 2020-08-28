@@ -107,3 +107,13 @@ task splunk_test(type: Test) {
     }
 }
 
+task prometheus_test(type: Test) {
+    useTestNG() {
+        useDefaultListeners = true
+        suites 'src/test/groovy/testng.xml'
+        includeGroups('prometheus', 'prometheus_xray')
+    }
+    testLogging {
+        showStandardStreams = true
+    }
+}

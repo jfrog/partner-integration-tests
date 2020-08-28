@@ -2,6 +2,8 @@ package utils
 
 import org.testng.Assert
 
+import java.security.DigestInputStream
+import java.security.MessageDigest
 import java.text.SimpleDateFormat
 
 
@@ -53,6 +55,33 @@ class Utils {
                 def push = "docker push ${dockerURL}/${repo}/busybox${i}:1.${i}".execute()
                 push.waitForProcessOutput(System.out, System.err)
                 Assert.assertTrue(push.exitValue().equals(0))
+            }
+        }
+    }
+
+    def generateMD5(File file){
+        file.withInputStream {
+            new DigestInputStream(it, MessageDigest.getInstance('MD5')).withStream {
+                it.eachByte {}
+                it.messageDigest.digest().encodeHex() as String
+            }
+        }
+    }
+
+    def generateSHA1(File file){
+        file.withInputStream {
+            new DigestInputStream(it, MessageDigest.getInstance('Sha1')).withStream {
+                it.eachByte {}
+                it.messageDigest.digest().encodeHex() as String
+            }
+        }
+    }
+
+    def generateSHA256(File file){
+        file.withInputStream {
+            new DigestInputStream(it, MessageDigest.getInstance('Sha-256')).withStream {
+                it.eachByte {}
+                it.messageDigest.digest().encodeHex() as String
             }
         }
     }

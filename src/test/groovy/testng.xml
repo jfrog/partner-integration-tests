@@ -32,4 +32,9 @@
             <class name="tests.SplunkTest"/>
         </classes>
     </test>
+    <test name="tests.PrometheusTest">
+        <classes>
+            <class name="tests.PrometheusTest"/>
+        </classes>
+    </test>
 </suite>
