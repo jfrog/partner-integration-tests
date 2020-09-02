@@ -68,7 +68,7 @@ class SplunkTest extends DataAnalyticsSteps{
         Thread.sleep(30000)
         // Create a search job in Splunk with given parameters, return Search ID
         // 'earliest=' and 'span=' added to the original query to optimize the output
-        def search_string = 'search=search sourcetype="jfrog.rt.artifactory.request" return_status="5*" earliest=-10m | timechart span=300 count by return_status&output_mode=json'
+        def search_string = 'search=search (sourcetype="jfrog.rt.artifactory.request" OR log_source="jfrog.rt.artifactory.request")  return_status="5*" earliest=-10m | timechart span=300 count by return_status'
         Response createSearch = splunk.createSearch(splunk_username, splunk_password, splunk_url, search_string)
         createSearch.then().statusCode(201)
         def searchID = splunk.getSplunkSearchID(splunk_username, splunk_password, splunk_url, search_string)
@@ -103,7 +103,7 @@ class SplunkTest extends DataAnalyticsSteps{
         Thread.sleep(30000)
         // Create a search job in Splunk with given parameters, return Search ID
         // 'earliest=' and 'span=' added to the original query to optimize the output
-        def search_string = 'search=search sourcetype="jfrog.rt.artifactory.request" earliest=-10m | timechart span=300 count by return_status&output_mode=json'
+        def search_string = 'search=search (sourcetype="jfrog.rt.artifactory.request" OR log_source="jfrog.rt.artifactory.request") earliest=-10m | timechart span=300 count by return_status'
         Response createSearch = splunk.createSearch(splunk_username, splunk_password, splunk_url, search_string)
         createSearch.then().statusCode(201)
         def searchID = splunk.getSplunkSearchID(splunk_username, splunk_password, splunk_url, search_string)
@@ -132,7 +132,7 @@ class SplunkTest extends DataAnalyticsSteps{
         int calls = 20
         uploadIntoRepo(count, calls)
         // Create a search job in Splunk with given parameters, return Search ID
-        def search_string = 'search=search sourcetype="jfrog.rt.artifactory.request" response_content_length!="-1" | eval gb=response_content_length/1073741824 | stats sum(gb) as upload_size by remote_address | top limit=10 remote_address,upload_size | fields - count,percent&output_mode=json'
+        def search_string = 'search=search (sourcetype="jfrog.rt.artifactory.request" OR log_source="jfrog.rt.artifactory.request") response_content_length!="-1" | eval gb=response_content_length/1073741824 | stats sum(gb) as upload_size by remote_address | top limit=10 remote_address,upload_size | fields - count,percent'
         Response createSearch = splunk.createSearch(splunk_username, splunk_password, splunk_url, search_string)
         createSearch.then().statusCode(201)
         def searchID = splunk.getSplunkSearchID(splunk_username, splunk_password, splunk_url, search_string)
@@ -154,7 +154,7 @@ class SplunkTest extends DataAnalyticsSteps{
         int calls = 20
         downloadArtifact(count, calls)
         // Create a search job in Splunk with given parameters, return Search ID
-        def search_string = 'search=search sourcetype="jfrog.rt.artifactory.request" request_content_length!="-1" | eval gb=request_content_length/1073741824 | stats sum(gb) as download_size by remote_address | top limit=10 remote_address,download_size | fields - count,percent'
+        def search_string = 'search=search (sourcetype="jfrog.rt.artifactory.request" OR log_source="jfrog.rt.artifactory.request") request_content_length!="-1" | eval gb=request_content_length/1073741824 | stats sum(gb) as download_size by remote_address | top limit=10 remote_address,download_size | fields - count,percent'
         Response createSearch = splunk.createSearch(splunk_username, splunk_password, splunk_url, search_string)
         createSearch.then().statusCode(201)
         def searchID = splunk.getSplunkSearchID(splunk_username, splunk_password, splunk_url, search_string)
@@ -181,7 +181,7 @@ class SplunkTest extends DataAnalyticsSteps{
         utils.dockerGenerateImages(repos, numberOfImages, image, dockerURL)
         Thread.sleep(60000)
         // Create a search job in Splunk with given parameters, return Search ID
-        def search_string = 'search=search sourcetype="jfrog.rt.artifactory.request" request_url="/api/docker/*" repo!="NULL" image!="NULL" repo!="" image!="" repo!="latest" earliest=-10m | timechart span=300 count by image'
+        def search_string = 'search=search (sourcetype="jfrog.rt.artifactory.request" OR log_source="jfrog.rt.artifactory.request") request_url="/api/docker/*" repo!="NULL" image!="NULL" repo!="" image!="" repo!="latest" earliest=-10m | timechart span=300 count by image'
         def searchID = splunk.getSplunkSearchID(splunk_username, splunk_password, splunk_url, search_string)
 
         Awaitility.await().atMost(120, TimeUnit.SECONDS).until(() ->
@@ -207,7 +207,7 @@ class SplunkTest extends DataAnalyticsSteps{
             utils.dockerPullImage(i)
         }
         Thread.sleep(30000)
-        def search_string = 'search=search sourcetype="jfrog.rt.artifactory.request" request_url="/api/docker/*" repo!="NULL" image!="NULL" repo!="" image!="" repo!="latest" earliest=-10m | timechart span=300 count by repo'
+        def search_string = 'search=search (sourcetype="jfrog.rt.artifactory.request" OR log_source="jfrog.rt.artifactory.request") request_url="/api/docker/*" repo!="NULL" image!="NULL" repo!="" image!="" repo!="latest" earliest=-10m | timechart span=300 count by repo'
         def searchID = splunk.getSplunkSearchID(splunk_username, splunk_password, splunk_url, search_string)
 
         Awaitility.await().atMost(120, TimeUnit.SECONDS).until(() ->
@@ -229,7 +229,7 @@ class SplunkTest extends DataAnalyticsSteps{
     @Test(priority=7, groups=["splunk"], testName = "Artifactory. Data Transfers (GBs) Uploads By Repo")
     void dataTransferUploadeTest() throws Exception {
 
-        def search_string = 'search=search sourcetype="jfrog.rt.artifactory.request" request_url="/api/docker/*" repo!="NULL" image!="NULL" repo!="" image!="" repo!="latest" | eval gb=response_content_length/1073741824 | stats sum(gb) as GB by repo | where GB > 0'
+        def search_string = 'search=search (sourcetype="jfrog.rt.artifactory.request" OR log_source="jfrog.rt.artifactory.request") request_url="/api/docker/*" repo!="NULL" image!="NULL" repo!="" image!="" repo!="latest" | eval gb=response_content_length/1073741824 | stats sum(gb) as GB by repo | where GB > 0'
         def searchID = splunk.getSplunkSearchID(splunk_username, splunk_password, splunk_url, search_string)
 
         Awaitility.await().atMost(120, TimeUnit.SECONDS).until(() ->
@@ -247,7 +247,7 @@ class SplunkTest extends DataAnalyticsSteps{
     @Test(priority=8, groups=["splunk"], testName = "Artifactory. Data Transfers (GBs) Downloads By Repo")
     void dataTransferDownloadsTest() throws Exception {
 
-        def search_string = 'search=search sourcetype="jfrog.rt.artifactory.request" request_url="/api/docker/*" repo!="NULL" image!="NULL" repo!="" image!="" repo!="latest" | eval gb=request_content_length/1073741824 | stats sum(gb) by repo'
+        def search_string = 'search=search (sourcetype="jfrog.rt.artifactory.request" OR log_source="jfrog.rt.artifactory.request") request_url="/api/docker/*" repo!="NULL" image!="NULL" repo!="" image!="" repo!="latest" | eval gb=request_content_length/1073741824 | stats sum(gb) by repo'
         def searchID = splunk.getSplunkSearchID(splunk_username, splunk_password, splunk_url, search_string)
 
         Awaitility.await().atMost(120, TimeUnit.SECONDS).until(() ->
@@ -308,7 +308,7 @@ class SplunkTest extends DataAnalyticsSteps{
         Thread.sleep(20000)
         // Create a search job in Splunk with given parameters, return Search ID
         // 'earliest=' and 'span=' added to the original query to optimize the output
-        def search_string = 'search=search sourcetype="jfrog.xray.*.service" log_level="ERROR" earliest=-10m | timechart span=300 count by log_level'
+        def search_string = 'search=search (sourcetype="jfrog.xray.*.service" OR log_source="jfrog.xray.*.service") log_level="ERROR" earliest=-10m | timechart span=300 count by log_level'
         Response createSearch = splunk.createSearch(splunk_username, splunk_password, splunk_url, search_string)
         createSearch.then().statusCode(201)
         def searchID = splunk.getSplunkSearchID(splunk_username, splunk_password, splunk_url, search_string)
@@ -336,7 +336,7 @@ class SplunkTest extends DataAnalyticsSteps{
         Thread.sleep(30000)
         // Create a search job in Splunk with given parameters, return Search ID
         // 'earliest=' and 'span=' added to the original query to optimize the output
-        def search_string = 'search=search sourcetype="jfrog.xray.xray.request" return_status="5*" earliest=-10m | timechart span=300 count by return_status'
+        def search_string = 'search=search (sourcetype="jfrog.xray.xray.request" OR log_source="jfrog.xray.xray.request") return_status="5*" earliest=-10m | timechart span=300 count by return_status'
         Response createSearch = splunk.createSearch(splunk_username, splunk_password, splunk_url, search_string)
         createSearch.then().statusCode(201)
         def searchID = splunk.getSplunkSearchID(splunk_username, splunk_password, splunk_url, search_string)
@@ -367,7 +367,7 @@ class SplunkTest extends DataAnalyticsSteps{
         Thread.sleep(30000)
         // Create a search job in Splunk with given parameters, return Search ID
         // 'earliest=' and 'span=' added to the original query to optimize the output
-        def search_string = 'search=search sourcetype="jfrog.xray.xray.request" earliest=-10m | timechart span=300 count by return_status'
+        def search_string = 'search=search (sourcetype="jfrog.xray.xray.request" OR log_source="jfrog.xray.xray.request") earliest=-10m | timechart span=300 count by return_status'
         Response createSearch = splunk.createSearch(splunk_username, splunk_password, splunk_url, search_string)
         createSearch.then().statusCode(201)
         def searchID = splunk.getSplunkSearchID(splunk_username, splunk_password, splunk_url, search_string)

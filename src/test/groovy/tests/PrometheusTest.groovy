@@ -56,12 +56,12 @@ class PrometheusTest extends DataAnalyticsSteps{
     void uploadDataTest() throws Exception {
 
         int count = 1
-        int calls = 5
+        int calls = 15
         def query = "sum(jfrog_rt_data_upload)"
         long fileSizeInBytes = uploadIntoRepo(count, calls)
 
-        Response response = prometheus.postQuery(prom_url, query)
-        response.then().log().everything()
+//        Response response = prometheus.postQuery(prom_url, query)
+//        response.then().log().everything()
 
         println fileSizeInBytes
 
@@ -82,7 +82,6 @@ class PrometheusTest extends DataAnalyticsSteps{
 
         JsonPath jsonPathEvaluator = response.jsonPath()
         def result = jsonPathEvaluator.get("data.result[0].value[1]")
-        Assert.assertTrue()
         println result
 
 

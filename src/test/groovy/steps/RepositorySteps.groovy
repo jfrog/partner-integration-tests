@@ -82,7 +82,7 @@ class RepositorySteps {
     }
 
     def deployArtifact(repoName, directoryName, artifact, filename, sha256, sha1, md5) {
-        return given().log().all()
+        return given()
                 .header("Cache-Control", "no-cache")
                 .header("mime-Type", "application/zip")
                 .header("X-Checksum-Sha256", sha256)
