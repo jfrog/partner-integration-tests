@@ -1,6 +1,7 @@
 package steps
 
 import io.restassured.response.Response
+import org.testng.annotations.DataProvider
 import org.yaml.snakeyaml.Yaml
 import utils.Utils
 
@@ -28,7 +29,7 @@ class DataAnalyticsSteps {
 
     def http200(count, calls){
         while (count <= calls) {
-            Response http200 = repoSteps.getRepos()
+            Response http200 = repoSteps.getRepos(username, password)
             http200.then().statusCode(200)
             count++
         }
@@ -39,7 +40,7 @@ class DataAnalyticsSteps {
             def usernameRt = "user${count}"
             def emailRt = "email+${count}@server.com"
             def passwordRt = "password"
-            Response http201 = securitySteps.createUser(usernameRt, emailRt, passwordRt)
+            Response http201 = securitySteps.createUser(username, password, usernameRt, emailRt, passwordRt)
             http201.then().statusCode(201)
             count++
         }
@@ -83,7 +84,7 @@ class DataAnalyticsSteps {
 
     def http500(count, calls){
         while (count <= calls) {
-            Response http500 = securitySteps.generateError500()
+            Response http500 = securitySteps.generateError500(username, password)
             http500.then().statusCode(500)
             count++
         }
@@ -119,7 +120,7 @@ class DataAnalyticsSteps {
             def filename = "artifact.zip"
             filename = "${i}_${filename}"
             Response deploy = repoSteps.deployArtifact(repoName, directoryName, artifact, filename, sha256, sha1, md5)
-            deploy.then().log().everything()//statusCode(201)
+            deploy.then().statusCode(201)
         }
         long fileSizeInBytes = artifact.length()
         return fileSizeInBytes
@@ -158,6 +159,61 @@ class DataAnalyticsSteps {
             Response policy = xraySteps.getPolicy(policyName, username, password, url)
             policy.then().statusCode(500)
             count++
+        }
+    }
+
+
+    def createUsers(usernameRt, emailRt, passwordRt){
+        Response response = securitySteps.createUser(username, password, usernameRt, emailRt, passwordRt)
+        response.then().statusCode(201)
+    }
+
+    def createRepos(){
+        def body = repoListHA
+        Response create = repoSteps.createRepositories(body, username, password)
+        create.then().statusCode(200)
+    }
+
+    def getRepos(username, password){
+        Response response = repoSteps.getReposWithUser(username, password)
+        response.then().statusCode(200)
+    }
+
+    def deployArtifactAs(usernameRt, passwordRt){
+            def path = "generic-dev-local/test-directory/artifact.zip"
+            def repoName = "generic-dev-local"
+            def directoryName = "test-directory"
+            def filename = "artifact.zip"
+            def sha256 = utils.generateSHA256(artifact)
+            def sha1 = utils.generateSHA1(artifact)
+            def md5 = utils.generateMD5(artifact)
+            def body = repoListHA
+            repoSteps.createRepositories(body, username, password)
+            repoSteps.deployArtifactAs(usernameRt, passwordRt, repoName, directoryName, artifact, filename, sha256, sha1, md5)
+    }
+
+    def addPermissions(usernameRt){
+        def permissionName = "testPermission"
+        def repository = "ANY"
+        def user1 = usernameRt
+        def action1 = "read"
+        def action2 = "write"
+        def action3 = "manage"
+        securitySteps.createSinglePermission(permissionName, repository, user1,
+                action1, action2, action3)
+
+    }
+
+
+    @DataProvider(name="users")
+    public Object[][] users() {
+        return new Object[][]{
+                ["splunktest0", "email0@jfrog.com", "password123", "incorrectPassword"],
+                ["splunktest1", "email1@jfrog.com", "password123", "incorrectPassword"],
+                ["splunktest2", "email2@jfrog.com", "password123", "incorrectPassword"],
+                ["splunktest3", "email3@jfrog.com", "password123", "incorrectPassword"],
+                ["splunktest4", "email4@jfrog.com", "password123", "incorrectPassword"]
+
         }
     }
 

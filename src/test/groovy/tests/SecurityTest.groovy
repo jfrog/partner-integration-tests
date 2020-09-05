@@ -34,7 +34,7 @@ class SecurityTest extends SecuritytSteps{
 
     @Test(priority=1, groups=["pro"], dataProvider = "users", testName = "Create users")
     void createUsersTest(usernameRt, emailRt, passwordRt){
-        Response response = createUser(usernameRt, emailRt, passwordRt)
+        Response response = createUser(username, password, usernameRt, emailRt, passwordRt)
         response.then().statusCode(201)
 
         Reporter.log("- Create users. User ${usernameRt} created successfully", true)

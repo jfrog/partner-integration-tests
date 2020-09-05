@@ -21,7 +21,7 @@ class HealthCheckTest extends RepositorySteps{
     @BeforeSuite(alwaysRun = true)
     def setUp() {
         artifactoryURL = config.artifactory.external_ip
-        RestAssured.baseURI = "http://${artifactoryURL}/artifactory"
+        RestAssured.baseURI = "https://${artifactoryURL}/artifactory"
     }
 
 
