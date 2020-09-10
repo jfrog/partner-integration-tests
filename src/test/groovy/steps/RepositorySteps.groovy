@@ -35,8 +35,24 @@ class RepositorySteps {
                 .extract().response()
     }
     // https://www.jfrog.com/confluence/display/JFROG/Artifactory+REST+API#ArtifactoryRESTAPI-GetRepositories
-    def getRepos() {
+    def getRepos(username, password) {
         return given()
+                .auth()
+                .preemptive()
+                .basic("${username}", "${password}")
+                .header("Cache-Control", "no-cache")
+                .header("content-Type", "application/yaml")
+                .when()
+                .get("/api/repositories")
+                .then()
+                .extract().response()
+
+    }
+    def getReposWithUser(username, password) {
+        return given()
+                .auth()
+                .preemptive()
+                .basic("${username}", "${password}")
                 .header("Cache-Control", "no-cache")
                 .header("content-Type", "application/yaml")
                 .when()
@@ -84,7 +100,26 @@ class RepositorySteps {
     def deployArtifact(repoName, directoryName, artifact, filename, sha256, sha1, md5) {
         return given()
                 .header("Cache-Control", "no-cache")
-                .header("Content-Type", "application/json")
+                .header("mime-Type", "application/zip")
+                .header("X-Checksum-Sha256", sha256)
+                .header("X-Checksum-Deploy", "false")
+                .header("X-Checksum-Sha1", sha1)
+                .header("X-Checksum", md5)
+                .body(artifact)
+                .when()
+                .put("/" + repoName + "/" + directoryName + "/" + filename)
+                .then()
+                .extract().response()
+
+    }
+
+    def deployArtifactAs(username, password, repoName, directoryName, artifact, filename, sha256, sha1, md5) {
+        return given()
+                .auth()
+                .preemptive()
+                .basic("${username}", "${password}")
+                .header("Cache-Control", "no-cache")
+                .header("mime-Type", "application/zip")
                 .header("X-Checksum-Sha256", sha256)
                 .header("X-Checksum-Deploy", "false")
                 .header("X-Checksum-Sha1", sha1)

@@ -10,6 +10,7 @@ import org.testng.annotations.BeforeTest
 import org.testng.annotations.Test
 import org.yaml.snakeyaml.Yaml
 import steps.RepositorySteps
+import utils.Utils
 
 import java.time.LocalDate
 
@@ -28,6 +29,7 @@ class RepositoryTest extends RepositorySteps{
     def repoListJCR = new File("./src/test/resources/repositories/CreateJCR.yaml")
     def artifact = new File("./src/test/resources/repositories/artifact.zip")
     def config = yaml.load(configFile.text)
+    def utils = new Utils()
     def artifactoryURL
     def dockerURL
     def username
@@ -142,9 +144,9 @@ class RepositoryTest extends RepositorySteps{
         def repoName = "generic-dev-local"
         def directoryName = "test-directory"
         def filename = "artifact.zip"
-        def sha256 = "34444087e37a6d1b8e0d30690f7ded539ba8f52da95ec17bc9ef4091bd1668f1"
-        def sha1 = "cbca9c7ae0f02b67b26a307f312fed1a23b3e407"
-        def md5 = "be7560fcfb06dd942d28bf0c9c764728"
+        def sha256 = utils.generateSHA256(artifact)
+        def sha1 = utils.generateSHA1(artifact)
+        def md5 = utils.generateMD5(artifact)
         Response response = deployArtifact(repoName, directoryName, artifact, filename, sha256, sha1, md5)
         response.then().assertThat().statusCode(201)
                 .body("repo", equalTo(repoName))
@@ -310,9 +312,9 @@ class RepositoryTest extends RepositorySteps{
         def repoName = "generic-dev-local"
         def directoryName = "test-directory"
         def filename = "artifact.zip"
-        def sha256 = "34444087e37a6d1b8e0d30690f7ded539ba8f52da95ec17bc9ef4091bd1668f1"
-        def sha1 = "cbca9c7ae0f02b67b26a307f312fed1a23b3e407"
-        def md5 = "be7560fcfb06dd942d28bf0c9c764728"
+        def sha256 = utils.generateSHA256(artifact)
+        def sha1 = utils.generateSHA1(artifact)
+        def md5 = utils.generateMD5(artifact)
         Response response = deployArtifact(repoName, directoryName, artifact, filename, sha256, sha1, md5)
         response.then().assertThat().statusCode(201)
                 .body("repo", equalTo(repoName))

@@ -2,7 +2,11 @@ package utils
 
 import org.testng.Assert
 
+import java.security.DigestInputStream
+import java.security.MessageDigest
 import java.text.SimpleDateFormat
+
+import static io.restassured.RestAssured.given
 
 
 class Utils {
@@ -45,16 +49,51 @@ class Utils {
         for(repo in repos) {
 
             for (int i = 1; i <= numberOfImages; i++) {
-                def tag = "docker tag ${image} ${dockerURL}/${repo}/busybox${i}:1.${i}".execute()
+                def tag = "docker tag ${image} ${dockerURL}/${repo}/${image}${i}:1.${i}".execute()
                 tag.waitForProcessOutput(System.out, System.err)
                 Assert.assertTrue(tag.exitValue().equals(0))
             }
             for (int i = 1; i <= numberOfImages; i++) {
-                def push = "docker push ${dockerURL}/${repo}/busybox${i}:1.${i}".execute()
+                def push = "docker push ${dockerURL}/${repo}/${image}${i}:1.${i}".execute()
                 push.waitForProcessOutput(System.out, System.err)
                 Assert.assertTrue(push.exitValue().equals(0))
             }
         }
+    }
+
+    def generateMD5(File file){
+        file.withInputStream {
+            new DigestInputStream(it, MessageDigest.getInstance('MD5')).withStream {
+                it.eachByte {}
+                it.messageDigest.digest().encodeHex() as String
+            }
+        }
+    }
+
+    def generateSHA1(File file){
+        file.withInputStream {
+            new DigestInputStream(it, MessageDigest.getInstance('Sha1')).withStream {
+                it.eachByte {}
+                it.messageDigest.digest().encodeHex() as String
+            }
+        }
+    }
+
+    def generateSHA256(File file){
+        file.withInputStream {
+            new DigestInputStream(it, MessageDigest.getInstance('Sha-256')).withStream {
+                it.eachByte {}
+                it.messageDigest.digest().encodeHex() as String
+            }
+        }
+    }
+
+    def getHostIPv4(){
+        final URL whatismyip2 = new URL("https://wtfismyip.com/text");
+        final BufferedReader in2 = new BufferedReader(new InputStreamReader(
+                whatismyip2.openStream()))
+        final String ip2 = in2.readLine()
+        return ip2
     }
 
 }

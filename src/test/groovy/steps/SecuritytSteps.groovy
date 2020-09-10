@@ -7,8 +7,11 @@ import static io.restassured.RestAssured.given
 
 class SecuritytSteps {
 
-    def createUser(usernameRt, emailRt, passwordRt) {
+    def createUser(username, password, usernameRt, emailRt, passwordRt) {
         return given()
+                .auth()
+                .preemptive()
+                .basic("${username}", "${password}")
                 .header("Cache-Control", "no-cache")
                 .header("content-Type", "application/json")
                 .body("{\n" +
@@ -134,7 +137,35 @@ class SecuritytSteps {
                         "  }\n" +
                         "}")
                 .when()
-                .put("/api/v2/security/permissions/testPermission")
+                .put("/api/v2/security/permissions/${permissionName}")
+                .then()
+                .extract().response()
+    }
+
+    def createSinglePermission(permissionName, repository, user1,
+                          action1, action2, action3) {
+        return given()
+                .header("Cache-Control", "no-cache")
+                .header("content-Type", "application/json")
+                .body("{\n" +
+                        "  \"name\": \"${permissionName}\",\n" +
+                        "  \"repo\": {\n" +
+                        "    \"repositories\": [\n" +
+                        "      \"${repository}\"\n" +
+                        "    ],\n" +
+                        "    \"actions\": {\n" +
+                        "      \"users\": {\n" +
+                        "        \"${user1}\": [\n" +
+                        "          \"${action1}\",\n" +
+                        "          \"${action2}\",\n" +
+                        "          \"${action3}\"\n" +
+                        "        ]\n" +
+                        "      }\n" +
+                        "    }\n" +
+                        "  }\n" +
+                        "}")
+                .when()
+                .put("/api/v2/security/permissions/${permissionName}")
                 .then()
                 .extract().response()
     }
@@ -179,8 +210,11 @@ class SecuritytSteps {
                 .extract().response()
     }
 
-    def generateError500(){
+    def generateError500(username, password){
         return given()
+                .auth()
+                .preemptive()
+                .basic("${username}", "${password}")
                 .header("Cache-Control", "no-cache")
                 .header("content-Type", "application/json")
                 .when()
