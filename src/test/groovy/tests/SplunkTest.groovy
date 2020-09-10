@@ -66,7 +66,7 @@ class SplunkTest extends DataAnalyticsSteps{
     void http500errorsTest() throws Exception {
         // Generate error 500 - post callhome data
         int count = 1
-        int calls = 10
+        int calls = 5
         http500(count, calls)
         Thread.sleep(30000)
         // Create a search job in Splunk with given parameters, return Search ID
@@ -95,7 +95,7 @@ class SplunkTest extends DataAnalyticsSteps{
     @Test(priority=2, groups=["splunk"], testName = "Artifactory. HTTP Response Codes")
     void httpResponseCodesTest() throws Exception {
         int count = 1
-        int calls = 10
+        int calls = 5
         // Generate HTTP responses in Artifactory
         http200(count, calls)
         http201(count, calls)
@@ -132,7 +132,7 @@ class SplunkTest extends DataAnalyticsSteps{
     @Test(priority=3, groups=["splunk"], testName = "Artifactory. Top 10 IPs By Uploads")
     void top10ipUploadTest() throws Exception {
         int count = 1
-        int calls = 10
+        int calls = 5
         uploadIntoRepo(count, calls)
         // Create a search job in Splunk with given parameters, return Search ID
         def search_string = 'search=search (sourcetype="jfrog.rt.artifactory.request" OR log_source="jfrog.rt.artifactory.request") response_content_length!="-1" | eval gb=response_content_length/1073741824 | stats sum(gb) as upload_size by remote_address | top limit=10 remote_address,upload_size | fields - count,percent'
@@ -154,7 +154,7 @@ class SplunkTest extends DataAnalyticsSteps{
     @Test(priority=4, groups=["splunk"], testName = "Artifactory. Top 10 IPs By Downloads")
     void top10ipDownloadTest() throws Exception {
         int count = 1
-        int calls = 10
+        int calls = 5
         downloadArtifact(count, calls)
         // Create a search job in Splunk with given parameters, return Search ID
         def search_string = 'search=search (sourcetype="jfrog.rt.artifactory.request" OR log_source="jfrog.rt.artifactory.request") request_content_length!="-1" | eval gb=request_content_length/1073741824 | stats sum(gb) as download_size by remote_address | top limit=10 remote_address,download_size | fields - count,percent'
@@ -268,7 +268,7 @@ class SplunkTest extends DataAnalyticsSteps{
     @Test(priority=9, groups=["splunk"], testName = "Artifactory, Application. Log Volume")
     void rtLogVolumeTest() throws Exception {
         int count = 1
-        int calls = 10
+        int calls = 5
         // Generate artifactory calls
         http200(count, calls)
         http201(count, calls)
@@ -304,7 +304,7 @@ class SplunkTest extends DataAnalyticsSteps{
     @Test(priority=10, groups=["splunk"], testName = "Artifcatory, Application. Log Errors")
     void rtLogErrorsTest() throws Exception {
         int count = 1
-        int calls = 10
+        int calls = 5
         // Generate Artifactory calls
         http403(count, calls)
         http404(count, calls)
@@ -549,7 +549,7 @@ class SplunkTest extends DataAnalyticsSteps{
     @Test(priority=20, groups=["splunk_xray"], testName = "Xray. HTTP 500 Errors")
     void error500Test() throws Exception {
         int count = 1
-        int calls = 10
+        int calls = 5
         // Generate xray calls
         xray500(count, calls)
         Thread.sleep(30000)
@@ -577,7 +577,7 @@ class SplunkTest extends DataAnalyticsSteps{
     @Test(priority=21, groups=["splunk_xray"], testName = "Xray. HTTP Response Codes")
     void httpResponsesTest() throws Exception {
         int count = 1
-        int calls = 10
+        int calls = 5
         // Generate xray calls
         xray200(count, calls)
         xray201(count, calls)
