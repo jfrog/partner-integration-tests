@@ -37,4 +37,9 @@
             <class name="tests.PrometheusTest"/>
         </classes>
     </test>
+    <test name="tests.DatadogTest">
+        <classes>
+            <class name="tests.DatadogTest"/>
+        </classes>
+    </test>
 </suite>

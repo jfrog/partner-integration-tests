@@ -49,7 +49,7 @@ class RepositoryTest extends RepositorySteps{
 
     @Test(priority=1, groups=["pro"], testName = "Delete sample repositories")
     void deleteReposTest(){
-        Response getRepoResponse = getRepos()
+        Response getRepoResponse = getRepos(username, password)
         JsonPath jsonPathEvaluator = getRepoResponse.jsonPath()
         List<String> repoNames = jsonPathEvaluator.getList("key", String.class)
         for (int i = 0; i < repoNames.size(); i ++){
@@ -62,7 +62,7 @@ class RepositoryTest extends RepositorySteps{
 
     @Test(priority=1, groups=["jcr",], testName = "Delete sample repositories JCR")
     void deleteDefaultJCRReposTest(){
-        Response getRepoResponse = getRepos()
+        Response getRepoResponse = getRepos(username, password)
         JsonPath jsonPathEvaluator = getRepoResponse.jsonPath()
         List<String> repoNames = jsonPathEvaluator.getList("key", String.class)
         for (int i = 0; i < repoNames.size(); i ++){
@@ -105,7 +105,7 @@ class RepositoryTest extends RepositorySteps{
 
     @Test(priority=3, groups=["pro"], testName = "Verify HA repositories were created successfully")
     void checkDefaultHAReposTest(){
-        Response response = getRepos()
+        Response response = getRepos(username, password)
         def numberOfRepos = response.then().extract().path("size()")
         def expectedReposNumber = 84
         println("Number of created repositories is ${numberOfRepos}")
@@ -117,7 +117,7 @@ class RepositoryTest extends RepositorySteps{
 
     @Test(priority=3, groups=["jcr"], testName = "Verify JCR repositories were created successfully")
     void checkDefaultJCRReposTest(){
-        Response response = getRepos()
+        Response response = getRepos(username, password)
         def numberOfRepos = response.then().extract().path("size()")
         def expectedReposNumber = 17
         response.then().assertThat().statusCode(200)
@@ -230,7 +230,7 @@ class RepositoryTest extends RepositorySteps{
 
     @Test(priority=10, groups=["pro"], testName = "Delete created repositories")
     void deleteDefaultReposTest(){
-        Response getRepoResponse = getRepos()
+        Response getRepoResponse = getRepos(username, password)
         JsonPath jsonPathEvaluator = getRepoResponse.jsonPath()
         List<String> repoNames = jsonPathEvaluator.getList("key", String.class)
         for (int i = 0; i < repoNames.size(); i ++){
@@ -243,7 +243,7 @@ class RepositoryTest extends RepositorySteps{
 
     @Test(priority=10, groups=["jcr",], testName = "Delete sample repositories JCR")
     void deleteJCRReposTest(){
-        Response getRepoResponse = getRepos()
+        Response getRepoResponse = getRepos(username, password)
         JsonPath jsonPathEvaluator = getRepoResponse.jsonPath()
         List<String> repoNames = jsonPathEvaluator.getList("key", String.class)
         for (int i = 0; i < repoNames.size(); i ++){
@@ -257,7 +257,7 @@ class RepositoryTest extends RepositorySteps{
 
     @Test(priority=11, groups=["pro"], testName = "Verify repositories were deleted successfully")
     void checkReposAreDeleted(){
-        Response response = getRepos()
+        Response response = getRepos(username, password)
         def numberOfRepos = response.then().extract().path("size()")
         def expectedReposNumber = 0
         response.then().assertThat().statusCode(200)

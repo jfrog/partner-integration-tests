@@ -117,3 +117,14 @@ task prometheus_test(type: Test) {
         showStandardStreams = true
     }
 }
+
+task datadog_test(type: Test) {
+    useTestNG() {
+        useDefaultListeners = true
+        suites 'src/test/groovy/testng.xml'
+        includeGroups('datadog', 'datadog_xray')
+    }
+    testLogging {
+        showStandardStreams = true
+    }
+}

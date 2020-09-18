@@ -382,7 +382,7 @@ class SplunkTest extends DataAnalyticsSteps{
         JsonPath jsonPathEvaluator = response.jsonPath()
         List<Integer> errorCount = jsonPathEvaluator.getList("results.count", Integer.class)
         Assert.assertTrue((errorCount.sum()) >= 1)
-        List<String> usernames = ["splunktest0 ", "splunktest1 ", "splunktest2 "]
+        List<String> usernames = ["testUser0 ", "testUser1 ", "testUser2 "]
         for(user in usernames) {
             response.then().
                     body("results.username", hasItems(user))

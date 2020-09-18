@@ -64,11 +64,36 @@ class DataAnalyticsSteps {
         }
     }
 
+    def http401(count, calls){
+        while (count <= calls) {
+            def repoName = "generic-dev-local"
+            Response http403 = repoSteps.deleteRepository(repoName, "user1", "password")
+            http403.then().log().everything()//.statusCode(403)
+            count++
+        }
+    }
+
+
+
     def http403(count, calls){
         while (count <= calls) {
             def repoName = "generic-dev-local"
             Response http403 = repoSteps.deleteRepository(repoName, "user1", "password")
-            http403.then().statusCode(403)
+            http403.then().log().everything()//.statusCode(403)
+            count++
+        }
+    }
+
+
+    def createUsers401(count, calls){
+        def usernameRt = "dummyuser"
+        def emailRt = "email"
+        def passwordRt = "password"
+        def password = "fakepassword"
+        while (count <= calls) {
+            def username = "fakeuser-${count}"
+            Response response = securitySteps.createUser(username, password, usernameRt, emailRt, passwordRt)
+            response.then().statusCode(401)
             count++
         }
     }
@@ -208,11 +233,11 @@ class DataAnalyticsSteps {
     @DataProvider(name="users")
     public Object[][] users() {
         return new Object[][]{
-                ["splunktest0", "email0@jfrog.com", "password123", "incorrectPassword"],
-                ["splunktest1", "email1@jfrog.com", "password123", "incorrectPassword"],
-                ["splunktest2", "email2@jfrog.com", "password123", "incorrectPassword"],
-                ["splunktest3", "email3@jfrog.com", "password123", "incorrectPassword"],
-                ["splunktest4", "email4@jfrog.com", "password123", "incorrectPassword"]
+                ["testUser0", "email0@jfrog.com", "password123", "incorrectPassword"],
+                ["testUser1", "email1@jfrog.com", "password123", "incorrectPassword"],
+                ["testUser2", "email2@jfrog.com", "password123", "incorrectPassword"],
+                ["testUser3", "email3@jfrog.com", "password123", "incorrectPassword"],
+                ["testUser4", "email4@jfrog.com", "password123", "incorrectPassword"]
 
         }
     }
