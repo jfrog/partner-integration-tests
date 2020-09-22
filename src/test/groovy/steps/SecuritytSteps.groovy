@@ -223,6 +223,23 @@ class SecuritytSteps {
                 .extract().response()
     }
 
+    def login(url, usernameRt, passwordRt) {
+        return given()
+                .relaxedHTTPSValidation()
+                .header("Connection", "keep-alive")
+                .header("Accept", "application/json, text/plain, */*")
+                .header("X-Requested-With", "XMLHttpRequest")
+                .header("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.135 Safari/537.36")
+                .header("Origin", "http://35.188.4.233")
+                .header("Accept-Language", "en-US,en;q=0.9")
+                .header("Content-Type", "application/json;charset=UTF-8")
+                .body("{\"user\":\"${usernameRt}\",\"password\":\"${passwordRt}\",\"type\":\"login\"}")
+                .when()
+                .post("http://${url}/ui/api/v1/ui/auth/login?_spring_security_remember_me=false")
+                .then()
+                .extract().response()
+    }
+
 
     // Data providers
 

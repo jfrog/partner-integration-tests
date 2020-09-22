@@ -27,6 +27,14 @@ class DataAnalyticsSteps {
 
     // Generate HTTP responses to test Log Analytics
 
+    def login(usernameRt, passwordRt, url, count, calls){
+        while (count <= calls) {
+            Response response = securitySteps.login(url, usernameRt+count, passwordRt)
+            response.then().log().status()
+            count++
+        }
+    }
+
     def http200(count, calls){
         while (count <= calls) {
             Response http200 = repoSteps.getRepos(username, password)
@@ -205,16 +213,16 @@ class DataAnalyticsSteps {
     }
 
     def deployArtifactAs(usernameRt, passwordRt){
-            def path = "generic-dev-local/test-directory/artifact.zip"
             def repoName = "generic-dev-local"
             def directoryName = "test-directory"
-            def filename = "artifact.zip"
+            def filename = "artifact-test.zip"
             def sha256 = utils.generateSHA256(artifact)
             def sha1 = utils.generateSHA1(artifact)
             def md5 = utils.generateMD5(artifact)
             def body = repoListHA
             repoSteps.createRepositories(body, username, password)
-            repoSteps.deployArtifactAs(usernameRt, passwordRt, repoName, directoryName, artifact, filename, sha256, sha1, md5)
+            Response response = repoSteps.deployArtifactAs(usernameRt, passwordRt, repoName, directoryName, artifact, filename, sha256, sha1, md5)
+            response.then().statusCode(201)
     }
 
     def addPermissions(usernameRt){

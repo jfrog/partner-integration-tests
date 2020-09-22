@@ -5,6 +5,7 @@ import io.restassured.path.json.JsonPath
 import io.restassured.response.Response
 import org.hamcrest.Matchers
 import org.testng.Assert
+import org.testng.Reporter
 import org.testng.annotations.BeforeSuite
 import org.testng.annotations.Test
 import org.yaml.snakeyaml.Yaml
@@ -61,11 +62,11 @@ class DatadogTest extends DataAnalyticsSteps {
         int calls = 10
         // Try to create a new user with incorrect admin credentials, HTTP response 401
         createUsers401(count, calls)
-        Thread.sleep(10000)
+        Thread.sleep(30000)
         def now = new Date()
         def from_timestamp = (now.getTime()-1800000).toString().substring(0,10)
         def to_timestamp = (now.getTime()).toString().substring(0,10)
-        def query = "sum:denied_actions_by_username{*} by {username}.as_count()"
+        def query = "sum:denied_actions_by_username{!username:na} by {username}.as_count()"
         Response response = datadog.datadogQueryTimeSeriesPoints(datadog_url,
                 datadog_api_key, datadog_application_key, from_timestamp, to_timestamp, query)
         response.then().assertThat().statusCode(200).
@@ -73,7 +74,7 @@ class DatadogTest extends DataAnalyticsSteps {
                 body("query", Matchers.equalTo(query))
         def userNames = []
         while (count <= calls) {
-            userNames.add("username:fakeuser-${count}")
+            userNames.add("username:fakeuser-${count},!username:na")
             count++
         }
         JsonPath jsonPathEvaluator = response.jsonPath()
@@ -82,7 +83,9 @@ class DatadogTest extends DataAnalyticsSteps {
         println userNames.sort()
         println "Actual username list:"
         println responseUserNames.sort()
-        Assert.assertTrue(userNames.sort() == responseUserNames.sort())
+        Assert.assertTrue(userNames.intersect(responseUserNames) as boolean)
+
+        Reporter.log("- Datadog. Denied Actions by Username graph test passed", true)
 
     }
 
@@ -96,61 +99,129 @@ class DatadogTest extends DataAnalyticsSteps {
         def now = new Date()
         def from_timestamp = (now.getTime()-1800000).toString().substring(0,10)
         def to_timestamp = (now.getTime()).toString().substring(0,10)
-        def query = "sum:denied_actions_by_ip{*} by {ip}.as_count()"
+        def query = "sum:denied_actions_based_on_ip{*} by {ip}.as_count()"
         Response response = datadog.datadogQueryTimeSeriesPoints(datadog_url,
                 datadog_api_key, datadog_application_key, from_timestamp, to_timestamp, query)
-        //TODO add IP versification back after it's fixed in Fluentd
-        def IPv4andIPv6Regex = "((^\\s*((([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]))\\s*\$)|(^\\s*((([0-9A-Fa-f]{1,4}:){7}([0-9A-Fa-f]{1,4}|:))|(([0-9A-Fa-f]{1,4}:){6}(:[0-9A-Fa-f]{1,4}|((25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)(\\.(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)){3})|:))|(([0-9A-Fa-f]{1,4}:){5}(((:[0-9A-Fa-f]{1,4}){1,2})|:((25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)(\\.(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)){3})|:))|(([0-9A-Fa-f]{1,4}:){4}(((:[0-9A-Fa-f]{1,4}){1,3})|((:[0-9A-Fa-f]{1,4})?:((25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)(\\.(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){3}(((:[0-9A-Fa-f]{1,4}){1,4})|((:[0-9A-Fa-f]{1,4}){0,2}:((25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)(\\.(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){2}(((:[0-9A-Fa-f]{1,4}){1,5})|((:[0-9A-Fa-f]{1,4}){0,3}:((25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)(\\.(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){1}(((:[0-9A-Fa-f]{1,4}){1,6})|((:[0-9A-Fa-f]{1,4}){0,4}:((25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)(\\.(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)){3}))|:))|(:(((:[0-9A-Fa-f]{1,4}){1,7})|((:[0-9A-Fa-f]{1,4}){0,5}:((25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)(\\.(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)){3}))|:)))(%.+)?\\s*\$))"
+        def IPv4andIPv6Regex = "(^ip:)(([a-za-z:])([0-9A-Fa-f]{1,4}:){7}[0-9A-Fa-f]{1,4}|(\\d{1,3}\\.){3}\\d{1,3})"
         response.then().assertThat().statusCode(200).
-                //body("series.scope", Matchers.hasItems(Matchers.matchesRegex(IPv4andIPv6Regex))).
+                body("series.scope", Matchers.hasItems(Matchers.matchesRegex(IPv4andIPv6Regex))).
                 body("query", Matchers.equalTo(query))
         JsonPath jsonPathEvaluator = response.jsonPath()
         int size = response.then().extract().body().path("series.size()")
         List<Integer> result = jsonPathEvaluator.getList("series.length", Integer.class)
         Assert.assertTrue((result.sum()) >= calls/size)
 
+        Reporter.log("- Datadog. Denied Actions by IP graph test passed", true)
 
     }
 
-    @Test(priority=3, groups=["datadog", "datadog_xray"], dataProvider = "users", testName = "Artifcatory, Audit. Generate data with data provider")
-    void generateDataTest(usernameRt, emailRt, passwordRt, incorrectPasswordRt) {
-        // Deploy as non-existent users, 401
-        deployArtifactAs(usernameRt, passwordRt)
-        createUsers(usernameRt, emailRt, passwordRt)
-        // Deploy with incorrect password
-        deployArtifactAs(usernameRt, incorrectPasswordRt)
-        // Users have no access to target repo, 403 expected
-        deployArtifactAs(usernameRt, passwordRt)
-        // Give access
-        addPermissions(usernameRt)
-        // Deploy again
-        deployArtifactAs(usernameRt, passwordRt)
-        // Delete users
-        securitySteps.deleteUser(usernameRt)
-    }
-
-
-    @Test(priority=4, groups=["datadog", "datadog_xray"], testName = "Accepted Deploys by Username")
+    @Test(priority=3, groups=["datadog", "datadog_xray"], testName = "Accepted Deploys by Username")
         void acceptedDeploysByUsernameTest(){
 
-        deployArtifactAs(username, password)
+        def users = ["testuser1", "testuser2", "testuser3", "testuser4"]
+        def emailRt = "testEmail@jfrog.com"
+        def passwordRt = "password123"
+        for(user in users) {
+            createUsers(user, emailRt, passwordRt)
+            addPermissions(user)
+            deployArtifactAs(user, passwordRt)
+        }
 
+        Thread.sleep(10000)
+        def now = new Date()
+        def from_timestamp = (now.getTime()-1800000).toString().substring(0,10)
+        def to_timestamp = (now.getTime()).toString().substring(0,10)
+        def query = "count:accepted_deploys_based_on_username{*} by {username}.as_count()"
+        Response response = datadog.datadogQueryTimeSeriesPoints(datadog_url,
+                datadog_api_key, datadog_application_key, from_timestamp, to_timestamp, query)
+        response.then().assertThat().statusCode(200)
+
+        JsonPath jsonPathEvaluator = response.jsonPath()
+        def responseUserNames = jsonPathEvaluator.getList("series.scope")
+        def usersVerification = users.collect { "username:$it" }.join(' ')
+        List<String> list = usersVerification.split(' ')
+        println "Expected username list:"
+        println list.sort()
+        println "Actual username list:"
+        println responseUserNames.sort()
+        Assert.assertTrue(list.intersect(responseUserNames) as boolean)
+
+        Reporter.log("- Datadog. Accepted Deploys by Username graph test passed", true)
+
+    }
+
+    @Test(priority=4, groups=["datadog", "datadog_xray"], testName = "Denied Logins By IP")
+    void deniedLoginsByIPTest(){
+        int count = 1
+        int calls = 10
+        // Try to create a new user with incorrect admin credentials, HTTP response 401
+        createUsers401(count, calls)
+        Thread.sleep(10000)
+        def now = new Date()
+        def from_timestamp = (now.getTime()-1800000).toString().substring(0,10)
+        def to_timestamp = (now.getTime()).toString().substring(0,10)
+        def query = "count:denied_logins_based_on_ip{*} by {ip}.as_count()"
+        Response response = datadog.datadogQueryTimeSeriesPoints(datadog_url,
+                datadog_api_key, datadog_application_key, from_timestamp, to_timestamp, query)
+        def IPv4andIPv6Regex = "(^ip:)(([a-za-z:])([0-9A-Fa-f]{1,4}:){7}[0-9A-Fa-f]{1,4}|(\\d{1,3}\\.){3}\\d{1,3})"
+        response.then().assertThat().statusCode(200).log().everything().
+                body("series.scope", Matchers.hasItems(Matchers.matchesRegex(IPv4andIPv6Regex))).
+                        body("query", Matchers.equalTo(query))
+        JsonPath jsonPathEvaluator = response.jsonPath()
+        int size = response.then().extract().body().path("series.size()")
+        List<Integer> result = jsonPathEvaluator.getList("series.length", Integer.class)
+        Assert.assertTrue((result.sum()) >= calls/size)
+
+        Reporter.log("- Datadog. Denied Logins By IP graph test passed", true)
+
+    }
+
+    @Test(priority=5, groups=["datadog", "datadog_xray"], testName = "Denied Logins By Username")
+    void deniedLoginsByUsernameTest(){
+        int count = 1
+        int calls = 10
+        def username = "badguy-"
+        def password = "badpassword"
+        login(username, password, artifactoryURL, count, calls)
         Thread.sleep(30000)
         def now = new Date()
         def from_timestamp = (now.getTime()-1800000).toString().substring(0,10)
         def to_timestamp = (now.getTime()).toString().substring(0,10)
-        def query = "avg:accepted_deploys_based_on_username{*} by {username}.as_count()"
+        def query = "count:denied_logins_by_username{!username:na} by {username}.as_count()"
         Response response = datadog.datadogQueryTimeSeriesPoints(datadog_url,
                 datadog_api_key, datadog_application_key, from_timestamp, to_timestamp, query)
-        response.then().log().everything()
+        response.then().assertThat().statusCode(200).log().everything().
+                body("series.pointlist", Matchers.notNullValue()).
+                body("query", Matchers.equalTo(query))
+        def userNames = []
+        while (count <= calls) {
+            userNames.add("username:badguy-${count},!username:na")
+            count++
+        }
+        JsonPath jsonPathEvaluator = response.jsonPath()
+        def responseUserNames = jsonPathEvaluator.getList("series.scope")
+        println "Expected username list:"
+        println userNames.sort()
+        println "Actual username list:"
+        println responseUserNames.sort()
+        Assert.assertTrue(userNames.intersect(responseUserNames) as boolean)
+
+        Reporter.log("- Datadog. Denied Actions by Username graph test passed", true)
+
     }
 
 
 
+//    @Test(priority=3, groups=["datadog", "datadog_xray"], dataProvider = "users", testName = "Artifcatory, Audit. Generate data with data provider")
+//    void generateDataTest(usernameRt, emailRt, passwordRt, incorrectPasswordRt) {
+//
+//    }
 
 
-    @Test(groups=["datadog", "datadog_xray"])
-    void test(){
+
+//    @Test(groups=["datadog", "datadog_xray"])
+//    void test(){
+
 
 //        int count = 1
 //        int calls = 10
@@ -168,15 +239,20 @@ class DatadogTest extends DataAnalyticsSteps {
 
 
 
-//        def from_timestapm = "1600067404"
-//        def to_timestamp = "1600107004"
-//        def query = ""
-        // denied_logins_by_username{*}by{username}
-//        Response response = datadog.query(datadog_url, datadog_api_key, datadog_application_key, from_timestapm, to_timestamp, query)
-//        response.then().log().everything()
-
-    }
-
+//    }
+//    // Deploy as non-existent users, 401
+//    deployArtifactAs(usernameRt, passwordRt)
+//    createUsers(usernameRt, emailRt, passwordRt)
+//    // Deploy with incorrect password
+//    deployArtifactAs(usernameRt, incorrectPasswordRt)
+//    // Users have no access to target repo, 403 expected
+//    deployArtifactAs(usernameRt, passwordRt)
+//    // Give access
+//    addPermissions(usernameRt)
+//    // Deploy again
+//    deployArtifactAs(usernameRt, passwordRt)
+//    // Delete users
+//    securitySteps.deleteUser(usernameRt)
 
     // AUDIT
     // Denied Actions by Username
