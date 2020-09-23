@@ -50,13 +50,13 @@ class SplunkTest extends DataAnalyticsSteps{
     @BeforeSuite(groups=["splunk", "splunk_xray"])
     def setUp() {
         artifactoryURL = config.artifactory.external_ip
-        dockerURL = config.artifactory.url
+        dockerURL = config.artifactory.xrayBaseUrl
         distribution = config.artifactory.distribution
         username = config.artifactory.rt_username
         password = config.artifactory.rt_password
         splunk_username = config.splunk.username
         splunk_password = config.splunk.password
-        splunk_url = "${config.splunk.protocol}" + "${config.splunk.url}" + ":" + "${config.splunk.port}"
+        splunk_url = "${config.splunk.protocol}" + "${config.splunk.xrayBaseUrl}" + ":" + "${config.splunk.port}"
         RestAssured.baseURI = "http://${artifactoryURL}/artifactory"
         RestAssured.authentication = RestAssured.basic(username, password)
         RestAssured.useRelaxedHTTPSValidation()

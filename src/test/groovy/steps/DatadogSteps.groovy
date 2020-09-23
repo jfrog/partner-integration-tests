@@ -13,6 +13,7 @@ class DatadogSteps {
 
     def datadogQueryTimeSeriesPoints(dd_url, api_key, application_key, from_timestamp, to_timestamp, query) {
         return given()
+                .relaxedHTTPSValidation()
                 .header("Cache-Control", "no-cache")
                 .header("content-Type", "application/json")
                 .header("Accept", "*/*")

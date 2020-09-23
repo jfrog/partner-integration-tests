@@ -34,9 +34,10 @@ class DatadogTest extends DataAnalyticsSteps {
     def securitySteps = new SecuritytSteps()
     def datadog = new DatadogSteps()
     def utils = new Utils()
-    def artifactoryURL
     def dockerURL
     def distribution
+    def artifactoryURL
+    def artifactoryBaseURL
     def username
     def password
     def datadog_api_key
@@ -44,16 +45,20 @@ class DatadogTest extends DataAnalyticsSteps {
     def datadog_url
 
 
-    @BeforeSuite(groups=["datadog", "datadog_xray"])
+    @BeforeSuite(groups=["testing", "datadog", "datadog_xray"])
     def setUp() {
+        dockerURL = config.artifactory.xrayBaseUrl
+        protocol = config.artifactory.protocol
         artifactoryURL = config.artifactory.external_ip
-        dockerURL = config.artifactory.url
+        artifactoryBaseURL = "${protocol}${config.artifactory.external_ip}/artifactory"
         distribution = config.artifactory.distribution
         username = config.artifactory.rt_username
         password = config.artifactory.rt_password
         datadog_api_key = config.datadog.api_key
         datadog_application_key = config.datadog.application_key
         datadog_url = "https://api.datadoghq.com"
+        RestAssured.useRelaxedHTTPSValidation()
+
     }
 
     @Test(priority=1, groups=["datadog", "datadog_xray"], testName = "Denied Actions by Username")
@@ -95,7 +100,7 @@ class DatadogTest extends DataAnalyticsSteps {
         int calls = 10
         // Try to create a new user with incorrect admin credentials, HTTP response 401
         createUsers401(count, calls)
-        Thread.sleep(10000)
+        Thread.sleep(30000)
         def now = new Date()
         def from_timestamp = (now.getTime()-1800000).toString().substring(0,10)
         def to_timestamp = (now.getTime()).toString().substring(0,10)
@@ -103,12 +108,15 @@ class DatadogTest extends DataAnalyticsSteps {
         Response response = datadog.datadogQueryTimeSeriesPoints(datadog_url,
                 datadog_api_key, datadog_application_key, from_timestamp, to_timestamp, query)
         def IPv4andIPv6Regex = "(^ip:)(([a-za-z:])([0-9A-Fa-f]{1,4}:){7}[0-9A-Fa-f]{1,4}|(\\d{1,3}\\.){3}\\d{1,3})"
-        response.then().assertThat().statusCode(200).
+        response.then().assertThat().statusCode(200).log().everything().
                 body("series.scope", Matchers.hasItems(Matchers.matchesRegex(IPv4andIPv6Regex))).
                 body("query", Matchers.equalTo(query))
         JsonPath jsonPathEvaluator = response.jsonPath()
         int size = response.then().extract().body().path("series.size()")
         List<Integer> result = jsonPathEvaluator.getList("series.length", Integer.class)
+        println result.sum()
+        println calls/size
+        println size
         Assert.assertTrue((result.sum()) >= calls/size)
 
         Reporter.log("- Datadog. Denied Actions by IP graph test passed", true)
@@ -127,7 +135,7 @@ class DatadogTest extends DataAnalyticsSteps {
             deployArtifactAs(user, passwordRt)
         }
 
-        Thread.sleep(10000)
+        Thread.sleep(50000)
         def now = new Date()
         def from_timestamp = (now.getTime()-1800000).toString().substring(0,10)
         def to_timestamp = (now.getTime()).toString().substring(0,10)
@@ -156,7 +164,7 @@ class DatadogTest extends DataAnalyticsSteps {
         int calls = 10
         // Try to create a new user with incorrect admin credentials, HTTP response 401
         createUsers401(count, calls)
-        Thread.sleep(10000)
+        Thread.sleep(30000)
         def now = new Date()
         def from_timestamp = (now.getTime()-1800000).toString().substring(0,10)
         def to_timestamp = (now.getTime()).toString().substring(0,10)
@@ -166,10 +174,13 @@ class DatadogTest extends DataAnalyticsSteps {
         def IPv4andIPv6Regex = "(^ip:)(([a-za-z:])([0-9A-Fa-f]{1,4}:){7}[0-9A-Fa-f]{1,4}|(\\d{1,3}\\.){3}\\d{1,3})"
         response.then().assertThat().statusCode(200).log().everything().
                 body("series.scope", Matchers.hasItems(Matchers.matchesRegex(IPv4andIPv6Regex))).
-                        body("query", Matchers.equalTo(query))
+                body("query", Matchers.equalTo(query))
         JsonPath jsonPathEvaluator = response.jsonPath()
         int size = response.then().extract().body().path("series.size()")
         List<Integer> result = jsonPathEvaluator.getList("series.length", Integer.class)
+        println result.sum()
+        println calls/size
+        println size
         Assert.assertTrue((result.sum()) >= calls/size)
 
         Reporter.log("- Datadog. Denied Logins By IP graph test passed", true)

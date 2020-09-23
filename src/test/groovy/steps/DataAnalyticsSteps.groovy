@@ -5,9 +5,6 @@ import org.testng.annotations.DataProvider
 import org.yaml.snakeyaml.Yaml
 import utils.Utils
 
-import static io.restassured.RestAssured.given
-import static io.restassured.RestAssured.given
-
 class DataAnalyticsSteps {
 
     def repoSteps = new RepositorySteps()
@@ -19,8 +16,9 @@ class DataAnalyticsSteps {
     Yaml yaml = new Yaml()
     def configFile = new File("./src/test/resources/testenv.yaml")
     def config = yaml.load(configFile.text)
-    def url = "http://${config.artifactory.external_ip}/xray/api"
-    def distribution = config.artifactory.distribution
+    def protocol = config.artifactory.protocol
+    def xrayBaseUrl = "${protocol}${config.artifactory.external_ip}/xray/api"
+    def artifactoryBaseURL = "${protocol}${config.artifactory.external_ip}/artifactory"
     def username = config.artifactory.rt_username
     def password = config.artifactory.rt_password
 
@@ -48,7 +46,7 @@ class DataAnalyticsSteps {
             def usernameRt = "user${count}"
             def emailRt = "email+${count}@server.com"
             def passwordRt = "password"
-            Response http201 = securitySteps.createUser(username, password, usernameRt, emailRt, passwordRt)
+            Response http201 = securitySteps.createUser(artifactoryBaseURL, username, password, usernameRt, emailRt, passwordRt)
             http201.then().statusCode(201)
             count++
         }
@@ -64,8 +62,8 @@ class DataAnalyticsSteps {
             def sha1 = utils.generateSHA1(artifact)
             def md5 = utils.generateMD5(artifact)
             def body = repoListHA
-            repoSteps.createRepositories(body, username, password)
-            repoSteps.deployArtifact(repoName, directoryName, artifact, filename, sha256, sha1, md5)
+            repoSteps.createRepositories(artifactoryBaseURL, body, username, password)
+            repoSteps.deployArtifact(artifactoryBaseURL, repoName, directoryName, artifact, filename, sha256, sha1, md5)
             Response http204 = repoSteps.deleteItem(path)
             http204.then().statusCode(204)
             count++
@@ -75,7 +73,7 @@ class DataAnalyticsSteps {
     def http401(count, calls){
         while (count <= calls) {
             def repoName = "generic-dev-local"
-            Response http403 = repoSteps.deleteRepository(repoName, "user1", "password")
+            Response http403 = repoSteps.deleteRepository(artifactoryBaseURL, repoName, "user1", "password")
             http403.then().log().everything()//.statusCode(403)
             count++
         }
@@ -86,7 +84,7 @@ class DataAnalyticsSteps {
     def http403(count, calls){
         while (count <= calls) {
             def repoName = "generic-dev-local"
-            Response http403 = repoSteps.deleteRepository(repoName, "user1", "password")
+            Response http403 = repoSteps.deleteRepository(artifactoryBaseURL, repoName, "user1", "password")
             http403.then().log().everything()//.statusCode(403)
             count++
         }
@@ -100,7 +98,7 @@ class DataAnalyticsSteps {
         def password = "fakepassword"
         while (count <= calls) {
             def username = "fakeuser-${count}"
-            Response response = securitySteps.createUser(username, password, usernameRt, emailRt, passwordRt)
+            Response response = securitySteps.createUser(artifactoryBaseURL, username, password, usernameRt, emailRt, passwordRt)
             response.then().statusCode(401)
             count++
         }
@@ -109,7 +107,7 @@ class DataAnalyticsSteps {
     def http404(count, calls){
         while (count <= calls) {
             def path = "generic-dev-local/test-directory/non-existing-artifact.zip"
-            Response http404 = repoSteps.deleteItem(path)
+            Response http404 = repoSteps.deleteItem(artifactoryBaseURL, path)
             http404.then().statusCode(404)
             count++
         }
@@ -117,7 +115,7 @@ class DataAnalyticsSteps {
 
     def http500(count, calls){
         while (count <= calls) {
-            Response http500 = securitySteps.generateError500(username, password)
+            Response http500 = securitySteps.generateError500(artifactoryBaseURL, username, password)
             http500.then().statusCode(500)
             count++
         }
@@ -128,7 +126,7 @@ class DataAnalyticsSteps {
         def directoryName = "test-directory"
         def filename = "1_artifact.zip"
         while (count <= calls) {
-            Response download = repoSteps.downloadArtifact(repoName, directoryName, filename)
+            Response download = repoSteps.downloadArtifact(artifactoryBaseURL, repoName, directoryName, filename)
             download.then().statusCode(200)
             count++
         }
@@ -141,7 +139,7 @@ class DataAnalyticsSteps {
         def config = yaml.load(configFile.text)
         def username = config.artifactory.rt_username
         def password = config.artifactory.rt_password
-        Response create = repoSteps.createRepositories(body, username, password)
+        Response create = repoSteps.createRepositories(artifactoryBaseURL, body, username, password)
         create.then().statusCode(200)
         def repoName = "generic-dev-local"
         def directoryName = "test-directory"
@@ -152,7 +150,7 @@ class DataAnalyticsSteps {
         for (int i = 1; i <= calls; i++) {
             def filename = "artifact.zip"
             filename = "${i}_${filename}"
-            Response deploy = repoSteps.deployArtifact(repoName, directoryName, artifact, filename, sha256, sha1, md5)
+            Response deploy = repoSteps.deployArtifact(artifactoryBaseURL, repoName, directoryName, artifact, filename, sha256, sha1, md5)
             deploy.then().statusCode(201)
         }
         long fileSizeInBytes = artifact.length()
@@ -161,7 +159,7 @@ class DataAnalyticsSteps {
 
     def xray200(count, calls){
         while (count <= calls) {
-            Response policies = xraySteps.getPolicies(username, password, url)
+            Response policies = xraySteps.getPolicies(username, password, xrayBaseUrl)
             policies.then().statusCode(200)
 
             count++
@@ -172,7 +170,7 @@ class DataAnalyticsSteps {
         Random random = new Random()
         while (count <= calls) {
             def policyName = "new-policy-(${random.nextInt(10000000)})"
-            Response policy = xraySteps.createPolicy(policyName, username, password, url)
+            Response policy = xraySteps.createPolicy(policyName, username, password, xrayBaseUrl)
             policy.then().statusCode(201)
             count++
         }
@@ -181,7 +179,7 @@ class DataAnalyticsSteps {
     def xray409(count, calls){
         while (count <= calls) {
             def policyName = "new-policy"
-            xraySteps.createPolicy(policyName, username, password, url)
+            xraySteps.createPolicy(policyName, username, password, xrayBaseUrl)
             count++
         }
     }
@@ -189,7 +187,7 @@ class DataAnalyticsSteps {
     def xray500(count, calls){
         while (count <= calls) {
             def policyName = "non-existing-policy"
-            Response policy = xraySteps.getPolicy(policyName, username, password, url)
+            Response policy = xraySteps.getPolicy(policyName, username, password, xrayBaseUrl)
             policy.then().statusCode(500)
             count++
         }
@@ -197,18 +195,18 @@ class DataAnalyticsSteps {
 
 
     def createUsers(usernameRt, emailRt, passwordRt){
-        Response response = securitySteps.createUser(username, password, usernameRt, emailRt, passwordRt)
+        Response response = securitySteps.createUser(artifactoryBaseURL, username, password, usernameRt, emailRt, passwordRt)
         response.then().statusCode(201)
     }
 
     def createRepos(){
         def body = repoListHA
-        Response create = repoSteps.createRepositories(body, username, password)
+        Response create = repoSteps.createRepositories(artifactoryBaseURL, body, username, password)
         create.then().statusCode(200)
     }
 
     def getRepos(username, password){
-        Response response = repoSteps.getReposWithUser(username, password)
+        Response response = repoSteps.getReposWithUser(artifactoryBaseURL, username, password)
         response.then().statusCode(200)
     }
 
@@ -220,8 +218,8 @@ class DataAnalyticsSteps {
             def sha1 = utils.generateSHA1(artifact)
             def md5 = utils.generateMD5(artifact)
             def body = repoListHA
-            repoSteps.createRepositories(body, username, password)
-            Response response = repoSteps.deployArtifactAs(usernameRt, passwordRt, repoName, directoryName, artifact, filename, sha256, sha1, md5)
+            repoSteps.createRepositories(artifactoryBaseURL, body, username, password)
+            Response response = repoSteps.deployArtifactAs(artifactoryBaseURL, usernameRt, passwordRt, repoName, directoryName, artifact, filename, sha256, sha1, md5)
             response.then().statusCode(201)
     }
 
@@ -232,7 +230,7 @@ class DataAnalyticsSteps {
         def action1 = "read"
         def action2 = "write"
         def action3 = "manage"
-        securitySteps.createSinglePermission(permissionName, repository, user1,
+        securitySteps.createSinglePermission(artifactoryBaseURL, permissionName, repository, user1,
                 action1, action2, action3)
 
     }
