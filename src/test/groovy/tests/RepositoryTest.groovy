@@ -40,7 +40,7 @@ class RepositoryTest extends RepositorySteps{
     @BeforeTest(groups=["jcr", "pro"])
     def setUp() {
         artifactoryURL = config.artifactory.external_ip
-        dockerURL = config.artifactory.xrayBaseUrl
+        dockerURL = config.artifactory.url
         username = config.artifactory.rt_username
         password = config.artifactory.rt_password
         protocol = config.artifactory.protocol
@@ -367,7 +367,7 @@ class RepositoryTest extends RepositorySteps{
     @Test(priority=17, groups=["docker"], testName = "Verify all the images were pushed successfully")
     void verifyDockerImagesTest(){
         def path = "docker-dev-local"
-        Response response = getInfo(path)
+        Response response = getInfo(artifactoryBaseURL, path)
         response.then().assertThat().statusCode(200)
                 .body("repo", equalTo(path))
                 .body("children[0].uri", containsString("busybox"))

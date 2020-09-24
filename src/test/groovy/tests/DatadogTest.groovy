@@ -136,7 +136,7 @@ class DatadogTest extends DataAnalyticsSteps {
         def query = "count:accepted_deploys_based_on_username{*} by {username}.as_count()"
         Response response = datadog.datadogQueryTimeSeriesPoints(datadog_url,
                 datadog_api_key, datadog_application_key, from_timestamp, to_timestamp, query)
-        response.then().assertThat().statusCode(200)
+        response.then().assertThat().log().ifValidationFails().statusCode(200).
 
         JsonPath jsonPathEvaluator = response.jsonPath()
         def responseUserNames = jsonPathEvaluator.getList("series.scope")
