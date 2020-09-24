@@ -50,7 +50,7 @@ class SplunkTest extends DataAnalyticsSteps{
     @BeforeSuite(groups=["splunk", "splunk_xray"])
     def setUp() {
         artifactoryURL = config.artifactory.external_ip
-        dockerURL = config.artifactory.xrayBaseUrl
+        dockerURL = config.artifactory.url
         distribution = config.artifactory.distribution
         username = config.artifactory.rt_username
         password = config.artifactory.rt_password

@@ -151,7 +151,7 @@ class RepositoryTest extends RepositorySteps{
         def sha256 = utils.generateSHA256(artifact)
         def sha1 = utils.generateSHA1(artifact)
         def md5 = utils.generateMD5(artifact)
-        Response response = deployArtifact(artifactoryBaseURL, repoName, directoryName, artifact, filename, sha256, sha1, md5)
+        Response response = deployArtifact(artifactoryBaseURL, username, password, repoName, directoryName, artifact, filename, sha256, sha1, md5)
         response.then().assertThat().statusCode(201)
                 .body("repo", equalTo(repoName))
                 .body("path", equalTo("/" + directoryName + "/" + filename))
@@ -196,7 +196,7 @@ class RepositoryTest extends RepositorySteps{
     @Test(priority=8, groups=["jcr", "pro"], testName = "Delete item")
     void deleteArtifactTest(){
         def path = "generic-dev-local/test-directory/artifact.zip"
-        Response response = deleteItem(artifactoryBaseURL, path)
+        Response response = deleteItem(artifactoryBaseURL, username, password, path)
         response.then().assertThat().statusCode(204)
 
         Response verification = getInfo(artifactoryBaseURL, path)
@@ -319,7 +319,7 @@ class RepositoryTest extends RepositorySteps{
         def sha256 = utils.generateSHA256(artifact)
         def sha1 = utils.generateSHA1(artifact)
         def md5 = utils.generateMD5(artifact)
-        Response response = deployArtifact(artifactoryBaseURL, repoName, directoryName, artifact, filename, sha256, sha1, md5)
+        Response response = deployArtifact(artifactoryBaseURL, username, password, repoName, directoryName, artifact, filename, sha256, sha1, md5)
         response.then().assertThat().statusCode(201)
                 .body("repo", equalTo(repoName))
                 .body("path", equalTo("/" + directoryName + "/" + filename))

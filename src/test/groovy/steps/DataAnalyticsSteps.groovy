@@ -63,9 +63,9 @@ class DataAnalyticsSteps {
             def md5 = utils.generateMD5(artifact)
             def body = repoListHA
             repoSteps.createRepositories(artifactoryBaseURL, body, username, password)
-            repoSteps.deployArtifact(artifactoryBaseURL, repoName, directoryName, artifact, filename, sha256, sha1, md5)
-            Response http204 = repoSteps.deleteItem(path)
-            http204.then().statusCode(204)
+            repoSteps.deployArtifact(artifactoryBaseURL, username, password, repoName, directoryName, artifact, filename, sha256, sha1, md5)
+            Response http204 = repoSteps.deleteItem(artifactoryBaseURL, username, password, path)
+            http204.then().log().ifValidationFails().statusCode(204)
             count++
         }
     }
@@ -74,7 +74,7 @@ class DataAnalyticsSteps {
         while (count <= calls) {
             def repoName = "generic-dev-local"
             Response http403 = repoSteps.deleteRepository(artifactoryBaseURL, repoName, "user1", "password")
-            http403.then().log().everything()//.statusCode(403)
+            http403.then().log().ifValidationFails().statusCode(403)
             count++
         }
     }
@@ -85,7 +85,7 @@ class DataAnalyticsSteps {
         while (count <= calls) {
             def repoName = "generic-dev-local"
             Response http403 = repoSteps.deleteRepository(artifactoryBaseURL, repoName, "user1", "password")
-            http403.then().log().everything()//.statusCode(403)
+            http403.then().log().ifValidationFails().statusCode(403)
             count++
         }
     }
@@ -99,7 +99,7 @@ class DataAnalyticsSteps {
         while (count <= calls) {
             def username = "fakeuser-${count}"
             Response response = securitySteps.createUser(artifactoryBaseURL, username, password, usernameRt, emailRt, passwordRt)
-            response.then().statusCode(401)
+            response.then().log().ifValidationFails().statusCode(401)
             count++
         }
     }
@@ -107,8 +107,8 @@ class DataAnalyticsSteps {
     def http404(count, calls){
         while (count <= calls) {
             def path = "generic-dev-local/test-directory/non-existing-artifact.zip"
-            Response http404 = repoSteps.deleteItem(artifactoryBaseURL, path)
-            http404.then().statusCode(404)
+            Response http404 = repoSteps.deleteItem(artifactoryBaseURL, username, password, path)
+            http404.then().log().ifValidationFails().statusCode(404)
             count++
         }
     }
@@ -116,7 +116,7 @@ class DataAnalyticsSteps {
     def http500(count, calls){
         while (count <= calls) {
             Response http500 = securitySteps.generateError500(artifactoryBaseURL, username, password)
-            http500.then().statusCode(500)
+            http500.then().log().ifValidationFails().statusCode(500)
             count++
         }
     }
@@ -126,8 +126,8 @@ class DataAnalyticsSteps {
         def directoryName = "test-directory"
         def filename = "1_artifact.zip"
         while (count <= calls) {
-            Response download = repoSteps.downloadArtifact(artifactoryBaseURL, repoName, directoryName, filename)
-            download.then().statusCode(200)
+            Response download = repoSteps.downloadArtifact(artifactoryBaseURL, username, password, repoName, directoryName, filename)
+            download.then().log().ifValidationFails().statusCode(200)
             count++
         }
     }
@@ -150,8 +150,8 @@ class DataAnalyticsSteps {
         for (int i = 1; i <= calls; i++) {
             def filename = "artifact.zip"
             filename = "${i}_${filename}"
-            Response deploy = repoSteps.deployArtifact(artifactoryBaseURL, repoName, directoryName, artifact, filename, sha256, sha1, md5)
-            deploy.then().statusCode(201)
+            Response deploy = repoSteps.deployArtifact(artifactoryBaseURL, username, password, repoName, directoryName, artifact, filename, sha256, sha1, md5)
+            deploy.then().log().ifValidationFails().statusCode(201)
         }
         long fileSizeInBytes = artifact.length()
         return fileSizeInBytes
@@ -196,7 +196,7 @@ class DataAnalyticsSteps {
 
     def createUsers(usernameRt, emailRt, passwordRt){
         Response response = securitySteps.createUser(artifactoryBaseURL, username, password, usernameRt, emailRt, passwordRt)
-        response.then().statusCode(201)
+        response.then().log().ifValidationFails().statusCode(201)
     }
 
     def createRepos(){
@@ -220,7 +220,7 @@ class DataAnalyticsSteps {
             def body = repoListHA
             repoSteps.createRepositories(artifactoryBaseURL, body, username, password)
             Response response = repoSteps.deployArtifactAs(artifactoryBaseURL, usernameRt, passwordRt, repoName, directoryName, artifact, filename, sha256, sha1, md5)
-            response.then().statusCode(201)
+            response.then().log().ifValidationFails().statusCode(201)
     }
 
     def addPermissions(usernameRt){
@@ -230,9 +230,9 @@ class DataAnalyticsSteps {
         def action1 = "read"
         def action2 = "write"
         def action3 = "manage"
-        securitySteps.createSinglePermission(artifactoryBaseURL, permissionName, repository, user1,
+        Response response = securitySteps.createSinglePermission(artifactoryBaseURL, username, password, permissionName, repository, user1,
                 action1, action2, action3)
-
+        response.then().log().ifValidationFails().statusCode(200)
     }
 
 

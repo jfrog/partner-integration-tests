@@ -1,7 +1,7 @@
 artifactory:
-  url: test.jfrog.tech
+  url: mahithab-datadog-artifactory.jfrog.tech
   protocol: http://
-  external_ip: test.jfrog.tech
+  external_ip: mahithab-datadog-artifactory.jfrog.tech
   distribution: artifactory_ha
   rt_username: admin
   rt_password: password1

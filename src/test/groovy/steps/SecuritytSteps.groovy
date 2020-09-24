@@ -142,9 +142,12 @@ class SecuritytSteps {
                 .extract().response()
     }
 
-    def createSinglePermission(artifactoryURL, permissionName, repository, user1,
+    def createSinglePermission(artifactoryURL, username, password, permissionName, repository, user1,
                           action1, action2, action3) {
         return given()
+                .auth()
+                .preemptive()
+                .basic("${username}", "${password}")
                 .header("Cache-Control", "no-cache")
                 .header("content-Type", "application/json")
                 .body("{\n" +

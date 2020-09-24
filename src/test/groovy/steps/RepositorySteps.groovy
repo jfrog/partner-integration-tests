@@ -97,8 +97,11 @@ class RepositorySteps {
 
     }
 
-    def deployArtifact(artifactoryURL, repoName, directoryName, artifact, filename, sha256, sha1, md5) {
+    def deployArtifact(artifactoryURL, username, password, repoName, directoryName, artifact, filename, sha256, sha1, md5) {
         return given()
+                .auth()
+                .preemptive()
+                .basic("${username}", "${password}")
                 .header("Cache-Control", "no-cache")
                 .header("mime-Type", "application/zip")
                 .header("X-Checksum-Sha256", sha256)
@@ -132,8 +135,11 @@ class RepositorySteps {
 
     }
 
-    def downloadArtifact(artifactoryURL, repoName, directoryName, filename) {
+    def downloadArtifact(artifactoryURL, username, password, repoName, directoryName, filename) {
         return given()
+                .auth()
+                .preemptive()
+                .basic("${username}", "${password}")
                 .header("Cache-Control", "no-cache")
                 .header("Content-Type", "application/octet-stream")
                 .when()
@@ -159,8 +165,11 @@ class RepositorySteps {
 
     }
 
-    def deleteItem(artifactoryURL, path) {
+    def deleteItem(artifactoryURL, username, password, path) {
         return given()
+                .auth()
+                .preemptive()
+                .basic("${username}", "${password}")
                 .header("Cache-Control", "no-cache")
                 .header("Content-Type", "application/json")
                 .when()
