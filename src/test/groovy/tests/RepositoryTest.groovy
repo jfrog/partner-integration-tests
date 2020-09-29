@@ -37,7 +37,7 @@ class RepositoryTest extends RepositorySteps{
     def username
     def password
 
-    @BeforeTest(groups=["jcr", "pro"])
+    @BeforeTest(groups=["jcr", "pro", "docker"])
     def setUp() {
         artifactoryURL = config.artifactory.external_ip
         dockerURL = config.artifactory.url

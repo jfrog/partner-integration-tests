@@ -51,6 +51,7 @@ Requirements:
 ### Tasks for Data analytics integration testing
 ```
 splunk_test
+prometheus_test
 datadog_test
 ```
 Data analytics tests generate load on the Artifactory instance, then use data analytics platforms APIs to get the charts 

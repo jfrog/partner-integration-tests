@@ -58,11 +58,11 @@ class Utils {
                 push.waitForProcessOutput(System.out, System.err)
                 Assert.assertTrue(push.exitValue().equals(0))
             }
-            for (int i = 1; i <= numberOfImages; i++) {
-                def push = "docker pull ${dockerURL}/${repo}/${image}${i}:1.${i}".execute()
-                push.waitForProcessOutput(System.out, System.err)
-                Assert.assertTrue(push.exitValue().equals(0))
-            }
+//            for (int i = 1; i <= numberOfImages; i++) {
+//                def push = "docker pull ${dockerURL}/${repo}/${image}${i}:1.${i}".execute()
+//                push.waitForProcessOutput(System.out, System.err)
+//                Assert.assertTrue(push.exitValue().equals(0))
+//            }
         }
     }
 

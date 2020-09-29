@@ -2,6 +2,7 @@ package tests
 
 import io.restassured.RestAssured
 import io.restassured.response.Response
+import org.awaitility.Awaitility
 import org.testng.Assert
 import org.testng.Reporter
 import org.testng.annotations.BeforeSuite
@@ -11,6 +12,7 @@ import org.yaml.snakeyaml.Yaml
 import steps.XraySteps
 
 import java.time.LocalDate
+import java.util.concurrent.TimeUnit
 
 import static org.hamcrest.Matchers.containsStringIgnoringCase
 import static org.hamcrest.Matchers.emptyArray
@@ -205,13 +207,15 @@ class XrayTest extends XraySteps{
     }
 
     @Test(priority=12, groups=["xray"], testName = "Start scan")
-    void startScanTest(){
+    void startScanTest() throws Exception{
         def artifactPath = "default/generic-dev-local/test-directory/artifact.zip"
         Response getSha = artifactSummary(username, password, artifactPath, xrayBaseUrl)
         def componentID = getSha.then().extract().path("artifacts[0].licenses[0].components[0]")
 
         Response scan = startScan(username, password, componentID, xrayBaseUrl)
-        scan.then().statusCode(200)
+        Awaitility.await().atMost(180, TimeUnit.SECONDS).until(() ->
+                (scan).then().extract().statusCode() == 200)
+        scan.then().log().ifValidationFails().statusCode(200)
                 .body("info",
                         equalTo(("Scan of artifact is in progress").toString()))
 

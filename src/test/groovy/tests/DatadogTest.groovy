@@ -4,6 +4,7 @@ import groovy.json.JsonSlurper
 import io.restassured.RestAssured
 import io.restassured.path.json.JsonPath
 import io.restassured.response.Response
+import org.awaitility.Awaitility
 import org.hamcrest.Matchers
 import org.testng.Assert
 import org.testng.Reporter
@@ -17,6 +18,7 @@ import steps.SecuritytSteps
 import utils.Utils
 
 import java.lang.reflect.Array
+import java.util.concurrent.TimeUnit
 
 /**
  PTRENG-976 Datadog integration tests for log analytics in test framework.
@@ -136,7 +138,7 @@ class DatadogTest extends DataAnalyticsSteps {
         def query = "count:accepted_deploys_based_on_username{*} by {username}.as_count()"
         Response response = datadog.datadogQueryTimeSeriesPoints(datadog_url,
                 datadog_api_key, datadog_application_key, from_timestamp, to_timestamp, query)
-        response.then().assertThat().log().ifValidationFails().statusCode(200).
+        response.then().assertThat().log().ifValidationFails().statusCode(200)
 
         JsonPath jsonPathEvaluator = response.jsonPath()
         def responseUserNames = jsonPathEvaluator.getList("series.scope")
@@ -155,7 +157,7 @@ class DatadogTest extends DataAnalyticsSteps {
     @Test(priority=4, groups=["datadog", "datadog_xray"], testName = "Denied Logins By IP")
     void deniedLoginsByIPTest(){
         int count = 1
-        int calls = 10
+        int calls = 5
         // Try to create a new user with incorrect admin credentials, HTTP response 401
         createUsers401(count, calls)
         Thread.sleep(50000)
@@ -169,13 +171,8 @@ class DatadogTest extends DataAnalyticsSteps {
         response.then().assertThat().log().ifValidationFails().statusCode(200).
                 body("series.scope", Matchers.hasItems(Matchers.matchesRegex(IPv4andIPv6Regex))).
                 body("query", Matchers.equalTo(query))
-        JsonPath jsonPathEvaluator = response.jsonPath()
-        int size = response.then().extract().body().path("series.size()")
-        List<Integer> result = jsonPathEvaluator.getList("series.length", Integer.class)
-        println result.sum()
-        println calls/size
-        println size
-        Assert.assertTrue((result.sum()) >= calls/size)
+        def numbers = getDatadogFloatList(response)
+        Assert.assertTrue((numbers.sum()) >= calls)
 
         Reporter.log("- Datadog, Audit. Denied Logins By IP graph test passed", true)
 
@@ -219,17 +216,21 @@ class DatadogTest extends DataAnalyticsSteps {
     @Test(priority=6, groups=["datadog", "datadog_xray"], testName = "Artifactory HTTP 500 Errors")
     void http500errorsTest(){
         int count = 1
-        int calls = 10
+        int calls = 5
         http500(count, calls)
-        Thread.sleep(40000)
+        Thread.sleep(50000)
         def now = new Date()
         def from_timestamp = (now.getTime()-1800000).toString().substring(0,10)
         def to_timestamp = (now.getTime()).toString().substring(0,10)
         def query = "avg:artifactory_http_500_errors{*}.as_count()"
         Response response = datadog.datadogQueryTimeSeriesPoints(datadog_url,
                 datadog_api_key, datadog_application_key, from_timestamp, to_timestamp, query)
+        Awaitility.await().atMost(120, TimeUnit.SECONDS).until(() ->
+                (response.then().assertThat().extract().path("series.pointlist.size()") > 0))
+        def numbers = getDatadogFloatList(response)
+        Assert.assertTrue((numbers.sum()) >= calls)
+
         response.then().assertThat().log().ifValidationFails().statusCode(200).
-                body("series.pointlist.size()", Matchers.greaterThan(0)).
                 body("query", Matchers.equalTo(query))
 
         Reporter.log("- Datadog, Request. Artifactory HTTP 500 Errors graph test passed", true)
@@ -240,7 +241,7 @@ class DatadogTest extends DataAnalyticsSteps {
     void accessedImagesTest(){
         def image = "busybox"
         def numberOfImages = 5
-        def repos = ["docker-dev-local", "docker-local"]
+        def repos = ["docker-dev-local", "docker-local", "docker-prod-local", "docker-push"]
         // Docker login, pull busybox, generate and push multiple dummy images
         utils.dockerLogin(username, password, dockerURL)
         utils.dockerPullImage(image)
@@ -284,13 +285,13 @@ class DatadogTest extends DataAnalyticsSteps {
         uploadIntoRepo(count, calls)
         def image = "busybox"
         def numberOfImages = 5
-        def repos = ["docker-dev-local", "docker-local"]
+        def repos = ["docker-dev-local", "docker-local", "docker-prod-local", "docker-push"]
         // Docker login, pull busybox, generate and push multiple dummy images
         utils.dockerLogin(username, password, dockerURL)
         utils.dockerPullImage(image)
         utils.dockerGenerateImages(repos, numberOfImages, image, dockerURL)
 
-        Thread.sleep(40000)
+        Thread.sleep(50000)
         def now = new Date()
         def from_timestamp = (now.getTime()-1800000).toString().substring(0,10)
         def to_timestamp = (now.getTime()).toString().substring(0,10)
@@ -303,7 +304,7 @@ class DatadogTest extends DataAnalyticsSteps {
         JsonPath jsonPathEvaluator = response.jsonPath()
         List<Integer> length = jsonPathEvaluator.getList("series.length", Integer.class)
         Assert.assertTrue((length.sum()) >= calls)
-        def repoNames = ["repo:docker-dev-local", "repo:docker-local"]
+        def repoNames = ["repo:docker-dev-local", "repo:docker-local", "repo:docker-prod-local", "repo:docker-push"]
         def responseRepos = jsonPathEvaluator.getList("series.scope")
         println "Expected images list:"
         println repoNames.sort()
@@ -325,7 +326,7 @@ class DatadogTest extends DataAnalyticsSteps {
         def now = new Date()
         def from_timestamp = (now.getTime()-1800000).toString().substring(0,10)
         def to_timestamp = (now.getTime()).toString().substring(0,10)
-        def query = "sum:upload_data_transfers_by_repo_test2{*} by {repo}.as_count()"
+        def query = "sum:upload_data_transfer_by_repo{*} by {repo}.as_count()"
         Response response = datadog.datadogQueryTimeSeriesPoints(datadog_url,
                 datadog_api_key, datadog_application_key, from_timestamp, to_timestamp, query)
         response.then().assertThat().log().ifValidationFails().statusCode(200).
@@ -349,10 +350,12 @@ class DatadogTest extends DataAnalyticsSteps {
         def now = new Date()
         def from_timestamp = (now.getTime()-1800000).toString().substring(0,10)
         def to_timestamp = (now.getTime()).toString().substring(0,10)
-        def query = "sum:download_data_transfers_by_repo{*} by {repo}.as_count()"
+        def query = "sum:download_data_transfer_by_repo{*} by {repo}.as_count()"
         Response response = datadog.datadogQueryTimeSeriesPoints(datadog_url,
                 datadog_api_key, datadog_application_key, from_timestamp, to_timestamp, query)
-        response.then().assertThat().log().ifValidationFails().statusCode(200).
+
+        response.then().assertThat().log().everything().statusCode(200).
+
                 body("series.pointlist.size()", Matchers.greaterThanOrEqualTo(1)).
                 body("query", Matchers.equalTo(query))
         JsonPath jsonPathEvaluator = response.jsonPath()
@@ -360,11 +363,30 @@ class DatadogTest extends DataAnalyticsSteps {
         int size = response.then().extract().body().path("series[${seriesSize-1}].pointlist.size()")
         def counter = 0
         while(counter < size){
-        List<Float> numbers = jsonPathEvaluator.getFloat("series[${seriesSize-1}].pointlist[${counter}][1]") as List<Float>
-            for(i in numbers){
-                Assert.assertTrue(i == 0.0 || i > 2890000.0)
+            try {
+                List<Float> numbers1 = []
+                for(i in size){
+                    float number = (jsonPathEvaluator.getString("series[${seriesSize - 1}].pointlist[${counter}][1]") as Float)
+                    Float object = number
+                    if (object != null) {
+                        numbers1.add(number)
+                    }
+                }
+                for (i in numbers1) {
+                    println i
+                    Assert.assertTrue(i == 0.0 || i > 2890000.0)
+                }
+//TODO: which verification is more stable?
+
+//                List<Float> numbers = jsonPathEvaluator.getFloat("series[${seriesSize - 1}].pointlist[${counter}][1]") as List<Float>
+//                for (i in numbers) {
+//                    println i
+//                    Assert.assertTrue(i == 0.0 || i > 2890000.0)
+//                }
+                counter++
+            } catch (NullPointerException e){
+                Assert.fail("The list of downloads is empty!" + e)
             }
-            counter++
         }
 
         List<Integer> length = jsonPathEvaluator.getList("series.length", Integer.class)

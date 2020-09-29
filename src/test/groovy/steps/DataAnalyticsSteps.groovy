@@ -1,6 +1,8 @@
 package steps
 
+import io.restassured.path.json.JsonPath
 import io.restassured.response.Response
+import org.testng.Assert
 import org.testng.annotations.DataProvider
 import org.yaml.snakeyaml.Yaml
 import utils.Utils
@@ -233,6 +235,26 @@ class DataAnalyticsSteps {
         Response response = securitySteps.createSinglePermission(artifactoryBaseURL, username, password, permissionName, repository, user1,
                 action1, action2, action3)
         response.then().log().ifValidationFails().statusCode(200)
+    }
+
+    def getDatadogFloatList(response){
+        JsonPath jsonPathEvaluator = response.jsonPath()
+        int seriesSize = response.then().extract().body().path("series.size()")
+        int size = response.then().extract().body().path("series[${seriesSize-1}].pointlist.size()")
+        def counter = 0
+        List<Float> numbers = []
+        while(counter < size){
+            try {
+                for(i in size){
+                    float number = (jsonPathEvaluator.getString("series[${seriesSize - 1}].pointlist[${counter}][1]") as Float)
+                    numbers.add(number)
+                }
+                counter++
+            } catch (NullPointerException e){
+                Assert.fail("The list of errors is empty!" + e)
+            }
+        }
+        return numbers
     }
 
 
