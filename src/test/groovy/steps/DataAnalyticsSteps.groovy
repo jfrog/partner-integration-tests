@@ -257,6 +257,23 @@ class DataAnalyticsSteps {
         return numbers
     }
 
+    def getDatadogStringList(response){
+        int seriesSize = response.then().extract().body().path("series.size()")
+        int size = response.then().extract().body().path("series[${seriesSize-1}].pointlist.size()")
+        def counter = 0
+        def numbers = []
+        while(counter < size){
+            for(i in size){
+                String number = (response.then().extract().body().path("series[${seriesSize - 1}].pointlist[${counter}][1]"))
+                if (number != null) {
+                    numbers.add(number)
+                }
+            }
+            counter++
+        }
+        return numbers
+    }
+
 
     @DataProvider(name="users")
     public Object[][] users() {

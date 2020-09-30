@@ -1,6 +1,5 @@
 package tests
 
-import groovy.json.JsonSlurper
 import io.restassured.RestAssured
 import io.restassured.path.json.JsonPath
 import io.restassured.response.Response
@@ -17,7 +16,6 @@ import steps.RepositorySteps
 import steps.SecuritytSteps
 import utils.Utils
 
-import java.lang.reflect.Array
 import java.util.concurrent.TimeUnit
 
 /**
@@ -46,7 +44,7 @@ class DatadogTest extends DataAnalyticsSteps {
     def datadog_api_key
     def datadog_application_key
     def datadog_url
-
+    def testUsers = ["testuser1", "testuser2", "testuser3", "testuser4"]
 
     @BeforeSuite(groups=["testing", "datadog", "datadog_xray"])
     def setUp() {
@@ -64,13 +62,58 @@ class DatadogTest extends DataAnalyticsSteps {
 
     }
 
+    @Test(priority=0, groups=["datadog", "datadog_xray"], testName = "Data generation for Datadog testing")
+    void dataGeneration(){
+        int count = 1
+        int calls = 5
+        // Try to create a new user with incorrect admin credentials, HTTP response 401
+        // Denied Actions by Username
+        // Denied Actions by IP
+        createUsers401(count, calls)
+        // Accepted Deploys by Username
+        def emailRt = "testEmail@jfrog.com"
+        def passwordRt = "password123"
+        for(user in testUsers) {
+            createUsers(user, emailRt, passwordRt)
+            addPermissions(user)
+            deployArtifactAs(user, passwordRt)
+        }
+        // Denied Logins by IP
+        createUsers401(count, calls)
+        // Denied Logins By Username
+        def badUsername = "badguy-"
+        def badPassword = "badpassword"
+        login(badUsername, badPassword, artifactoryURL, count, calls)
+        // Artifactory HTTP 500 Errors
+        http500(count, calls)
+        // Accessed Images
+        // Accessed Repos
+        uploadIntoRepo(count, calls)
+        def image = "busybox"
+        def numberOfImages = 5
+        def repos = ["docker-dev-local", "docker-local", "docker-prod-local", "docker-push"]
+        // Docker login, pull busybox, generate and push multiple dummy images
+        utils.dockerLogin(username, password, dockerURL)
+        utils.dockerPullImage(image)
+        utils.dockerGenerateImages(repos, numberOfImages, image, dockerURL)
+        // Upload Data Transfer by Repo
+        // Upload IP's by Data Volume
+        uploadIntoRepo(count, calls)
+        // Download Data Transfer by Repo
+        // Download IP's by Data Volume
+        downloadArtifact(count, calls)
+        // Artifactory Log Errors
+        http404(count, calls)
+        http500(count, calls)
+
+    }
+
+
+
     @Test(priority=1, groups=["datadog", "datadog_xray"], testName = "Denied Actions by Username")
     void deniedActionsByUsernameTest(){
         int count = 1
-        int calls = 10
-        // Try to create a new user with incorrect admin credentials, HTTP response 401
-        createUsers401(count, calls)
-        Thread.sleep(60000)
+        int calls = 5
         def now = new Date()
         def from_timestamp = (now.getTime()-1800000).toString().substring(0,10)
         def to_timestamp = (now.getTime()).toString().substring(0,10)
@@ -85,6 +128,7 @@ class DatadogTest extends DataAnalyticsSteps {
             userNames.add("username:fakeuser-${count},!username:na")
             count++
         }
+        println count
         JsonPath jsonPathEvaluator = response.jsonPath()
         def responseUserNames = jsonPathEvaluator.getList("series.scope")
         println "Expected username list:"
@@ -99,11 +143,6 @@ class DatadogTest extends DataAnalyticsSteps {
 
     @Test(priority=2, groups=["datadog", "datadog_xray"], testName = "Denied Actions by IP")
     void deniedActionsByIPTest(){
-        int count = 1
-        int calls = 10
-        // Try to create a new user with incorrect admin credentials, HTTP response 401
-        createUsers401(count, calls)
-        Thread.sleep(40000)
         def now = new Date()
         def from_timestamp = (now.getTime()-1800000).toString().substring(0,10)
         def to_timestamp = (now.getTime()).toString().substring(0,10)
@@ -121,17 +160,6 @@ class DatadogTest extends DataAnalyticsSteps {
 
     @Test(priority=3, groups=["datadog", "datadog_xray"], testName = "Accepted Deploys by Username")
         void acceptedDeploysByUsernameTest(){
-
-        def users = ["testuser1", "testuser2", "testuser3", "testuser4"]
-        def emailRt = "testEmail@jfrog.com"
-        def passwordRt = "password123"
-        for(user in users) {
-            createUsers(user, emailRt, passwordRt)
-            addPermissions(user)
-            deployArtifactAs(user, passwordRt)
-        }
-
-        Thread.sleep(50000)
         def now = new Date()
         def from_timestamp = (now.getTime()-1800000).toString().substring(0,10)
         def to_timestamp = (now.getTime()).toString().substring(0,10)
@@ -142,7 +170,7 @@ class DatadogTest extends DataAnalyticsSteps {
 
         JsonPath jsonPathEvaluator = response.jsonPath()
         def responseUserNames = jsonPathEvaluator.getList("series.scope")
-        def usersVerification = users.collect { "username:$it" }.join(' ')
+        def usersVerification = testUsers.collect { "username:$it" }.join(' ')
         List<String> list = usersVerification.split(' ')
         println "Expected username list:"
         println list.sort()
@@ -156,11 +184,7 @@ class DatadogTest extends DataAnalyticsSteps {
 
     @Test(priority=4, groups=["datadog", "datadog_xray"], testName = "Denied Logins By IP")
     void deniedLoginsByIPTest(){
-        int count = 1
         int calls = 5
-        // Try to create a new user with incorrect admin credentials, HTTP response 401
-        createUsers401(count, calls)
-        Thread.sleep(50000)
         def now = new Date()
         def from_timestamp = (now.getTime()-1800000).toString().substring(0,10)
         def to_timestamp = (now.getTime()).toString().substring(0,10)
@@ -181,11 +205,7 @@ class DatadogTest extends DataAnalyticsSteps {
     @Test(priority=5, groups=["datadog", "datadog_xray"], testName = "Denied Logins By Username")
     void deniedLoginsByUsernameTest(){
         int count = 1
-        int calls = 10
-        def username = "badguy-"
-        def password = "badpassword"
-        login(username, password, artifactoryURL, count, calls)
-        Thread.sleep(60000)
+        int calls = 5
         def now = new Date()
         def from_timestamp = (now.getTime()-1800000).toString().substring(0,10)
         def to_timestamp = (now.getTime()).toString().substring(0,10)
@@ -215,10 +235,7 @@ class DatadogTest extends DataAnalyticsSteps {
 
     @Test(priority=6, groups=["datadog", "datadog_xray"], testName = "Artifactory HTTP 500 Errors")
     void http500errorsTest(){
-        int count = 1
         int calls = 5
-        http500(count, calls)
-        Thread.sleep(50000)
         def now = new Date()
         def from_timestamp = (now.getTime()-1800000).toString().substring(0,10)
         def to_timestamp = (now.getTime()).toString().substring(0,10)
@@ -241,12 +258,6 @@ class DatadogTest extends DataAnalyticsSteps {
     void accessedImagesTest(){
         def image = "busybox"
         def numberOfImages = 5
-        def repos = ["docker-dev-local", "docker-local", "docker-prod-local", "docker-push"]
-        // Docker login, pull busybox, generate and push multiple dummy images
-        utils.dockerLogin(username, password, dockerURL)
-        utils.dockerPullImage(image)
-        utils.dockerGenerateImages(repos, numberOfImages, image, dockerURL)
-        Thread.sleep(40000)
         def now = new Date()
         def from_timestamp = (now.getTime()-1800000).toString().substring(0,10)
         def to_timestamp = (now.getTime()).toString().substring(0,10)
@@ -277,21 +288,10 @@ class DatadogTest extends DataAnalyticsSteps {
 
     }
 
-    //TODO: ONLY DOCKER REPOS! add docker requests
+    // current graph shows only docker repos
     @Test(priority=8, groups=["datadog", "datadog_xray"], testName = "Accessed Repos")
     void accessedReposTest(){
-        int count = 1
         int calls = 5
-        uploadIntoRepo(count, calls)
-        def image = "busybox"
-        def numberOfImages = 5
-        def repos = ["docker-dev-local", "docker-local", "docker-prod-local", "docker-push"]
-        // Docker login, pull busybox, generate and push multiple dummy images
-        utils.dockerLogin(username, password, dockerURL)
-        utils.dockerPullImage(image)
-        utils.dockerGenerateImages(repos, numberOfImages, image, dockerURL)
-
-        Thread.sleep(50000)
         def now = new Date()
         def from_timestamp = (now.getTime()-1800000).toString().substring(0,10)
         def to_timestamp = (now.getTime()).toString().substring(0,10)
@@ -319,10 +319,7 @@ class DatadogTest extends DataAnalyticsSteps {
     // current graph doesn't show the repo names
     @Test(priority=9, groups=["datadog", "datadog_xray"], testName = "Upload Data Transfer by Repo")
     void uploadDataByRepoTest(){
-        int count = 1
-        int calls = 10
-        uploadIntoRepo(count, calls)
-        Thread.sleep(40000)
+        int calls = 5
         def now = new Date()
         def from_timestamp = (now.getTime()-1800000).toString().substring(0,10)
         def to_timestamp = (now.getTime()).toString().substring(0,10)
@@ -343,52 +340,22 @@ class DatadogTest extends DataAnalyticsSteps {
     // current graph doesn't show the repo names
     @Test(priority=10, groups=["datadog", "datadog_xray"], testName = "Download Data Transfer by Repo")
     void downloadDataByRepoTest() throws Exception{
-        int count = 1
-        int calls = 10
-        downloadArtifact(count, calls)
-        Thread.sleep(40000)
+        int calls = 5
         def now = new Date()
         def from_timestamp = (now.getTime()-1800000).toString().substring(0,10)
         def to_timestamp = (now.getTime()).toString().substring(0,10)
         def query = "sum:download_data_transfer_by_repo{*} by {repo}.as_count()"
         Response response = datadog.datadogQueryTimeSeriesPoints(datadog_url,
                 datadog_api_key, datadog_application_key, from_timestamp, to_timestamp, query)
-
-        response.then().assertThat().log().everything().statusCode(200).
-
+        response.then().assertThat().log().ifValidationFails().statusCode(200).
                 body("series.pointlist.size()", Matchers.greaterThanOrEqualTo(1)).
                 body("query", Matchers.equalTo(query))
-        JsonPath jsonPathEvaluator = response.jsonPath()
-        int seriesSize = response.then().extract().body().path("series.size()")
-        int size = response.then().extract().body().path("series[${seriesSize-1}].pointlist.size()")
-        def counter = 0
-        while(counter < size){
-            try {
-                List<Float> numbers1 = []
-                for(i in size){
-                    float number = (jsonPathEvaluator.getString("series[${seriesSize - 1}].pointlist[${counter}][1]") as Float)
-                    Float object = number
-                    if (object != null) {
-                        numbers1.add(number)
-                    }
-                }
-                for (i in numbers1) {
-                    println i
-                    Assert.assertTrue(i == 0.0 || i > 2890000.0)
-                }
-//TODO: which verification is more stable?
-
-//                List<Float> numbers = jsonPathEvaluator.getFloat("series[${seriesSize - 1}].pointlist[${counter}][1]") as List<Float>
-//                for (i in numbers) {
-//                    println i
-//                    Assert.assertTrue(i == 0.0 || i > 2890000.0)
-//                }
-                counter++
-            } catch (NullPointerException e){
-                Assert.fail("The list of downloads is empty!" + e)
-            }
+        def numbers = getDatadogStringList(response)
+        for (i in numbers) {
+            def x = i.substring(0, i.indexOf("."))
+            Assert.assertTrue(x as int == 0 || x as int > 750000)
         }
-
+        JsonPath jsonPathEvaluator = response.jsonPath()
         List<Integer> length = jsonPathEvaluator.getList("series.length", Integer.class)
         Assert.assertTrue((length.sum()) >= calls)
 
@@ -398,10 +365,6 @@ class DatadogTest extends DataAnalyticsSteps {
 
     @Test(priority=11, groups=["datadog", "datadog_xray"], testName = "Download IP's by Data Volume")
     void downloadIPTest(){
-        int count = 1
-        int calls = 10
-        downloadArtifact(count, calls)
-        Thread.sleep(30000)
         def now = new Date()
         def from_timestamp = (now.getTime()-1800000).toString().substring(0,10)
         def to_timestamp = (now.getTime()).toString().substring(0,10)
@@ -419,10 +382,6 @@ class DatadogTest extends DataAnalyticsSteps {
 
     @Test(priority=12, groups=["datadog", "datadog_xray"], testName = "Upload IP's by Data Volume")
     void uploadIPTest(){
-        int count = 1
-        int calls = 10
-        uploadIntoRepo(count, calls)
-        Thread.sleep(30000)
         def now = new Date()
         def from_timestamp = (now.getTime()-1800000).toString().substring(0,10)
         def to_timestamp = (now.getTime()).toString().substring(0,10)
@@ -440,11 +399,6 @@ class DatadogTest extends DataAnalyticsSteps {
 
     @Test(priority=13, groups=["datadog", "datadog_xray"], testName = "Artifactory Log Errors")
     void logErrorsTest(){
-        int count = 1
-        int calls = 10
-        http404(count, calls)
-        http500(count, calls)
-        Thread.sleep(50000)
         def now = new Date()
         def from_timestamp = (now.getTime()-1800000).toString().substring(0,10)
         def to_timestamp = (now.getTime()).toString().substring(0,10)
