@@ -86,7 +86,7 @@ class RepositoryTest extends RepositorySteps{
         body = repoListHA
         expectedMessage = "383 changes to config merged successfully"
         Response response = createRepositories(artifactoryBaseURL, body, username, password)
-        response.then().assertThat().statusCode(200)
+        response.then().assertThat().log().ifValidationFails().statusCode(200)
                 .body(Matchers.hasToString(expectedMessage))
                 .log().body()
 
@@ -135,7 +135,7 @@ class RepositoryTest extends RepositorySteps{
         def repoName = "generic-dev-local"
         def directoryName = "test-directory/"
         Response response = createDirectory(artifactoryBaseURL, repoName, directoryName)
-        response.then().assertThat().statusCode(201)
+        response.then().assertThat().log().ifValidationFails().statusCode(201)
                 .body("repo", equalTo(repoName))
                 .body("path", equalTo("/" + directoryName))
                 .body("uri", containsString("/artifactory/" + repoName + "/" + directoryName))
@@ -152,7 +152,7 @@ class RepositoryTest extends RepositorySteps{
         def sha1 = utils.generateSHA1(artifact)
         def md5 = utils.generateMD5(artifact)
         Response response = deployArtifact(artifactoryBaseURL, username, password, repoName, directoryName, artifact, filename, sha256, sha1, md5)
-        response.then().assertThat().statusCode(201)
+        response.then().assertThat().log().ifValidationFails().statusCode(201)
                 .body("repo", equalTo(repoName))
                 .body("path", equalTo("/" + directoryName + "/" + filename))
                 .body("downloadUri", containsString("/artifactory/" + repoName + "/"
@@ -173,7 +173,7 @@ class RepositoryTest extends RepositorySteps{
         def directoryName = "test-directory"
         def filename = "artifact.zip"
         Response response = addChecksumToArtifact(artifactoryBaseURL, repoName, directoryName, filename)
-        response.then().assertThat().statusCode(200)
+        response.then().assertThat().log().ifValidationFails().statusCode(200)
 
         Reporter.log("- Add checksum SHA256 to artifact. Successfully added", true)
     }
@@ -185,7 +185,7 @@ class RepositoryTest extends RepositorySteps{
         def filename = "artifact.zip"
         def path = repoName + "/" + directoryName + "/" + filename
         Response response = getInfo(artifactoryBaseURL, path)
-        response.then().assertThat().statusCode(200)
+        response.then().assertThat().log().ifValidationFails().statusCode(200)
                 .body("repo", equalTo(repoName))
                 .body("path", equalTo("/" + directoryName + "/" + filename))
                 .body("downloadUri", containsString("/artifactory/" + path))
@@ -197,7 +197,7 @@ class RepositoryTest extends RepositorySteps{
     void deleteArtifactTest(){
         def path = "generic-dev-local/test-directory/artifact.zip"
         Response response = deleteItem(artifactoryBaseURL, username, password, path)
-        response.then().assertThat().statusCode(204)
+        response.then().assertThat().log().ifValidationFails().statusCode(204)
 
         Response verification = getInfo(artifactoryBaseURL, path)
         verification.then().statusCode(404)
@@ -277,7 +277,7 @@ class RepositoryTest extends RepositorySteps{
         body = repoListHA
         expectedMessage = "383 changes to config merged successfully"
         Response response = createRepositories(artifactoryBaseURL, body, username, password)
-        response.then().assertThat().statusCode(200)
+        response.then().assertThat().log().ifValidationFails().statusCode(200)
                 .body(Matchers.hasToString(expectedMessage))
                 .log().body()
 
@@ -303,7 +303,7 @@ class RepositoryTest extends RepositorySteps{
         def repoName = "generic-dev-local"
         def directoryName = "test-directory/"
         Response response = createDirectory(artifactoryBaseURL, repoName, directoryName)
-        response.then().assertThat().statusCode(201)
+        response.then().assertThat().log().ifValidationFails().statusCode(201)
                 .body("repo", equalTo(repoName))
                 .body("path", equalTo("/" + directoryName))
                 .body("uri", containsString("/artifactory/" + repoName + "/" + directoryName))
@@ -320,7 +320,7 @@ class RepositoryTest extends RepositorySteps{
         def sha1 = utils.generateSHA1(artifact)
         def md5 = utils.generateMD5(artifact)
         Response response = deployArtifact(artifactoryBaseURL, username, password, repoName, directoryName, artifact, filename, sha256, sha1, md5)
-        response.then().assertThat().statusCode(201)
+        response.then().assertThat().log().ifValidationFails().statusCode(201)
                 .body("repo", equalTo(repoName))
                 .body("path", equalTo("/" + directoryName + "/" + filename))
                 .body("downloadUri", containsString("/artifactory/" + repoName + "/"

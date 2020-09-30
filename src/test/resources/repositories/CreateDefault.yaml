@@ -38,13 +38,13 @@ localRepositories:
   gradle-prod-local:
       type: gradle
       description: "production deployment"
-      repoLayout: gradle-default
+      repoLayout: maven-2-default
       xray:
           enabled: true
   gradle-dev-local:
       type: gradle
       description: "development deployment"
-      repoLayout: gradle-default
+      repoLayout: maven-2-default
       xray:
           enabled: true
   tomcat-local:
