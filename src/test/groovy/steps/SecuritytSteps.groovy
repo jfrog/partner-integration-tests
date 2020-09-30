@@ -7,8 +7,8 @@ import static io.restassured.RestAssured.given
 
 class SecuritytSteps {
 
-    def createUser(username, password, usernameRt, emailRt, passwordRt) {
-        return given()
+    def createUser(artifactoryURL, username, password, usernameRt, emailRt, passwordRt) {
+        return given().log().uri()
                 .auth()
                 .preemptive()
                 .basic("${username}", "${password}")
@@ -19,45 +19,32 @@ class SecuritytSteps {
                         "  \"password\": \"${passwordRt}\"\n" +
                         "}")
                 .when()
-                .put("/api/security/users/${usernameRt}")
+                .put("${artifactoryURL}/api/security/users/${usernameRt}")
                 .then()
                 .extract().response()
     }
 
-    def getUserDetails(usernameRt) {
+    def getUserDetails(artifactoryURL, usernameRt) {
         return given()
                 .header("Cache-Control", "no-cache")
                 .header("content-Type", "application/json")
                 .when()
-                .get("/api/security/users/${usernameRt}")
+                .get("${artifactoryURL}/api/security/users/${usernameRt}")
                 .then()
                 .extract().response()
     }
 
-    def deleteUser(usernameRt) {
+    def deleteUser(artifactoryURL, usernameRt) {
         return given()
                 .header("Cache-Control", "no-cache")
                 .header("content-Type", "application/json")
                 .when()
-                .delete("/api/security/users/${usernameRt}")
+                .delete("${artifactoryURL}/api/security/users/${usernameRt}")
                 .then()
                 .extract().response()
     }
 
-    def generateAPIKey(usernameRt, passwordRt) {
-        return given()
-                .auth()
-                .preemptive()
-                .basic("${usernameRt}", "${passwordRt}")
-                .header("Cache-Control", "no-cache")
-                .header("content-Type", "application/json")
-                .when()
-                .post("/api/security/apiKey")
-                .then()
-                .extract().response()
-    }
-
-    def getAPIKey(usernameRt, passwordRt) {
+    def generateAPIKey(artifactoryURL, usernameRt, passwordRt) {
         return given()
                 .auth()
                 .preemptive()
@@ -65,12 +52,12 @@ class SecuritytSteps {
                 .header("Cache-Control", "no-cache")
                 .header("content-Type", "application/json")
                 .when()
-                .get("/api/security/apiKey")
+                .post("${artifactoryURL}/api/security/apiKey")
                 .then()
                 .extract().response()
     }
 
-    def regenerateAPIKey(usernameRt, passwordRt) {
+    def getAPIKey(artifactoryURL, usernameRt, passwordRt) {
         return given()
                 .auth()
                 .preemptive()
@@ -78,44 +65,57 @@ class SecuritytSteps {
                 .header("Cache-Control", "no-cache")
                 .header("content-Type", "application/json")
                 .when()
-                .put("/api/security/apiKey")
+                .get("${artifactoryURL}/api/security/apiKey")
                 .then()
                 .extract().response()
     }
 
-    def createGroup(groupName) {
+    def regenerateAPIKey(artifactoryURL, usernameRt, passwordRt) {
+        return given()
+                .auth()
+                .preemptive()
+                .basic("${usernameRt}", "${passwordRt}")
+                .header("Cache-Control", "no-cache")
+                .header("content-Type", "application/json")
+                .when()
+                .put("${artifactoryURL}/api/security/apiKey")
+                .then()
+                .extract().response()
+    }
+
+    def createGroup(artifactoryURL, groupName) {
         return given()
                 .header("Cache-Control", "no-cache")
                 .header("content-Type", "application/json")
                 .body("{\"name\": \"${groupName}\"}")
                 .when()
-                .put("/api/security/groups/${groupName}")
+                .put("${artifactoryURL}/api/security/groups/${groupName}")
                 .then()
                 .extract().response()
     }
 
-    def getGroup(groupName) {
+    def getGroup(artifactoryURL, groupName) {
         return given()
                 .header("Cache-Control", "no-cache")
                 .header("content-Type", "application/json")
                 .body("{\"name\": \"${groupName}\"}")
                 .when()
-                .get("/api/security/groups/${groupName}")
+                .get("${artifactoryURL}/api/security/groups/${groupName}")
                 .then()
                 .extract().response()
     }
 
-    def deleteGroup(groupName) {
+    def deleteGroup(artifactoryURL, groupName) {
         return given()
                 .header("Cache-Control", "no-cache")
                 .header("content-Type", "application/json")
                 .when()
-                .delete("/api/security/groups/${groupName}")
+                .delete("${artifactoryURL}/api/security/groups/${groupName}")
                 .then()
                 .extract().response()
     }
 
-    def createPermissions(permissionName, repository, user1, user2,
+    def createPermissions(artifactoryURL, permissionName, repository, user1, user2,
                           group1, group2, action1, action2, action3) {
         return given()
                 .header("Cache-Control", "no-cache")
@@ -137,14 +137,17 @@ class SecuritytSteps {
                         "  }\n" +
                         "}")
                 .when()
-                .put("/api/v2/security/permissions/${permissionName}")
+                .put("${artifactoryURL}/api/v2/security/permissions/${permissionName}")
                 .then()
                 .extract().response()
     }
 
-    def createSinglePermission(permissionName, repository, user1,
+    def createSinglePermission(artifactoryURL, username, password, permissionName, repository, user1,
                           action1, action2, action3) {
         return given()
+                .auth()
+                .preemptive()
+                .basic("${username}", "${password}")
                 .header("Cache-Control", "no-cache")
                 .header("content-Type", "application/json")
                 .body("{\n" +
@@ -165,52 +168,52 @@ class SecuritytSteps {
                         "  }\n" +
                         "}")
                 .when()
-                .put("/api/v2/security/permissions/${permissionName}")
+                .put("${artifactoryURL}/api/v2/security/permissions/${permissionName}")
                 .then()
                 .extract().response()
     }
 
-    def getPermissions( permissionName) {
+    def getPermissions(artifactoryURL, permissionName) {
         return given()
                 .header("Cache-Control", "no-cache")
                 .header("content-Type", "application/json")
                 .when()
-                .get("/api/v2/security/permissions/${permissionName}")
+                .get("${artifactoryURL}/api/v2/security/permissions/${permissionName}")
                 .then()
                 .extract().response()
     }
 
-    def deletePermissions(permissionName) {
+    def deletePermissions(artifactoryURL, permissionName) {
         return given()
                 .header("Cache-Control", "no-cache")
                 .header("content-Type", "application/json")
                 .when()
-                .delete("/api/v2/security/permissions/${permissionName}")
+                .delete("${artifactoryURL}/api/v2/security/permissions/${permissionName}")
                 .then()
                 .extract().response()
     }
 
-    def getInstalledCerts() {
+    def getInstalledCerts(artifactoryURL) {
         return given()
                 .header("Cache-Control", "no-cache")
                 .header("content-Type", "application/json")
                 .when()
-                .get("/api/system/security/certificates")
+                .get("${artifactoryURL}/api/system/security/certificates")
                 .then()
                 .extract().response()
     }
 
-    def getPermissionTargetDetails(parmTergetName) {
+    def getPermissionTargetDetails(artifactoryURL, parmTergetName) {
         return given()
                 .header("Cache-Control", "no-cache")
                 .header("content-Type", "application/json")
                 .when()
-                .get("/api/security/permissions/${parmTergetName}")
+                .get("${artifactoryURL}/api/security/permissions/${parmTergetName}")
                 .then()
                 .extract().response()
     }
 
-    def generateError500(username, password){
+    def generateError500(artifactoryURL, username, password){
         return given()
                 .auth()
                 .preemptive()
@@ -218,7 +221,24 @@ class SecuritytSteps {
                 .header("Cache-Control", "no-cache")
                 .header("content-Type", "application/json")
                 .when()
-                .post("/api/system/usage")
+                .post("${artifactoryURL}/api/system/usage")
+                .then()
+                .extract().response()
+    }
+
+    def login(url, usernameRt, passwordRt) {
+        return given()
+                .relaxedHTTPSValidation()
+                .header("Connection", "keep-alive")
+                .header("Accept", "application/json, text/plain, */*")
+                .header("X-Requested-With", "XMLHttpRequest")
+                .header("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.135 Safari/537.36")
+                .header("Origin", "http://35.188.4.233")
+                .header("Accept-Language", "en-US,en;q=0.9")
+                .header("Content-Type", "application/json;charset=UTF-8")
+                .body("{\"user\":\"${usernameRt}\",\"password\":\"${passwordRt}\",\"type\":\"login\"}")
+                .when()
+                .post("http://${url}/ui/api/v1/ui/auth/login?_spring_security_remember_me=false")
                 .then()
                 .extract().response()
     }

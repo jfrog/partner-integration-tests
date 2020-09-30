@@ -27,20 +27,24 @@ class TerraformTest {
     def config = yaml.load(configFile.text)
     def tfConfigFile = new File("./src/test/resources/terraform/terraform_config.yaml")
     def tfConfig = yaml.load(tfConfigFile.text)
-    def artifactoryURL
     def distribution
     def username
     def password
+    def protocol
+    def xrayBaseUrl
+    def artifactoryBaseURL
 
     @BeforeSuite(groups=["terraform"])
     def setUp() {
-        artifactoryURL = config.artifactory.external_ip
         distribution = config.artifactory.distribution
         username = config.artifactory.rt_username
         password = config.artifactory.rt_password
-        RestAssured.baseURI = "http://${artifactoryURL}/artifactory"
-        RestAssured.authentication = RestAssured.basic(username, password);
-        RestAssured.useRelaxedHTTPSValidation();
+        protocol = config.artifactory.protocol
+        xrayBaseUrl = "${protocol}${config.artifactory.external_ip}/xray/api"
+        artifactoryBaseURL = "${protocol}${config.artifactory.external_ip}/artifactory"
+        //RestAssured.baseURI = "http://${artifactoryURL}/artifactory"
+        RestAssured.authentication = RestAssured.basic(username, password)
+        RestAssured.useRelaxedHTTPSValidation()
     }
 
     //Groups
@@ -48,7 +52,7 @@ class TerraformTest {
     void createGroupTest(){
         def groupName = tfConfig.groups.groupName
         def groupDescription = tfConfig.groups.groupDescription
-        Response get = securitySteps.getGroup(groupName)
+        Response get = securitySteps.getGroup(artifactoryBaseURL, groupName)
         get.then().statusCode(200)
         def name = get.then().extract().path("name")
         def description = get.then().extract().path("description")
@@ -67,7 +71,7 @@ class TerraformTest {
         def username = tfConfig.users.userName
         def email = tfConfig.users.email
         def groupName = tfConfig.groups.groupName
-        Response response = securitySteps.getUserDetails(username)
+        Response response = securitySteps.getUserDetails(artifactoryBaseURL, username)
         response.then().statusCode(200).
                 body("name", Matchers.equalTo(username)).
                 body("email", Matchers.equalTo(email)).
@@ -99,7 +103,7 @@ class TerraformTest {
         def parmTergetName = tfConfig.permission_target.name
         def includesPattern = tfConfig.permission_target.includesPattern
         def excludesPattern = tfConfig.permission_target.excludesPattern
-        Response response = securitySteps.getPermissionTargetDetails(parmTergetName)
+        Response response = securitySteps.getPermissionTargetDetails(artifactoryBaseURL, parmTergetName)
         response.then().statusCode(200).
                 body("name", Matchers.equalTo(parmTergetName)).
                 body("includesPattern", Matchers.equalTo(includesPattern)).
@@ -115,7 +119,7 @@ class TerraformTest {
     void verifyRemoteRepoTest(){
         def repoName = tfConfig.remote_repo.repoName
         def packageType = tfConfig.remote_repo.package_type
-        def url = tfConfig.remote_repo.url
+        def url = tfConfig.remote_repo.xrayBaseUrl
         def repo_layout = tfConfig.remote_repo.repo_layout
         Response response = repositorySteps.getRepoConfig(repoName)
         response.then().statusCode(200).

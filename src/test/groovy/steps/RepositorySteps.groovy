@@ -8,20 +8,20 @@ class RepositorySteps {
     def getHealthCheckResponse(artifactoryURL) {
         return given()
                 .when()
-                .get("http://" + artifactoryURL + "/router/api/v1/system/health")
+                .get("${artifactoryURL}/router/api/v1/system/health")
                 .then()
                 .extract().response()
     }
 
-    def ping() {
+    def ping(artifactoryURL) {
         return given()
                 .when()
-                .get("/api/system/ping")
+                .get("${artifactoryURL}/api/system/ping")
                 .then()
                 .extract().response()
     }
 
-    def createRepositories(File body, username, password) {
+    def createRepositories(artifactoryURL, File body, username, password) {
         return given()
                 .auth()
                 .preemptive()
@@ -30,12 +30,12 @@ class RepositorySteps {
                 .header("content-Type", "application/yaml")
                 .body(body)
                 .when()
-                .patch("/api/system/configuration")
+                .patch("${artifactoryURL}/api/system/configuration")
                 .then()
                 .extract().response()
     }
     // https://www.jfrog.com/confluence/display/JFROG/Artifactory+REST+API#ArtifactoryRESTAPI-GetRepositories
-    def getRepos(username, password) {
+    def getRepos(artifactoryURL, username, password) {
         return given()
                 .auth()
                 .preemptive()
@@ -43,12 +43,12 @@ class RepositorySteps {
                 .header("Cache-Control", "no-cache")
                 .header("content-Type", "application/yaml")
                 .when()
-                .get("/api/repositories")
+                .get("${artifactoryURL}/api/repositories")
                 .then()
                 .extract().response()
 
     }
-    def getReposWithUser(username, password) {
+    def getReposWithUser(artifactoryURL, username, password) {
         return given()
                 .auth()
                 .preemptive()
@@ -56,23 +56,23 @@ class RepositorySteps {
                 .header("Cache-Control", "no-cache")
                 .header("content-Type", "application/yaml")
                 .when()
-                .get("/api/repositories")
+                .get("${artifactoryURL}/api/repositories")
                 .then()
                 .extract().response()
 
     }
     // https://www.jfrog.com/confluence/display/JFROG/Artifactory+REST+API#ArtifactoryRESTAPI-RepositoryConfiguration
-    def getRepoConfig(repoName) {
+    def getRepoConfig(artifactoryURL, repoName) {
         return given()
                 .header("Cache-Control", "no-cache")
                 .when()
-                .get("/api/repositories/${repoName}")
+                .get("${artifactoryURL}/api/repositories/${repoName}")
                 .then()
                 .extract().response()
 
     }
     // https://www.jfrog.com/confluence/display/JFROG/Artifactory+REST+API#ArtifactoryRESTAPI-DeleteRepository
-    def deleteRepository(repoName, username, password) {
+    def deleteRepository(artifactoryURL, repoName, username, password) {
         return given()
                 .auth()
                 .preemptive()
@@ -80,40 +80,24 @@ class RepositorySteps {
                 .header("Cache-Control", "no-cache")
                 .header("content-Type", "application/yaml")
                 .when()
-                .delete("/api/repositories/" + repoName)
+                .delete("${artifactoryURL}/api/repositories/" + repoName)
                 .then()
                 .extract().response()
 
     }
 
-    def createDirectory(repoName, directoryName) {
+    def createDirectory(artifactoryURL, repoName, directoryName) {
         return given()
                 .header("Cache-Control", "no-cache")
                 .header("content-Type", "application/yaml")
                 .when()
-                .put("/" + repoName + "/" + directoryName)
+                .put("${artifactoryURL}/${repoName}/${directoryName}")
                 .then()
                 .extract().response()
 
     }
 
-    def deployArtifact(repoName, directoryName, artifact, filename, sha256, sha1, md5) {
-        return given()
-                .header("Cache-Control", "no-cache")
-                .header("mime-Type", "application/zip")
-                .header("X-Checksum-Sha256", sha256)
-                .header("X-Checksum-Deploy", "false")
-                .header("X-Checksum-Sha1", sha1)
-                .header("X-Checksum", md5)
-                .body(artifact)
-                .when()
-                .put("/" + repoName + "/" + directoryName + "/" + filename)
-                .then()
-                .extract().response()
-
-    }
-
-    def deployArtifactAs(username, password, repoName, directoryName, artifact, filename, sha256, sha1, md5) {
+    def deployArtifact(artifactoryURL, username, password, repoName, directoryName, artifact, filename, sha256, sha1, md5) {
         return given()
                 .auth()
                 .preemptive()
@@ -126,25 +110,47 @@ class RepositorySteps {
                 .header("X-Checksum", md5)
                 .body(artifact)
                 .when()
-                .put("/" + repoName + "/" + directoryName + "/" + filename)
+                .put("${artifactoryURL}/${repoName}/${directoryName}/${filename}")
                 .then()
                 .extract().response()
 
     }
 
-    def downloadArtifact(repoName, directoryName, filename) {
+    def deployArtifactAs(artifactoryURL, username, password, repoName, directoryName, artifact, filename, sha256, sha1, md5) {
         return given()
+                .auth()
+                .preemptive()
+                .basic("${username}", "${password}")
+                .header("Cache-Control", "no-cache")
+                .header("mime-Type", "application/zip")
+                .header("X-Checksum-Sha256", sha256)
+                .header("X-Checksum-Deploy", "false")
+                .header("X-Checksum-Sha1", sha1)
+                .header("X-Checksum", md5)
+                .body(artifact)
+                .when()
+                .put("${artifactoryURL}/${repoName}/${directoryName}/${filename}")
+                .then()
+                .extract().response()
+
+    }
+
+    def downloadArtifact(artifactoryURL, username, password, repoName, directoryName, filename) {
+        return given()
+                .auth()
+                .preemptive()
+                .basic("${username}", "${password}")
                 .header("Cache-Control", "no-cache")
                 .header("Content-Type", "application/octet-stream")
                 .when()
-                .get("/api/download/" + repoName + "/" + directoryName + "/" + filename)
+                .get("${artifactoryURL}/api/download/${repoName}/${directoryName}/${filename}")
                 .then()
                 .extract().response()
     }
 
 
 
-    def addChecksumToArtifact(repoName, directoryName, filename) {
+    def addChecksumToArtifact(artifactoryURL, repoName, directoryName, filename) {
         return given()
                 .header("Cache-Control", "no-cache")
                 .header("Content-Type", "application/json")
@@ -153,35 +159,13 @@ class RepositorySteps {
                         "   \"path\":\"${directoryName}/${filename}\"\n" +
                         "}")
                 .when()
-                .post("/api/checksum/sha256")
+                .post("${artifactoryURL}/api/checksum/sha256")
                 .then()
                 .extract().response()
 
     }
 
-    def deleteItem(path) {
-        return given()
-                .header("Cache-Control", "no-cache")
-                .header("Content-Type", "application/json")
-                .when()
-                .delete("/" + path)
-                .then()
-                .extract().response()
-
-    }
-
-    def getInfo(path) {
-        return given()
-                .header("Cache-Control", "no-cache")
-                .header("Content-Type", "application/json")
-                .when()
-                .get("/api/storage/" + path)
-                .then()
-                .extract().response()
-
-    }
-
-    def listDockerTags(username, password, repoKey, imageName, listSize, endTag) {
+    def deleteItem(artifactoryURL, username, password, path) {
         return given()
                 .auth()
                 .preemptive()
@@ -189,24 +173,49 @@ class RepositorySteps {
                 .header("Cache-Control", "no-cache")
                 .header("Content-Type", "application/json")
                 .when()
-                .get("/api/docker/${repoKey}/v2/${imageName}/tags/list?n=${listSize}&last=${endTag}")
+                .delete("${artifactoryURL}/" + path)
+                .then()
+                .extract().response()
+
+    }
+
+    def getInfo(artifactoryURL, path) {
+        return given()
+                .header("Cache-Control", "no-cache")
+                .header("Content-Type", "application/json")
+                .when()
+                .get("${artifactoryURL}/api/storage/" + path)
+                .then()
+                .extract().response()
+
+    }
+
+    def listDockerTags(artifactoryURL, username, password, repoKey, imageName, listSize, endTag) {
+        return given()
+                .auth()
+                .preemptive()
+                .basic("${username}", "${password}")
+                .header("Cache-Control", "no-cache")
+                .header("Content-Type", "application/json")
+                .when()
+                .get("${artifactoryURL}/api/docker/${repoKey}/v2/${imageName}/tags/list?n=${listSize}&last=${endTag}")
                 .then()
                 .extract().response()
 
     }
     // https://www.jfrog.com/confluence/display/JFROG/Artifactory+REST+API#ArtifactoryRESTAPI-GetRepositoryReplicationConfiguration
-    def getReplicationConfig(repoName) {
+    def getReplicationConfig(artifactoryURL, repoName) {
         return given()
                 .header("Cache-Control", "no-cache")
                 .header("Content-Type", "application/json")
                 .when()
-                .get("/api/replications/" + repoName)
+                .get("${artifactoryURL}/api/replications/" + repoName)
                 .then()
                 .extract().response()
 
     }
 
-    def createSupportBundle(name, startDate, endDate) {
+    def createSupportBundle(artifactoryURL, name, startDate, endDate) {
         return given()
                 .header("Cache-Control", "no-cache")
                 .header("Content-Type", "application/json")
@@ -228,7 +237,7 @@ class RepositorySteps {
                         "   }\n" +
                         "}")
                 .when()
-                .post("/api/system/support/bundle")
+                .post("${artifactoryURL}/api/system/support/bundle")
                 .then()
                 .extract().response()
 

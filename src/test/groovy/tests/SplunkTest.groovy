@@ -56,7 +56,7 @@ class SplunkTest extends DataAnalyticsSteps{
         password = config.artifactory.rt_password
         splunk_username = config.splunk.username
         splunk_password = config.splunk.password
-        splunk_url = "${config.splunk.protocol}" + "${config.splunk.url}" + ":" + "${config.splunk.port}"
+        splunk_url = "${config.splunk.protocol}" + "${config.splunk.xrayBaseUrl}" + ":" + "${config.splunk.port}"
         RestAssured.baseURI = "http://${artifactoryURL}/artifactory"
         RestAssured.authentication = RestAssured.basic(username, password)
         RestAssured.useRelaxedHTTPSValidation()
@@ -382,7 +382,7 @@ class SplunkTest extends DataAnalyticsSteps{
         JsonPath jsonPathEvaluator = response.jsonPath()
         List<Integer> errorCount = jsonPathEvaluator.getList("results.count", Integer.class)
         Assert.assertTrue((errorCount.sum()) >= 1)
-        List<String> usernames = ["splunktest0 ", "splunktest1 ", "splunktest2 "]
+        List<String> usernames = ["testUser0 ", "testUser1 ", "testUser2 "]
         for(user in usernames) {
             response.then().
                     body("results.username", hasItems(user))

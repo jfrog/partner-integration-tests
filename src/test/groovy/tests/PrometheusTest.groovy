@@ -47,13 +47,13 @@ class PrometheusTest extends DataAnalyticsSteps{
     @BeforeSuite(groups=["prometheus", "prometheus_xray"])
     def setUp() {
         artifactoryURL = config.artifactory.external_ip
-        dockerURL = config.artifactory.url
+        dockerURL = config.artifactory.xrayBaseUrl
         distribution = config.artifactory.distribution
         username = config.artifactory.rt_username
         password = config.artifactory.rt_password
         prometheus_username = config.prometheus.username
         prometheus_password = config.prometheus.password
-        prom_url = "${config.prometheus.protocol}" + "${config.prometheus.url}" + ":" + "${config.prometheus.port}"
+        prom_url = "${config.prometheus.protocol}" + "${config.prometheus.xrayBaseUrl}" + ":" + "${config.prometheus.port}"
         RestAssured.baseURI = "http://${artifactoryURL}/artifactory"
         RestAssured.authentication = RestAssured.basic(username, password)
         RestAssured.useRelaxedHTTPSValidation()

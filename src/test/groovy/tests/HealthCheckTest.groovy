@@ -15,19 +15,22 @@ class HealthCheckTest extends RepositorySteps{
     Yaml yaml = new Yaml()
     def configFile = new File("./src/test/resources/testenv.yaml")
     def config = yaml.load(configFile.text)
-    def artifactoryURL
+    def artifactoryBaseURL
+    def artifactoryPingURL
+    def protocol
 
 
-    @BeforeSuite(alwaysRun = true)
+    @BeforeSuite(groups=["common"])
     def setUp() {
-        artifactoryURL = config.artifactory.external_ip
-        RestAssured.baseURI = "https://${artifactoryURL}/artifactory"
+        protocol = config.artifactory.protocol
+        artifactoryBaseURL = "${protocol}${config.artifactory.external_ip}/artifactory"
+        artifactoryPingURL = "${protocol}${config.artifactory.external_ip}"
     }
 
 
     @Test(priority=0, groups="common", testName = "Health check for all 4 services")
     void healthCheckTest(){
-        Response response = getHealthCheckResponse(artifactoryURL)
+        Response response = getHealthCheckResponse(artifactoryPingURL)
         response.then().assertThat().statusCode(200).
                 body("router.state", Matchers.equalTo("HEALTHY"))
 
@@ -46,7 +49,7 @@ class HealthCheckTest extends RepositorySteps{
 
     @Test(priority=1, groups=["ping","common"], testName = "Ping (In HA 200 only when licences were added)")
     void pingTest() {
-        Response response = ping()
+        Response response = ping(artifactoryBaseURL)
         response.then().assertThat().statusCode(200).
                 body(Matchers.hasToString("OK"))
         Reporter.log("- Ping test. Service is OK", true)
