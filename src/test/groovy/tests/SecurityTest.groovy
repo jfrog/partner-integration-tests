@@ -39,7 +39,7 @@ class SecurityTest extends SecuritytSteps{
     @Test(priority=1, groups=["pro"], dataProvider = "users", testName = "Create users")
     void createUsersTest(usernameRt, emailRt, passwordRt){
         Response response = createUser(artifactoryBaseURL, username, password, usernameRt, emailRt, passwordRt)
-        response.then().statusCode(201)
+        response.then().log().ifValidationFails().statusCode(201)
 
         Reporter.log("- Create users. User ${usernameRt} created successfully", true)
     }
@@ -47,7 +47,7 @@ class SecurityTest extends SecuritytSteps{
     @Test(priority=2, groups=["pro"], dataProvider = "users", testName = "Verify users were created successfully")
     void verifyUsersTest(usernameRt, emailRt, passwordRt){
         Response response = getUserDetails(artifactoryBaseURL, usernameRt)
-        response.then().statusCode(200).
+        response.then().log().ifValidationFails().statusCode(200).
                 body("name", Matchers.equalTo(usernameRt)).
                 body("email",  Matchers.equalTo(emailRt)).
                 body("admin",  Matchers.equalTo(false)).
@@ -74,10 +74,10 @@ class SecurityTest extends SecuritytSteps{
     @Test(priority=4, groups=["pro"], dataProvider = "users", testName = "Re-generate API keys")
     void regenerateAPIKeysTest(usernameRt, emailRt, passwordRt){
         Response regenerated = regenerateAPIKey(artifactoryBaseURL, usernameRt, passwordRt)
-        regenerated.then().statusCode(200)
+        regenerated.then().log().ifValidationFails().statusCode(200)
         def key = regenerated.then().extract().path("apiKey")
         Response getKey = getAPIKey(artifactoryBaseURL, usernameRt, passwordRt)
-        getKey.then().statusCode(200)
+        getKey.then().log().ifValidationFails().statusCode(200)
         def keyVerification = getKey.then().extract().path("apiKey")
         Assert.assertTrue(key == keyVerification)
 
@@ -87,10 +87,10 @@ class SecurityTest extends SecuritytSteps{
     @Test(priority=5, groups=["pro"], dataProvider = "groups", testName = "Create a group")
     void createGroupTest(groupName){
         Response create = createGroup(artifactoryBaseURL, groupName)
-        create.then().statusCode(201)
+        create.then().log().ifValidationFails().statusCode(201)
 
         Response get = getGroup(artifactoryBaseURL, groupName)
-        get.then().statusCode(200)
+        get.then().log().ifValidationFails().statusCode(200)
         def name = get.then().extract().path("name")
         def adminPrivileges = get.then().extract().path("adminPrivileges")
         Assert.assertTrue(name == groupName)
@@ -112,7 +112,7 @@ class SecurityTest extends SecuritytSteps{
         def action3 = "manage"
         Response create = createPermissions(artifactoryBaseURL, permissionName, repository, user1, user2,
         group1, group2, action1, action2, action3)
-        create.then().statusCode(200)
+        create.then().log().ifValidationFails().statusCode(200)
 
         Response get = getPermissions(artifactoryBaseURL, permissionName)
         get.then().statusCode(200)
@@ -136,21 +136,21 @@ class SecurityTest extends SecuritytSteps{
     void deletePermissionsTest(){
         def permissionName = "testPermission"
         Response delete = deletePermissions(artifactoryBaseURL, permissionName)
-        delete.then().statusCode(200)
+        delete.then().log().ifValidationFails().statusCode(200)
         Reporter.log("- Delete permissions. User ${permissionName} has been removed successfully", true)
     }
 
     @Test(priority=8, groups=["pro"], dataProvider = "users", testName = "Delete non-default users")
     void deleteUserTest(usernameRt, email, passwordRt){
         Response delete = deleteUser(artifactoryBaseURL, usernameRt)
-        delete.then().statusCode(200).body(Matchers.containsString("${usernameRt}"))
+        delete.then().log().ifValidationFails().statusCode(200).body(Matchers.containsString("${usernameRt}"))
         Reporter.log("- Delete user. User ${usernameRt} has been removed successfully", true)
     }
 
     @Test(priority=9, groups=["pro"], dataProvider = "groups", testName = "Delete non-default groups")
     void deleteGroupTest(groupName){
         Response delete = deleteGroup(artifactoryBaseURL, groupName)
-        delete.then().statusCode(200).body(Matchers.containsString("${groupName}"))
+        delete.then().log().ifValidationFails().statusCode(200).body(Matchers.containsString("${groupName}"))
         Reporter.log("- Delete group. Group ${groupName} has been removed successfully", true)
     }
 

@@ -249,16 +249,16 @@ class SecuritytSteps {
     @DataProvider(name="users")
     public Object[][] users() {
         return new Object[][]{
-                ["testuser0", "email0@jfrog.com", "password123"],
-                ["testuser1", "email1@jfrog.com", "password123"],
-                ["testuser2", "email2@jfrog.com", "password123"],
-                ["testuser3", "email3@jfrog.com", "password123"],
-                ["testuser4", "email4@jfrog.com", "password123"],
-                ["testuser5", "email5@jfrog.com", "password123"],
-                ["testuser6", "email6@jfrog.com", "password123"],
-                ["testuser7", "email7@jfrog.com", "password123"],
-                ["testuser8", "email8@jfrog.com", "password123"],
-                ["testuser9", "email9@jfrog.com", "password123"]
+                ["testuser0", "email0@jfrog.com", "Password123"],
+                ["testuser1", "email1@jfrog.com", "Password123"],
+                ["testuser2", "email2@jfrog.com", "Password123"],
+                ["testuser3", "email3@jfrog.com", "Password123"],
+                ["testuser4", "email4@jfrog.com", "Password123"],
+                ["testuser5", "email5@jfrog.com", "Password123"],
+                ["testuser6", "email6@jfrog.com", "Password123"],
+                ["testuser7", "email7@jfrog.com", "Password123"],
+                ["testuser8", "email8@jfrog.com", "Password123"],
+                ["testuser9", "email9@jfrog.com", "Password123"]
         }
     }
 
