@@ -1,10 +1,10 @@
 artifactory:
-  url: mahithab-datadog-artifactory.jfrog.tech
+  url: localhost:8082
   protocol: http://
-  external_ip: mahithab-datadog-artifactory.jfrog.tech
+  external_ip: localhost:8082
   distribution: artifactory_ha
   rt_username: admin
-  rt_password: password1
+  rt_password: password
 splunk:
   protocol: https://
   url: OVERWRITE
