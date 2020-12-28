@@ -7,7 +7,7 @@ RT_USERNAME=$1
 RT_PASSWORD=$2
 IP_ADDR=$3
 
-echo "### Accept EULA for JCR distrubution ###"
+echo "### Accept EULA for JCR distrubution on ${IP_ADDR}###"
 OUT=$(curl -XPOST -vu ${RT_USERNAME}:${RT_PASSWORD} http://${IP_ADDR}/artifactory/ui/jcr/eula/accept 2>&1)
     echo "$OUT"
     if [[ "$OUT" =~ (ERROR) ]]
