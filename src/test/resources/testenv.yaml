@@ -21,7 +21,7 @@ datadog:
   protocol: https://
   url: api.datadoghq.com
   port:
-  api_key: 71762dd03cc0fcaba3b85c2487772fe2
-  application_key: 6bc9bcc3f05031b730d678309d39b584d3a31fb2
+  api_key: <api_key>
+  application_key: <application_key>
   username: OVERWRITE
   password: OVERWRITE
