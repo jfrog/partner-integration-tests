@@ -1,0 +1,27 @@
+artifactory:
+  url: localhost:8082
+  protocol: http://
+  external_ip: 1.2.3.4
+  distribution: artifactory_ha
+  rt_username: admin
+  rt_password: password
+splunk:
+  protocol: https://
+  url: OVERWRITE
+  port: 8089
+  username: OVERWRITE
+  password: OVERWRITE
+prometheus:
+  protocol: http://
+  url: 35.202.185.139
+  port: 9090
+  username: OVERWRITE
+  password: OVERWRITE
+datadog:
+  protocol: https://
+  url: api.datadoghq.com
+  port:
+  api_key: 71762dd03cc0fcaba3b85c2487772fe2
+  application_key: 6bc9bcc3f05031b730d678309d39b584d3a31fb2
+  username: OVERWRITE
+  password: OVERWRITE
