@@ -30,8 +30,6 @@ import static org.hamcrest.Matchers.hasItems
 class SplunkTest extends DataAnalyticsSteps{
 
     Yaml yaml = new Yaml()
-    def configFile = new File("./src/test/resources/testenv.yaml")
-    def config = yaml.load(configFile.text)
     def artifact = new File("./src/test/resources/repositories/artifact.zip")
     def repoSteps = new RepositorySteps()
     def securitySteps = new SecuritytSteps()

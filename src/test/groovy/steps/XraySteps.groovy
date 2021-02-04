@@ -1,10 +1,11 @@
 package steps
 
 import org.testng.annotations.DataProvider
+import tests.TestSetup
 
 import static io.restassured.RestAssured.given
 
-class XraySteps {
+class XraySteps extends TestSetup{
 
     def createIssueEvent(issueID, cve, summary, description, username, password, url) {
         return given()

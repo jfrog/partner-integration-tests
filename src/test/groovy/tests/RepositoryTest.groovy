@@ -24,15 +24,9 @@ import static org.hamcrest.Matchers.hasSize
 
 class RepositoryTest extends RepositorySteps{
     Yaml yaml = new Yaml()
-    def configFile = new File("./src/test/resources/testenv.yaml")
-    def repoListHA = new File("./src/test/resources/repositories/CreateDefault.yaml")
-    def repoListJCR = new File("./src/test/resources/repositories/CreateJCR.yaml")
-    def artifact = new File("./src/test/resources/repositories/artifact.zip")
-    def config = yaml.load(configFile.text)
+
     def utils = new Utils()
-    def artifactoryURL
-    def protocol
-    def artifactoryBaseURL
+
     def dockerURL
     def username
     def password
@@ -44,7 +38,6 @@ class RepositoryTest extends RepositorySteps{
         username = config.artifactory.rt_username
         password = config.artifactory.rt_password
         protocol = config.artifactory.protocol
-        artifactoryBaseURL = "${protocol}${config.artifactory.external_ip}/artifactory"
         //RestAssured.baseURI = "http://${artifactoryURL}/artifactory"
         RestAssured.authentication = RestAssured.basic(username, password);
         RestAssured.useRelaxedHTTPSValidation();

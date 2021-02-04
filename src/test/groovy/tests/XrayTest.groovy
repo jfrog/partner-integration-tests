@@ -28,14 +28,9 @@ import static org.hamcrest.Matchers.nullValue
 class XrayTest extends XraySteps{
 
     Yaml yaml = new Yaml()
-    def configFile = new File("./src/test/resources/testenv.yaml")
-    def config = yaml.load(configFile.text)
+
     def distribution
-    def username
-    def password
-    def protocol
-    def xrayBaseUrl
-    def artifactoryBaseURL
+    def xrayBaseUrl = "${protocol}${config.artifactory.external_ip}/xray/api"
     def randomIndex
     def policyName
     def watchName
@@ -43,11 +38,6 @@ class XrayTest extends XraySteps{
     @BeforeSuite(groups=["xray"])
     def setUp() {
         distribution = config.artifactory.distribution
-        username = config.artifactory.rt_username
-        password = config.artifactory.rt_password
-        protocol = config.artifactory.protocol
-        xrayBaseUrl = "${protocol}${config.artifactory.external_ip}/xray/api"
-        artifactoryBaseURL = "${protocol}${config.artifactory.external_ip}/artifactory"
         RestAssured.authentication = RestAssured.basic(username, password)
         RestAssured.useRelaxedHTTPSValidation()
         Random random = new Random()

@@ -12,20 +12,7 @@ import org.yaml.snakeyaml.Yaml
 import utils.Shell
 
 class HealthCheckTest extends RepositorySteps{
-    Yaml yaml = new Yaml()
-    def configFile = new File("./src/test/resources/testenv.yaml")
-    def config = yaml.load(configFile.text)
-    def artifactoryBaseURL
-    def artifactoryPingURL
-    def protocol
 
-
-    @BeforeSuite(groups=["common"])
-    def setUp() {
-        protocol = config.artifactory.protocol
-        artifactoryBaseURL = "${protocol}${config.artifactory.external_ip}/artifactory"
-        artifactoryPingURL = "${protocol}${config.artifactory.external_ip}"
-    }
 
 
     @Test(priority=0, groups="common", testName = "Health check for all 4 services")
