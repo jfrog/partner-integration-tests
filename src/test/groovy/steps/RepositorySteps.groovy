@@ -1,9 +1,10 @@
 package steps
 
+import tests.TestSetup
 
 import static io.restassured.RestAssured.given
 
-class RepositorySteps {
+class RepositorySteps extends TestSetup{
 
     def getHealthCheckResponse(artifactoryURL) {
         return given()
