@@ -1,0 +1,45 @@
+<!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd" >
+
+<suite name="All API tests" verbose="1" >
+
+    <test name="tests.HealthCheckTest">
+        <classes>
+            <class name="tests.HealthCheckTest"/>
+        </classes>
+    </test>
+    <test name="tests.RepositoryTest">
+        <classes>
+            <class name="tests.RepositoryTest"/>
+        </classes>
+    </test>
+    <test name="tests.SecurityTest">
+        <classes>
+            <class name="tests.SecurityTest"/>
+        </classes>
+    </test>
+    <test name="tests.XrayTest">
+        <classes>
+            <class name="tests.XrayTest"/>
+        </classes>
+    </test>
+    <test name="tests.TerraformTest">
+        <classes>
+            <class name="tests.TerraformTest"/>
+        </classes>
+    </test>
+    <test name="tests.SplunkTest">
+        <classes>
+            <class name="tests.SplunkTest"/>
+        </classes>
+    </test>
+    <test name="tests.PrometheusTest">
+        <classes>
+            <class name="tests.PrometheusTest"/>
+        </classes>
+    </test>
+    <test name="tests.DatadogTest">
+        <classes>
+            <class name="tests.DatadogTest"/>
+        </classes>
+    </test>
+</suite>

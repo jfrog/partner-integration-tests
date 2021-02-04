@@ -1,0 +1,41 @@
+groups:
+  groupName: terraform
+  groupDescription: test group
+users:
+  userName: terraform
+  email: test-user@artifactory-terraform.com
+  groupName: terraform
+permission_target:
+  name: test-perm
+  includesPattern: foo/**
+  excludesPattern: bar/**
+local_repo:
+  repoName: my-local
+  package_type: npm
+remote_repo:
+  repoName: my-remote
+  package_type: npm
+  url: https://registry.npmjs.org/
+  repo_layout: npm-default
+virtual_repo:
+  repoName: foo
+  package_type: maven
+  rclass: virtual
+  repos:
+    - bar
+    - baz
+replication:
+  sourceRepoName: provider_test_rep_source
+  sourceRepoType: maven
+  destRepoName: provider_test_rep_dest
+  destRepoType: maven
+  cronExp: "0 0 * * * ?"
+single_replication:
+  sourceRepoName: provider_test_source
+  sourceRepoType: maven
+  destRepoName: provider_test_dest
+  destRepoType: maven
+  cronExp: "0 0 * * * ?"
+certificate:
+  alias: my-cert
+  repoName: my-remote-with-cert
