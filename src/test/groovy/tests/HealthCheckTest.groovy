@@ -3,6 +3,7 @@ package tests
 import io.restassured.path.json.JsonPath
 import io.restassured.response.Response
 import org.hamcrest.Matchers
+import org.testng.Assert
 import org.testng.Reporter
 import org.testng.annotations.BeforeSuite
 import org.testng.annotations.Test
@@ -43,5 +44,12 @@ class HealthCheckTest extends RepositorySteps{
         Reporter.log("- Ping test. Service is OK", true)
     }
 
-
+    @Test(priority=2, groups=["jcr"], testName = "Accept EULA before testing")
+    void acceptEULATest() {
+        println username
+        println "bash ./scripts/accept_eula.sh ${username},${password},${artifactoryBaseURL}"
+        def proc = "bash ./scripts/accept_eula.sh ${username} ${password} ${artifactoryBaseURL}".execute()
+        proc.waitForProcessOutput(System.out, System.err)
+        Assert.assertTrue(proc.exitValue().equals(0))
+    }
 }
