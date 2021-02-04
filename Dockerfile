@@ -4,4 +4,4 @@ RUN apk add --no-cache jq python3 bash \
 COPY . /root
 WORKDIR /root
 RUN ./gradlew dependencies &> /dev/null
-ENTRYPOINT [ "bash", "-c", "./gradlew ${@}" ]
+ENTRYPOINT ["./gradlew"]
