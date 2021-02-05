@@ -56,7 +56,7 @@ class RepositorySteps extends TestSetup{
                 .header("content-Type", "application/yaml")
                 .when()
                 .get("${artifactoryURL}/api/repositories")
-                .then().log().everything()
+                .then()
                 .extract().response()
 
 
@@ -94,7 +94,7 @@ class RepositorySteps extends TestSetup{
                 .header("content-Type", "application/yaml")
                 .when()
                 .delete("${artifactoryURL}/api/repositories/" + repoName)
-                .then().log().everything()
+                .then()
                 .extract().response()
 
     }
