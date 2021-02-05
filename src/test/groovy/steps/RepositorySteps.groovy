@@ -1,9 +1,21 @@
 package steps
 
+import tests.TestSetup
 
 import static io.restassured.RestAssured.given
 
-class RepositorySteps {
+class RepositorySteps extends TestSetup{
+
+    def acceptEula(artifactoryURL, username, password) {
+        return given()
+                .auth()
+                .preemptive()
+                .basic(username, password)
+                .when()
+                .post("${artifactoryURL}/ui/jcr/eula/accept")
+                .then()
+                .extract().response()
+    }
 
     def getHealthCheckResponse(artifactoryURL) {
         return given()
@@ -25,7 +37,7 @@ class RepositorySteps {
         return given()
                 .auth()
                 .preemptive()
-                .basic("${username}", "${password}")
+                .basic(username, password)
                 .header("Cache-Control", "no-cache")
                 .header("content-Type", "application/yaml")
                 .body(body)
@@ -39,7 +51,7 @@ class RepositorySteps {
         return given()
                 .auth()
                 .preemptive()
-                .basic("${username}", "${password}")
+                .basic(username, password)
                 .header("Cache-Control", "no-cache")
                 .header("content-Type", "application/yaml")
                 .when()
@@ -47,12 +59,13 @@ class RepositorySteps {
                 .then()
                 .extract().response()
 
+
     }
     def getReposWithUser(artifactoryURL, username, password) {
         return given()
                 .auth()
                 .preemptive()
-                .basic("${username}", "${password}")
+                .basic(username, password)
                 .header("Cache-Control", "no-cache")
                 .header("content-Type", "application/yaml")
                 .when()
@@ -76,7 +89,7 @@ class RepositorySteps {
         return given()
                 .auth()
                 .preemptive()
-                .basic("${username}", "${password}")
+                .basic(username, password)
                 .header("Cache-Control", "no-cache")
                 .header("content-Type", "application/yaml")
                 .when()
@@ -101,7 +114,7 @@ class RepositorySteps {
         return given()
                 .auth()
                 .preemptive()
-                .basic("${username}", "${password}")
+                .basic(username, password)
                 .header("Cache-Control", "no-cache")
                 .header("mime-Type", "application/zip")
                 .header("X-Checksum-Sha256", sha256)
@@ -120,7 +133,7 @@ class RepositorySteps {
         return given()
                 .auth()
                 .preemptive()
-                .basic("${username}", "${password}")
+                .basic(username, password)
                 .header("Cache-Control", "no-cache")
                 .header("mime-Type", "application/zip")
                 .header("X-Checksum-Sha256", sha256)
@@ -139,7 +152,7 @@ class RepositorySteps {
         return given()
                 .auth()
                 .preemptive()
-                .basic("${username}", "${password}")
+                .basic(username, password)
                 .header("Cache-Control", "no-cache")
                 .header("Content-Type", "application/octet-stream")
                 .when()
@@ -169,7 +182,7 @@ class RepositorySteps {
         return given()
                 .auth()
                 .preemptive()
-                .basic("${username}", "${password}")
+                .basic(username, password)
                 .header("Cache-Control", "no-cache")
                 .header("Content-Type", "application/json")
                 .when()
@@ -194,7 +207,7 @@ class RepositorySteps {
         return given()
                 .auth()
                 .preemptive()
-                .basic("${username}", "${password}")
+                .basic(username, password)
                 .header("Cache-Control", "no-cache")
                 .header("Content-Type", "application/json")
                 .when()

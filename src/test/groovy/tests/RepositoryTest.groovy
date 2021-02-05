@@ -24,28 +24,14 @@ import static org.hamcrest.Matchers.hasSize
 
 class RepositoryTest extends RepositorySteps{
     Yaml yaml = new Yaml()
-    def configFile = new File("./src/test/resources/testenv.yaml")
     def repoListHA = new File("./src/test/resources/repositories/CreateDefault.yaml")
     def repoListJCR = new File("./src/test/resources/repositories/CreateJCR.yaml")
     def artifact = new File("./src/test/resources/repositories/artifact.zip")
-    def config = yaml.load(configFile.text)
     def utils = new Utils()
-    def artifactoryURL
-    def protocol
-    def artifactoryBaseURL
-    def dockerURL
-    def username
-    def password
+    def artifactoryURL = "${artifactoryBaseURL}/artifactory"
 
     @BeforeTest(groups=["jcr", "pro", "docker"])
     def setUp() {
-        artifactoryURL = config.artifactory.external_ip
-        dockerURL = config.artifactory.url
-        username = config.artifactory.rt_username
-        password = config.artifactory.rt_password
-        protocol = config.artifactory.protocol
-        artifactoryBaseURL = "${protocol}${config.artifactory.external_ip}/artifactory"
-        //RestAssured.baseURI = "http://${artifactoryURL}/artifactory"
         RestAssured.authentication = RestAssured.basic(username, password);
         RestAssured.useRelaxedHTTPSValidation();
     }
@@ -53,11 +39,11 @@ class RepositoryTest extends RepositorySteps{
 
     @Test(priority=1, groups=["pro"], testName = "Delete sample repositories")
     void deleteReposTest(){
-        Response getRepoResponse = getRepos(artifactoryBaseURL, username, password)
+        Response getRepoResponse = getRepos(artifactoryURL, username, password)
         JsonPath jsonPathEvaluator = getRepoResponse.jsonPath()
         List<String> repoNames = jsonPathEvaluator.getList("key", String.class)
         for (int i = 0; i < repoNames.size(); i ++){
-            Response delete = deleteRepository(artifactoryBaseURL, repoNames[i], username, password)
+            Response delete = deleteRepository(artifactoryURL, repoNames[i], username, password)
             delete.then().statusCode(200)
         }
 
@@ -66,11 +52,11 @@ class RepositoryTest extends RepositorySteps{
 
     @Test(priority=1, groups=["jcr",], testName = "Delete sample repositories JCR")
     void deleteDefaultJCRReposTest(){
-        Response getRepoResponse = getRepos(artifactoryBaseURL, username, password)
+        Response getRepoResponse = getRepos(artifactoryURL, username, password)
         JsonPath jsonPathEvaluator = getRepoResponse.jsonPath()
         List<String> repoNames = jsonPathEvaluator.getList("key", String.class)
         for (int i = 0; i < repoNames.size(); i ++){
-            Response delete = deleteRepository(artifactoryBaseURL, repoNames[i], username, password)
+            Response delete = deleteRepository(artifactoryURL, repoNames[i], username, password)
             delete.then().statusCode(400).body("errors[0].message",
                     containsStringIgnoringCase("This REST API is available only in Artifactory Pro"))
         }
@@ -85,7 +71,7 @@ class RepositoryTest extends RepositorySteps{
         def expectedMessage
         body = repoListHA
         expectedMessage = "383 changes to config merged successfully"
-        Response response = createRepositories(artifactoryBaseURL, body, username, password)
+        Response response = createRepositories(artifactoryURL, body, username, password)
         response.then().assertThat().log().ifValidationFails().statusCode(200)
                 .body(Matchers.hasToString(expectedMessage))
                 .log().body()
@@ -99,7 +85,7 @@ class RepositoryTest extends RepositorySteps{
         def expectedMessage
         body = repoListJCR
         expectedMessage = "82 changes to config merged successfully"
-        Response response = createRepositories(artifactoryBaseURL, body, username, password)
+        Response response = createRepositories(artifactoryURL, body, username, password)
         response.then().assertThat().statusCode(200)
                 .body(Matchers.hasToString(expectedMessage))
                 .log().body()
@@ -109,7 +95,7 @@ class RepositoryTest extends RepositorySteps{
 
     @Test(priority=3, groups=["pro"], testName = "Verify HA repositories were created successfully")
     void checkDefaultHAReposTest(){
-        Response response = getRepos(artifactoryBaseURL, username, password)
+        Response response = getRepos(artifactoryURL, username, password)
         def numberOfRepos = response.then().extract().path("size()")
         def expectedReposNumber = 84
         println("Number of created repositories is ${numberOfRepos}")
@@ -121,7 +107,7 @@ class RepositoryTest extends RepositorySteps{
 
     @Test(priority=3, groups=["jcr"], testName = "Verify JCR repositories were created successfully")
     void checkDefaultJCRReposTest(){
-        Response response = getRepos(artifactoryBaseURL, username, password)
+        Response response = getRepos(artifactoryURL, username, password)
         def numberOfRepos = response.then().extract().path("size()")
         def expectedReposNumber = 17
         response.then().assertThat().statusCode(200)
@@ -134,7 +120,7 @@ class RepositoryTest extends RepositorySteps{
     void createDirectoryTest(){
         def repoName = "generic-dev-local"
         def directoryName = "test-directory/"
-        Response response = createDirectory(artifactoryBaseURL, repoName, directoryName)
+        Response response = createDirectory(artifactoryURL, repoName, directoryName)
         response.then().assertThat().log().ifValidationFails().statusCode(201)
                 .body("repo", equalTo(repoName))
                 .body("path", equalTo("/" + directoryName))
@@ -151,7 +137,7 @@ class RepositoryTest extends RepositorySteps{
         def sha256 = utils.generateSHA256(artifact)
         def sha1 = utils.generateSHA1(artifact)
         def md5 = utils.generateMD5(artifact)
-        Response response = deployArtifact(artifactoryBaseURL, username, password, repoName, directoryName, artifact, filename, sha256, sha1, md5)
+        Response response = deployArtifact(artifactoryURL, username, password, repoName, directoryName, artifact, filename, sha256, sha1, md5)
         response.then().assertThat().log().ifValidationFails().statusCode(201)
                 .body("repo", equalTo(repoName))
                 .body("path", equalTo("/" + directoryName + "/" + filename))
@@ -172,7 +158,7 @@ class RepositoryTest extends RepositorySteps{
         def repoName = "generic-dev-local"
         def directoryName = "test-directory"
         def filename = "artifact.zip"
-        Response response = addChecksumToArtifact(artifactoryBaseURL, repoName, directoryName, filename)
+        Response response = addChecksumToArtifact(artifactoryURL, repoName, directoryName, filename)
         response.then().assertThat().log().ifValidationFails().statusCode(200)
 
         Reporter.log("- Add checksum SHA256 to artifact. Successfully added", true)
@@ -184,7 +170,7 @@ class RepositoryTest extends RepositorySteps{
         def directoryName = "test-directory"
         def filename = "artifact.zip"
         def path = repoName + "/" + directoryName + "/" + filename
-        Response response = getInfo(artifactoryBaseURL, path)
+        Response response = getInfo(artifactoryURL, path)
         response.then().assertThat().log().ifValidationFails().statusCode(200)
                 .body("repo", equalTo(repoName))
                 .body("path", equalTo("/" + directoryName + "/" + filename))
@@ -196,10 +182,10 @@ class RepositoryTest extends RepositorySteps{
     @Test(priority=8, groups=["jcr", "pro"], testName = "Delete item")
     void deleteArtifactTest(){
         def path = "generic-dev-local/test-directory/artifact.zip"
-        Response response = deleteItem(artifactoryBaseURL, username, password, path)
+        Response response = deleteItem(artifactoryURL, username, password, path)
         response.then().assertThat().log().ifValidationFails().statusCode(204)
 
-        Response verification = getInfo(artifactoryBaseURL, path)
+        Response verification = getInfo(artifactoryURL, path)
         verification.then().statusCode(404)
                 .body("errors[0].message", equalToIgnoringCase("Unable to find item"))
 
@@ -211,7 +197,7 @@ class RepositoryTest extends RepositorySteps{
         def name = "Support Bundle"
         LocalDate startDate = LocalDate.now().minusDays(5)
         LocalDate endDate = LocalDate.now()
-        Response response = createSupportBundle(artifactoryBaseURL, name, startDate, endDate)
+        Response response = createSupportBundle(artifactoryURL, name, startDate, endDate)
         response.then().assertThat().statusCode(200)
                 .body("artifactory.bundle_url", containsString(artifactoryURL))
 
@@ -223,7 +209,7 @@ class RepositoryTest extends RepositorySteps{
         def name = "Support Bundle"
         LocalDate startDate = LocalDate.now().minusDays(5)
         LocalDate endDate = LocalDate.now()
-        Response response = createSupportBundle(artifactoryBaseURL, name, startDate, endDate)
+        Response response = createSupportBundle(artifactoryURL, name, startDate, endDate)
         response.then().assertThat().statusCode(400)
                 .body("errors[0].message",
                         containsStringIgnoringCase("This REST API is available only in Artifactory Pro"))
@@ -234,11 +220,11 @@ class RepositoryTest extends RepositorySteps{
 
     @Test(priority=10, groups=["pro"], testName = "Delete created repositories")
     void deleteDefaultReposTest(){
-        Response getRepoResponse = getRepos(artifactoryBaseURL, username, password)
+        Response getRepoResponse = getRepos(artifactoryURL, username, password)
         JsonPath jsonPathEvaluator = getRepoResponse.jsonPath()
         List<String> repoNames = jsonPathEvaluator.getList("key", String.class)
         for (int i = 0; i < repoNames.size(); i ++){
-            Response delete = deleteRepository(artifactoryBaseURL, repoNames[i], username, password)
+            Response delete = deleteRepository(artifactoryURL, repoNames[i], username, password)
             delete.then().statusCode(200)
         }
 
@@ -247,11 +233,11 @@ class RepositoryTest extends RepositorySteps{
 
     @Test(priority=10, groups=["jcr",], testName = "Delete sample repositories JCR")
     void deleteJCRReposTest(){
-        Response getRepoResponse = getRepos(artifactoryBaseURL, username, password)
+        Response getRepoResponse = getRepos(artifactoryURL, username, password)
         JsonPath jsonPathEvaluator = getRepoResponse.jsonPath()
         List<String> repoNames = jsonPathEvaluator.getList("key", String.class)
         for (int i = 0; i < repoNames.size(); i ++){
-            Response delete = deleteRepository(artifactoryBaseURL, repoNames[i], username, password)
+            Response delete = deleteRepository(artifactoryURL, repoNames[i], username, password)
             delete.then().statusCode(400).body("errors[0].message",
                     containsStringIgnoringCase("This REST API is available only in Artifactory Pro"))
         }
@@ -261,7 +247,7 @@ class RepositoryTest extends RepositorySteps{
 
     @Test(priority=11, groups=["pro"], testName = "Verify repositories were deleted successfully")
     void checkReposAreDeleted(){
-        Response response = getRepos(artifactoryBaseURL, username, password)
+        Response response = getRepos(artifactoryURL, username, password)
         def numberOfRepos = response.then().extract().path("size()")
         def expectedReposNumber = 0
         response.then().assertThat().statusCode(200)
@@ -276,7 +262,7 @@ class RepositoryTest extends RepositorySteps{
         def expectedMessage
         body = repoListHA
         expectedMessage = "383 changes to config merged successfully"
-        Response response = createRepositories(artifactoryBaseURL, body, username, password)
+        Response response = createRepositories(artifactoryURL, body, username, password)
         response.then().assertThat().log().ifValidationFails().statusCode(200)
                 .body(Matchers.hasToString(expectedMessage))
                 .log().body()
@@ -290,7 +276,7 @@ class RepositoryTest extends RepositorySteps{
         def expectedMessage
         body = repoListJCR
         expectedMessage = "82 changes to config merged successfully"
-        Response response = createRepositories(artifactoryBaseURL, body, username, password)
+        Response response = createRepositories(artifactoryURL, body, username, password)
         response.then().assertThat().statusCode(200)
                 .body(Matchers.hasToString(expectedMessage))
                 .log().body()
@@ -302,7 +288,7 @@ class RepositoryTest extends RepositorySteps{
     void reCreateDirectoryTest(){
         def repoName = "generic-dev-local"
         def directoryName = "test-directory/"
-        Response response = createDirectory(artifactoryBaseURL, repoName, directoryName)
+        Response response = createDirectory(artifactoryURL, repoName, directoryName)
         response.then().assertThat().log().ifValidationFails().statusCode(201)
                 .body("repo", equalTo(repoName))
                 .body("path", equalTo("/" + directoryName))
@@ -319,7 +305,7 @@ class RepositoryTest extends RepositorySteps{
         def sha256 = utils.generateSHA256(artifact)
         def sha1 = utils.generateSHA1(artifact)
         def md5 = utils.generateMD5(artifact)
-        Response response = deployArtifact(artifactoryBaseURL, username, password, repoName, directoryName, artifact, filename, sha256, sha1, md5)
+        Response response = deployArtifact(artifactoryURL, username, password, repoName, directoryName, artifact, filename, sha256, sha1, md5)
         response.then().assertThat().log().ifValidationFails().statusCode(201)
                 .body("repo", equalTo(repoName))
                 .body("path", equalTo("/" + directoryName + "/" + filename))
@@ -367,7 +353,7 @@ class RepositoryTest extends RepositorySteps{
     @Test(priority=17, groups=["docker"], testName = "Verify all the images were pushed successfully")
     void verifyDockerImagesTest(){
         def path = "docker-dev-local"
-        Response response = getInfo(artifactoryBaseURL, path)
+        Response response = getInfo(artifactoryURL, path)
         response.then().assertThat().statusCode(200)
                 .body("repo", equalTo(path))
                 .body("children[0].uri", containsString("busybox"))
@@ -381,7 +367,7 @@ class RepositoryTest extends RepositorySteps{
         def imageName = "busybox"
         def listSize = 20
         def endTag = 1
-        Response response = listDockerTags(artifactoryBaseURL, username, password, repoKey, imageName, listSize, endTag)
+        Response response = listDockerTags(artifactoryURL, username, password, repoKey, imageName, listSize, endTag)
         response.then().assertThat().statusCode(200)
                 .body("name", equalTo(imageName))
                 .body("tags", hasSize(listSize))
