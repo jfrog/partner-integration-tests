@@ -46,10 +46,7 @@ class HealthCheckTest extends RepositorySteps{
 
     @Test(priority=2, groups=["jcr"], testName = "Accept EULA before testing")
     void acceptEULATest() {
-        println username
-        println "bash ./scripts/accept_eula.sh ${username},${password},${artifactoryBaseURL}"
-        def proc = "bash ./scripts/accept_eula.sh ${username} ${password} ${artifactoryBaseURL}".execute()
-        proc.waitForProcessOutput(System.out, System.err)
-        Assert.assertTrue(proc.exitValue().equals(0))
+        Response response = acceptEula(artifactoryURL, username, password)
+        response.then().assertThat().log().ifValidationFails().statusCode(200)
     }
 }

@@ -6,6 +6,17 @@ import static io.restassured.RestAssured.given
 
 class RepositorySteps extends TestSetup{
 
+    def acceptEula(artifactoryURL, username, password) {
+        return given()
+                .auth()
+                .preemptive()
+                .basic("${username}", "${password}")
+                .when()
+                .post("${artifactoryURL}/ui/jcr/eula/accept")
+                .then()
+                .extract().response()
+    }
+
     def getHealthCheckResponse(artifactoryURL) {
         return given()
                 .when()

@@ -73,8 +73,11 @@ task artifactory_ha_docker_test(type: Test) {
         showStandardStreams = true
     }
 }
+
 task envVars () {
-    (System.env as TreeMap).each{ k,v -> println("${k} -> ${v}")}
+    doFirst {
+        (System.env as TreeMap).each { k, v -> println("${k} -> ${v}") }
+    }
 }
 
 task artifactory_jcr_docker_test(type: Test) {
