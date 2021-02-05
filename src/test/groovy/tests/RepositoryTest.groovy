@@ -28,11 +28,10 @@ class RepositoryTest extends RepositorySteps{
     def repoListJCR = new File("./src/test/resources/repositories/CreateJCR.yaml")
     def artifact = new File("./src/test/resources/repositories/artifact.zip")
     def utils = new Utils()
-    def artifactoryURL
+    def artifactoryURL = "${artifactoryBaseURL}/artifactory"
 
     @BeforeTest(groups=["jcr", "pro", "docker"])
     def setUp() {
-        artifactoryURL = "${artifactoryBaseURL}/artifactory"
         RestAssured.authentication = RestAssured.basic(username, password);
         RestAssured.useRelaxedHTTPSValidation();
     }

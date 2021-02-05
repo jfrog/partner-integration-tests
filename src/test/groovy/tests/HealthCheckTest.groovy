@@ -10,12 +10,7 @@ import org.testng.annotations.Test
 import steps.RepositorySteps
 
 class HealthCheckTest extends RepositorySteps{
-    def artifactoryURL
-
-    @BeforeSuite(groups=["common"])
-    def setUp() {
-        artifactoryURL = "${artifactoryBaseURL}/artifactory"
-    }
+    def artifactoryURL = "${artifactoryBaseURL}/artifactory"
 
     @Test(priority=0, groups="common", testName = "Health check for all 4 services")
     void healthCheckTest(){
