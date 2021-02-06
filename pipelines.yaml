@@ -36,9 +36,9 @@ pipelines:
             - echo "Preparing for work..."
             - printenv
           onSuccess:
-            - send_notification partnersSlack --text "${step_name} for ${pipeline_name} step is done"
+            - send_notification partnersSlack --text "${step_name} step in ${pipeline_name} is done"
           onFailure:
-            - send_notification partnersSlack --text "${step_name} step ${pipeline_name} is failed"
+            - send_notification partnersSlack --text "${step_name} step in ${pipeline_name} is failed"
           onComplete:
             - echo "Cleaning up some stuff"
       - name: docker_push
@@ -56,9 +56,9 @@ pipelines:
             - echo "Preparing for work..."
             - printenv
           onSuccess:
-            - send_notification partnersSlack --text "${step_name} for ${pipeline_name} step is done"
+            - send_notification partnersSlack --text "${step_name} step in ${pipeline_name} is done"
           onFailure:
-            - send_notification partnersSlack --text "${step_name} step ${pipeline_name} is failed"
+            - send_notification partnersSlack --text "${step_name} step in ${pipeline_name} is failed"
           onComplete:
             - echo "Cleaning up some stuff"
       - name: publish_build_info
