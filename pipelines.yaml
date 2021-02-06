@@ -1,0 +1,61 @@
+resources:
+  - name: partnerIntegrationTestGitHubRepo
+    type: GitRepo
+    configuration:
+      gitProvider: danielMiakotkinGitHub
+      path: jfrog/partner-integration-tests
+      branches:
+        include: master
+      buildOn:
+        commit: true
+  - name: partnerIntegrationTest
+    type: BuildInfo
+    configuration:
+      sourceArtifactory: PartnershipArtifactory
+      buildName: docker_build
+      buildNumber: 1
+
+pipelines:
+  - name: Build_Partner_Integration_Test_image
+    steps:
+      - name: docker_build
+        type: DockerBuild
+        configuration:
+          affinityGroup: dockerGroup
+          dockerFileLocation: .
+          dockerFileName: Dockerfile
+          dockerImageName: partnership-partner-integration-tests.jfrog.io/jfrog-tester
+          dockerImageTag: '${run_number}'
+          inputResources:
+            - name: partnerIntegrationTestGitHubRepo
+          integrations:
+            - name: partnership_jfrog_io
+            - name: partnersSlack
+        execution:
+          onStart:
+            - echo "Preparing for work..."
+            - printenv
+          onSuccess:
+            - send_notification partnersSlack --text "${step_name} step is done"
+          onFailure:
+            - send_notification partnersSlack --text "${step_name} step is failed"
+          onComplete:
+            - echo "Cleaning up some stuff"
+      - name: docker_push
+        type: DockerPush
+        configuration:
+          affinityGroup: dockerGroup
+          targetRepository: partner-integration-tests
+          autoPublishBuildInfo: true
+          integrations:
+            - name: partnership_jfrog_io
+            - name: partnersSlack
+          inputSteps:
+            - name: docker_build
+      - name: publish_build_info
+        type: PublishBuildInfo
+        configuration:
+          inputSteps:
+            - name: docker_push
+          outputResources:
+            - name: partnerIntegrationTest
