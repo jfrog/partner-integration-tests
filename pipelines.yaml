@@ -46,7 +46,6 @@ pipelines:
         configuration:
           affinityGroup: dockerGroup
           targetRepository: partner-integration-tests
-          autoPublishBuildInfo: true
           integrations:
             - name: partnership_jfrog_io
             - name: partnersSlack
