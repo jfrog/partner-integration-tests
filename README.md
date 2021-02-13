@@ -2,6 +2,8 @@
 
 The purpose of this framework is to test different Artifactory configurations deployed by various Partnership Engineering solutions.
 It can be used in the CI-CD process and in a single manual test run.
+NOTE: the test purpose is to test if deployment was correct and Artifactory functioning as expected. 
+test will delete all existing repositories and create a list of new repos. 
 
 Test suites include Artifactory Pro, JCR and X-ray tests as well as Terraform Provider and Data analytics tests.    
 
@@ -19,6 +21,13 @@ Clone the repo. Open the file ```/src/test/resources/testenv.yaml``` and fill it
 Run Gradle wrapper to invoke Gradle task: 
 ```
 ./gradlew <task_name>
+```
+
+### Run as a docker container
+Build the image or pull the image ``partnership-partner-integration-tests.jfrog.io/jfrog-tester``
+Run the container with a set of environment variables:
+```
+docker run -it -e RT_URL=<your_artifactory_uri> -e RT_PROTOCOL=<http:// or https://> -e RT_USERNAME=<username> -e RT_PASSWORD=<password> partnership-partner-integration-tests.jfrog.io/jfrog-tester:0.0.1 <task_name>
 ```
 
 ### Tasks for Artifactory testing
