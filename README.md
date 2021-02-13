@@ -25,9 +25,10 @@ Run Gradle wrapper to invoke Gradle task:
 
 ### Run as a docker container
 Build the image or pull the image ``partnership-partner-integration-tests.jfrog.io/jfrog-tester``
-Run the container with a set of env variables:
-``docker run -it -e RT_URL=<your_artifactory_uri> -e RT_PROTOCOL=<http:// or https://> -e RT_USERNAME=<username> -e RT_PASSWORD=<password> partnership-partner-integration-tests.jfrog.io/jfrog-tester:0.0.1 <task_name>``
-
+Run the container with a set of environment variables:
+```
+docker run -it -e RT_URL=<your_artifactory_uri> -e RT_PROTOCOL=<http:// or https://> -e RT_USERNAME=<username> -e RT_PASSWORD=<password> partnership-partner-integration-tests.jfrog.io/jfrog-tester:0.0.1 <task_name>
+```
 
 ### Tasks for Artifactory testing
 ```
