@@ -1,7 +1,7 @@
 artifactory:
-  url: 34.121.150.8
+  url: localhost:8082
   protocol: http://
-  external_ip: 34.121.150.8
+  external_ip: localhost:8082
   distribution: artifactory_ha
   rt_username: admin
   rt_password: password
