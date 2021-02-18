@@ -3,62 +3,34 @@ package tests
 import io.restassured.RestAssured
 import io.restassured.path.json.JsonPath
 import io.restassured.response.Response
-import org.awaitility.Awaitility
 import org.hamcrest.Matchers
 import org.testng.Assert
 import org.testng.Reporter
 import org.testng.annotations.BeforeSuite
 import org.testng.annotations.Test
-import org.yaml.snakeyaml.Yaml
 import steps.DataAnalyticsSteps
-import steps.PrometheusSteps
 import steps.RepositorySteps
 import steps.SecuritytSteps
 import steps.PrometheusSteps
 import utils.Utils
 
-import java.util.concurrent.TimeUnit
-
 import static org.hamcrest.Matchers.equalTo
-import static org.hamcrest.Matchers.hasItems
-import static org.hamcrest.Matchers.hasItems
 import static org.hamcrest.Matchers.hasItems
 
 class PrometheusTest extends DataAnalyticsSteps{
 
-    Yaml yaml = new Yaml()
-    def configFile = new File("./src/test/resources/testenv.yaml")
-    def config = yaml.load(configFile.text)
     def artifact = new File("./src/test/resources/repositories/artifact.zip")
     def repoSteps = new RepositorySteps()
     def securitySteps = new SecuritytSteps()
     def prometheus = new PrometheusSteps()
     def utils = new Utils()
-    def artifactoryURL
-    def dockerURL
-    def distribution
-    def username
-    def password
-    def prometheus_username
-    def prometheus_password
-    def prom_url
-
 
     @BeforeSuite(groups=["prometheus", "prometheus_xray"])
     def setUp() {
-        artifactoryURL = config.artifactory.external_ip
-        dockerURL = config.artifactory.xrayBaseUrl
-        distribution = config.artifactory.distribution
-        username = config.artifactory.rt_username
-        password = config.artifactory.rt_password
-        prometheus_username = config.prometheus.username
-        prometheus_password = config.prometheus.password
-        prom_url = "${config.prometheus.protocol}" + "${config.prometheus.xrayBaseUrl}" + ":" + "${config.prometheus.port}"
-        RestAssured.baseURI = "http://${artifactoryURL}/artifactory"
+        RestAssured.baseURI = "${artifactoryBaseURL}/artifactory"
         RestAssured.authentication = RestAssured.basic(username, password)
         RestAssured.useRelaxedHTTPSValidation()
     }
-
 
     @Test(priority=1, groups=["prometheus"], testName = "Artifactory. Upload Data Transfers")
     void uploadDataTest() throws Exception {
@@ -68,7 +40,7 @@ class PrometheusTest extends DataAnalyticsSteps{
         uploadIntoRepo(count, calls)
         Thread.sleep(10000)
         def query = "sum(rate(jfrog_rt_data_upload[5m]))"
-        Response response = prometheus.postQuery(prom_url, query)
+        Response response = prometheus.postQuery(prometheusBaseURL, query)
         response.then().log().everything()
 
         JsonPath jsonPathEvaluator = response.jsonPath()
@@ -88,7 +60,7 @@ class PrometheusTest extends DataAnalyticsSteps{
         downloadArtifact(count, calls)
         Thread.sleep(10000)
         def query = "sum(rate(jfrog_rt_data_download[5m]))"
-        Response response = prometheus.postQuery(prom_url, query)
+        Response response = prometheus.postQuery(prometheusBaseURL, query)
         response.then().log().everything()
 
         JsonPath jsonPathEvaluator = response.jsonPath()
@@ -109,7 +81,7 @@ class PrometheusTest extends DataAnalyticsSteps{
         Thread.sleep(10000)
         def query = "sum(increase(jfrog_rt_req{return_status=~\"5.*\"}[1m]))"
 
-        Response response = prometheus.postQuery(prom_url, query)
+        Response response = prometheus.postQuery(prometheusBaseURL, query)
         response.then().log().everything()
 
         JsonPath jsonPathEvaluator = response.jsonPath()
@@ -131,7 +103,7 @@ class PrometheusTest extends DataAnalyticsSteps{
         Thread.sleep(10000)
         def query = "sum by (return_status) (increase(jfrog_rt_req[2m]))"
 
-        Response response = prometheus.postQuery(prom_url, query)
+        Response response = prometheus.postQuery(prometheusBaseURL, query)
         response.then().log().everything()
 
         JsonPath jsonPathEvaluator = response.jsonPath()
@@ -154,12 +126,12 @@ class PrometheusTest extends DataAnalyticsSteps{
         Thread.sleep(10000)
         def query = "sum by (remote_address) (increase(jfrog_rt_data_upload[5m])) > 0"
 
-        Response response = prometheus.postQuery(prom_url, query)
+        Response response = prometheus.postQuery(prometheusBaseURL, query)
         response.then().log().everything()
 
         def IPv4andIPv6Regex = "((^\\s*((([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]))\\s*\$)|(^\\s*((([0-9A-Fa-f]{1,4}:){7}([0-9A-Fa-f]{1,4}|:))|(([0-9A-Fa-f]{1,4}:){6}(:[0-9A-Fa-f]{1,4}|((25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)(\\.(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)){3})|:))|(([0-9A-Fa-f]{1,4}:){5}(((:[0-9A-Fa-f]{1,4}){1,2})|:((25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)(\\.(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)){3})|:))|(([0-9A-Fa-f]{1,4}:){4}(((:[0-9A-Fa-f]{1,4}){1,3})|((:[0-9A-Fa-f]{1,4})?:((25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)(\\.(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){3}(((:[0-9A-Fa-f]{1,4}){1,4})|((:[0-9A-Fa-f]{1,4}){0,2}:((25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)(\\.(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){2}(((:[0-9A-Fa-f]{1,4}){1,5})|((:[0-9A-Fa-f]{1,4}){0,3}:((25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)(\\.(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){1}(((:[0-9A-Fa-f]{1,4}){1,6})|((:[0-9A-Fa-f]{1,4}){0,4}:((25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)(\\.(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)){3}))|:))|(:(((:[0-9A-Fa-f]{1,4}){1,7})|((:[0-9A-Fa-f]{1,4}){0,5}:((25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)(\\.(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)){3}))|:)))(%.+)?\\s*\$))"
         response.then().
-                body("data.result.metric.remote_address", Matchers.hasItems(Matchers.matchesRegex(IPv4andIPv6Regex))).
+                body("data.result.metric.remote_address", hasItems(Matchers.matchesRegex(IPv4andIPv6Regex))).
                 body("data.result.value[1]", Matchers.notNullValue())
 
         Reporter.log("- Prometheus. Top 10 IPs By Uploads verified", true)
@@ -173,12 +145,12 @@ class PrometheusTest extends DataAnalyticsSteps{
         Thread.sleep(10000)
         def query = "sum by (remote_address) (increase(jfrog_rt_data_download[5m])) > 0"
 
-        Response response = prometheus.postQuery(prom_url, query)
+        Response response = prometheus.postQuery(prometheusBaseURL, query)
         response.then().log().everything()
 
         def IPv4andIPv6Regex = "((^\\s*((([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]))\\s*\$)|(^\\s*((([0-9A-Fa-f]{1,4}:){7}([0-9A-Fa-f]{1,4}|:))|(([0-9A-Fa-f]{1,4}:){6}(:[0-9A-Fa-f]{1,4}|((25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)(\\.(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)){3})|:))|(([0-9A-Fa-f]{1,4}:){5}(((:[0-9A-Fa-f]{1,4}){1,2})|:((25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)(\\.(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)){3})|:))|(([0-9A-Fa-f]{1,4}:){4}(((:[0-9A-Fa-f]{1,4}){1,3})|((:[0-9A-Fa-f]{1,4})?:((25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)(\\.(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){3}(((:[0-9A-Fa-f]{1,4}){1,4})|((:[0-9A-Fa-f]{1,4}){0,2}:((25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)(\\.(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){2}(((:[0-9A-Fa-f]{1,4}){1,5})|((:[0-9A-Fa-f]{1,4}){0,3}:((25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)(\\.(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){1}(((:[0-9A-Fa-f]{1,4}){1,6})|((:[0-9A-Fa-f]{1,4}){0,4}:((25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)(\\.(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)){3}))|:))|(:(((:[0-9A-Fa-f]{1,4}){1,7})|((:[0-9A-Fa-f]{1,4}){0,5}:((25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)(\\.(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)){3}))|:)))(%.+)?\\s*\$))"
         response.then().
-                body("data.result.metric.remote_address", Matchers.hasItems(Matchers.matchesRegex(IPv4andIPv6Regex))).
+                body("data.result.metric.remote_address", hasItems(Matchers.matchesRegex(IPv4andIPv6Regex))).
                 body("data.result[0].value[1]", Matchers.notNullValue())
         Reporter.log("- Prometheus. Top 10 IPs By Downloads verified", true)
     }
@@ -204,7 +176,7 @@ class PrometheusTest extends DataAnalyticsSteps{
     void rtAuditByUsersTest() throws Exception {
         def query = "sum by (user) (increase(jfrog_rt_access_audit{user!=\"UNKNOWN\", user!=\"_system_\",user!=\"\"}[10m]))"
 
-        Response response = prometheus.postQuery(prom_url, query)
+        Response response = prometheus.postQuery(prometheusBaseURL, query)
         response.then().log().everything()
         response.then().assertThat().statusCode(200)
                 .body("data.result.metric.user[0]", equalTo(username))
@@ -219,7 +191,7 @@ class PrometheusTest extends DataAnalyticsSteps{
     void rtDeniedActionByUsersTest() throws Exception {
         def query = "sum by (user) (increase(jfrog_rt_access{user!=\"UNKNOWN\", user!=\"_system_\", action_response=~\"DENIED.*\"}[10m]) > 0)"
 
-        Response response = prometheus.postQuery(prom_url, query)
+        Response response = prometheus.postQuery(prometheusBaseURL, query)
         response.then().log().everything()
 
         List<String> usernames = ["splunktest0", "splunktest1", "splunktest2"]
@@ -235,7 +207,7 @@ class PrometheusTest extends DataAnalyticsSteps{
     void rtDeniedActionByUserIPTest() throws Exception {
         def query = "sum by (user,ip) (increase(jfrog_rt_access{user!=\"UNKNOWN\", user!=\"_system_\", action_response=~\"DENIED.*\"}[10m]) > 0)"
 
-        Response response = prometheus.postQuery(prom_url, query)
+        Response response = prometheus.postQuery(prometheusBaseURL, query)
         response.then().log().everything()
 
         List<String> usernames = ["splunktest0", "splunktest1", "splunktest2"]
@@ -254,7 +226,7 @@ class PrometheusTest extends DataAnalyticsSteps{
     void rtDeniedLoginsByIPTest() throws Exception {
         def query = "sum by (ip) (increase(jfrog_rt_access{user!=\"UNKNOWN\", user!=\"_system_\", action_response=~\"DENIED LOGIN\"}[10m]) > 0)"
 
-        Response response = prometheus.postQuery(prom_url, query)
+        Response response = prometheus.postQuery(prometheusBaseURL, query)
         response.then().log().everything()
 
         response.then().
@@ -267,7 +239,7 @@ class PrometheusTest extends DataAnalyticsSteps{
     void rtDeniedActionsByIPTest() throws Exception {
         def query = "sum by (ip) (increase(jfrog_rt_access{user!=\"UNKNOWN\", user!=\"_system_\", action_response=~\"DENIED.*\"}[10m]) > 0)"
 
-        Response response = prometheus.postQuery(prom_url, query)
+        Response response = prometheus.postQuery(prometheusBaseURL, query)
         response.then().log().everything()
 
         response.then().
@@ -282,7 +254,7 @@ class PrometheusTest extends DataAnalyticsSteps{
     void rtAcceptedDeploysByUsernameTest() throws Exception {
         def query = "sum by (user) (increase(jfrog_rt_access{user!=\"UNKNOWN\", user!=\"_system_\", action_response=~\"ACCEPTED DEPLOY\"}[10m]) > 0)"
 
-        Response response = prometheus.postQuery(prom_url, query)
+        Response response = prometheus.postQuery(prometheusBaseURL, query)
         response.then().log().everything()
 
         List<String> usernames = ["splunktest0", "splunktest1", "splunktest2"]
@@ -304,7 +276,7 @@ class PrometheusTest extends DataAnalyticsSteps{
         Thread.sleep(10000)
         def query = "sum(increase(jfrog_xray_log_level{log_level=\"ERROR\"}[1m]))"
 
-        Response response = prometheus.postQuery(prom_url, query)
+        Response response = prometheus.postQuery(prometheusBaseURL, query)
         response.then().log().everything()
 
         JsonPath jsonPathEvaluator = response.jsonPath()
@@ -324,7 +296,7 @@ class PrometheusTest extends DataAnalyticsSteps{
         Thread.sleep(30000)
         def query = "sum(increase(jfrog_xray_req{return_status=~\"5.*\"}[1m]))"
 
-        Response response = prometheus.postQuery(prom_url, query)
+        Response response = prometheus.postQuery(prometheusBaseURL, query)
         response.then().log().everything()
 
         JsonPath jsonPathEvaluator = response.jsonPath()
@@ -345,7 +317,7 @@ class PrometheusTest extends DataAnalyticsSteps{
         Thread.sleep(30000)
         def query = "sum by (return_status) (increase(jfrog_xray_req[2m]))"
 
-        Response response = prometheus.postQuery(prom_url, query)
+        Response response = prometheus.postQuery(prometheusBaseURL, query)
         response.then().log().everything()
 
         JsonPath jsonPathEvaluator = response.jsonPath()

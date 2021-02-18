@@ -26,6 +26,7 @@ class SplunkSteps {
                 .header("content-Type", "application/x-www-form-urlencoded")
                 .body(search_string)
                 .when()
+                .log().everything()
                 .post(splunk_url + "/services/search/jobs")
                 .then()
                 .extract().response()
