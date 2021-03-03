@@ -19,6 +19,10 @@ class DataAnalyticsSteps extends TestSetup{
     def xrayURL = "${artifactoryBaseURL}/xray/api"
     def artifactoryURL = "${artifactoryBaseURL}/artifactory"
 
+    def getRepos = (repoSteps.&getRepos).curry(artifactoryURL, username, password)
+    def createUser = (securitySteps.&createUser).curry(artifactoryURL, username, password)
+    def createPolicy = (xraySteps.&createPolicy).rcurry(username, password, xrayURL)
+
     // Generate HTTP responses to test Log Analytics
 
     def login(usernameRt, passwordRt, url, count, calls){
@@ -31,7 +35,7 @@ class DataAnalyticsSteps extends TestSetup{
 
     def http200(count, calls){
         while (count <= calls) {
-            Response http200 = repoSteps.getRepos(artifactoryURL, username, password)
+            Response http200 = getRepos
             http200.then().statusCode(200)
             count++
         }
@@ -42,7 +46,7 @@ class DataAnalyticsSteps extends TestSetup{
             def usernameRt = "user${count}"
             def emailRt = "email+${count}@server.com"
             def passwordRt = "password"
-            Response http201 = securitySteps.createUser(artifactoryURL, username, password, usernameRt, emailRt, passwordRt)
+            Response http201 = createUser(usernameRt, emailRt, passwordRt)
             http201.then().statusCode(201)
             count++
         }
@@ -67,11 +71,9 @@ class DataAnalyticsSteps extends TestSetup{
     }
 
     def http401(count, calls){
-        while (count <= calls) {
-            def repoName = "generic-dev-local"
-            Response http403 = repoSteps.deleteRepository(artifactoryURL, repoName, "user1", "password")
-            http403.then().log().ifValidationFails().statusCode(403)
-            count++
+        def repoName = "generic-dev-local"
+        (count..calls) {
+            repoSteps.deleteRepository(artifactoryURL, repoName, "user1", "password").then().log().ifValidationFails().statusCode(403)
         }
     }
 
@@ -94,7 +96,7 @@ class DataAnalyticsSteps extends TestSetup{
         def password = "fakepassword"
         while (count <= calls) {
             def username = "fakeuser-${count}"
-            Response response = securitySteps.createUser(artifactoryURL, username, password, usernameRt, emailRt, passwordRt)
+            Response response = createUser(usernameRt, emailRt, passwordRt)
             response.then().log().ifValidationFails().statusCode(401)
             count++
         }
@@ -166,7 +168,7 @@ class DataAnalyticsSteps extends TestSetup{
         Random random = new Random()
         while (count <= calls) {
             def policyName = "new-policy-(${random.nextInt(10000000)})"
-            Response policy = xraySteps.createPolicy(policyName, username, password, xrayURL)
+            Response policy = createPolicy(policyName)
             policy.then().statusCode(201)
             count++
         }
@@ -175,7 +177,7 @@ class DataAnalyticsSteps extends TestSetup{
     def xray409(count, calls){
         while (count <= calls) {
             def policyName = "new-policy"
-            xraySteps.createPolicy(policyName, username, password, xrayURL)
+            createPolicy(policyName)
             count++
         }
     }
@@ -191,7 +193,7 @@ class DataAnalyticsSteps extends TestSetup{
 
 
     def createUsers(usernameRt, emailRt, passwordRt){
-        Response response = securitySteps.createUser(artifactoryURL, username, password, usernameRt, emailRt, passwordRt)
+        Response response = createUser(usernameRt, emailRt, passwordRt)
         response.then().log().ifValidationFails().statusCode(201)
     }
 
