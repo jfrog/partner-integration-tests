@@ -1,6 +1,6 @@
 artifactory:
-  url: localhost:8082
   protocol: http://
+  url: localhost:8082
   external_ip: localhost:8082
   distribution: artifactory_ha
   rt_username: admin
@@ -21,7 +21,7 @@ datadog:
   protocol: https://
   url: api.datadoghq.com
   port:
-  api_key: OVERWRITE
-  application_key: OVERWRITE
   username: OVERWRITE
   password: OVERWRITE
+  api_key: OVERWRITE
+  application_key: OVERWRITE

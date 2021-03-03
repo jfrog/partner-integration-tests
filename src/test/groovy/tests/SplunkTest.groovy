@@ -9,7 +9,6 @@ import org.testng.Assert
 import org.testng.Reporter
 import org.testng.annotations.BeforeSuite
 import org.testng.annotations.Test
-import org.yaml.snakeyaml.Yaml
 import steps.DataAnalyticsSteps
 import steps.RepositorySteps
 import utils.Utils
@@ -28,36 +27,15 @@ import static org.hamcrest.Matchers.hasItems
  */
 
 class SplunkTest extends DataAnalyticsSteps{
-
-    Yaml yaml = new Yaml()
-    def configFile = new File("./src/test/resources/testenv.yaml")
-    def config = yaml.load(configFile.text)
     def artifact = new File("./src/test/resources/repositories/artifact.zip")
     def repoSteps = new RepositorySteps()
     def securitySteps = new SecuritytSteps()
     def splunk = new SplunkSteps()
     def utils = new Utils()
-    def artifactoryURL
-    def dockerURL
-    def distribution
-    def username
-    def password
-    def splunk_username
-    def splunk_password
-    def splunk_url
-
 
     @BeforeSuite(groups=["splunk", "splunk_xray"])
     def setUp() {
-        artifactoryURL = config.artifactory.external_ip
-        dockerURL = config.artifactory.url
-        distribution = config.artifactory.distribution
-        username = config.artifactory.rt_username
-        password = config.artifactory.rt_password
-        splunk_username = config.splunk.username
-        splunk_password = config.splunk.password
-        splunk_url = "${config.splunk.protocol}" + "${config.splunk.xrayBaseUrl}" + ":" + "${config.splunk.port}"
-        RestAssured.baseURI = "http://${artifactoryURL}/artifactory"
+        RestAssured.baseURI = "${artifactoryBaseURL}/artifactory"
         RestAssured.authentication = RestAssured.basic(username, password)
         RestAssured.useRelaxedHTTPSValidation()
     }
@@ -72,14 +50,14 @@ class SplunkTest extends DataAnalyticsSteps{
         // Create a search job in Splunk with given parameters, return Search ID
         // 'earliest=' and 'span=' added to the original query to optimize the output
         def search_string = 'search=search (sourcetype="jfrog.rt.artifactory.request" OR log_source="jfrog.rt.artifactory.request")  return_status="5*" earliest=-10m | timechart span=300 count by return_status'
-        Response createSearch = splunk.createSearch(splunk_username, splunk_password, splunk_url, search_string)
+        Response createSearch = splunk.createSearch(splunk_username, splunk_password, splunkBaseURL, search_string)
         createSearch.then().statusCode(201)
-        def searchID = splunk.getSplunkSearchID(splunk_username, splunk_password, splunk_url, search_string)
+        def searchID = splunk.getSplunkSearchID(splunk_username, splunk_password, splunkBaseURL, search_string)
 
         Awaitility.await().atMost(120, TimeUnit.SECONDS).until(() ->
-                (splunk.getSearchResults(splunk_username, splunk_password, splunk_url, searchID)).then().extract().statusCode() == 200)
+                (splunk.getSearchResults(splunk_username, splunk_password, splunkBaseURL, searchID)).then().extract().statusCode() == 200)
         // Verify the number of errors in the report is => the number of API calls sent
-        Response response = splunk.getSearchResults(splunk_username, splunk_password, splunk_url, searchID)
+        Response response = splunk.getSearchResults(splunk_username, splunk_password, splunkBaseURL, searchID)
         JsonPath jsonPathEvaluator = response.jsonPath()
         List<Integer> errorCounts = jsonPathEvaluator.getList("results.500", Integer.class)
         Assert.assertTrue((errorCounts.sum()) >= calls)
@@ -107,13 +85,13 @@ class SplunkTest extends DataAnalyticsSteps{
         // Create a search job in Splunk with given parameters, return Search ID
         // 'earliest=' and 'span=' added to the original query to optimize the output
         def search_string = 'search=search (sourcetype="jfrog.rt.artifactory.request" OR log_source="jfrog.rt.artifactory.request") earliest=-10m | timechart span=300 count by return_status'
-        Response createSearch = splunk.createSearch(splunk_username, splunk_password, splunk_url, search_string)
+        Response createSearch = splunk.createSearch(splunk_username, splunk_password, splunkBaseURL, search_string)
         createSearch.then().statusCode(201)
-        def searchID = splunk.getSplunkSearchID(splunk_username, splunk_password, splunk_url, search_string)
+        def searchID = splunk.getSplunkSearchID(splunk_username, splunk_password, splunkBaseURL, search_string)
         Awaitility.await().atMost(120, TimeUnit.SECONDS).until(() ->
-                (splunk.getSearchResults(splunk_username, splunk_password, splunk_url, searchID)).then().extract().statusCode() == 200)
+                (splunk.getSearchResults(splunk_username, splunk_password, splunkBaseURL, searchID)).then().extract().statusCode() == 200)
         // Verify Splunk response
-        Response response = splunk.getSearchResults(splunk_username, splunk_password, splunk_url, searchID)
+        Response response = splunk.getSearchResults(splunk_username, splunk_password, splunkBaseURL, searchID)
         JsonPath jsonPathEvaluator = response.jsonPath()
 
         def responseCodes = ["200","201","204","403","404","500"]
@@ -136,14 +114,14 @@ class SplunkTest extends DataAnalyticsSteps{
         uploadIntoRepo(count, calls)
         // Create a search job in Splunk with given parameters, return Search ID
         def search_string = 'search=search (sourcetype="jfrog.rt.artifactory.request" OR log_source="jfrog.rt.artifactory.request") response_content_length!="-1" | eval gb=response_content_length/1073741824 | stats sum(gb) as upload_size by remote_address | top limit=10 remote_address,upload_size | fields - count,percent'
-        Response createSearch = splunk.createSearch(splunk_username, splunk_password, splunk_url, search_string)
+        Response createSearch = splunk.createSearch(splunk_username, splunk_password, splunkBaseURL, search_string)
         createSearch.then().statusCode(201)
-        def searchID = splunk.getSplunkSearchID(splunk_username, splunk_password, splunk_url, search_string)
+        def searchID = splunk.getSplunkSearchID(splunk_username, splunk_password, splunkBaseURL, search_string)
 
         Awaitility.await().atMost(120, TimeUnit.SECONDS).until(() ->
-                (splunk.getSearchResults(splunk_username, splunk_password, splunk_url, searchID)).then().extract().statusCode() == 200)
+                (splunk.getSearchResults(splunk_username, splunk_password, splunkBaseURL, searchID)).then().extract().statusCode() == 200)
         def IPv4andIPv6Regex = "((^\\s*((([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]))\\s*\$)|(^\\s*((([0-9A-Fa-f]{1,4}:){7}([0-9A-Fa-f]{1,4}|:))|(([0-9A-Fa-f]{1,4}:){6}(:[0-9A-Fa-f]{1,4}|((25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)(\\.(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)){3})|:))|(([0-9A-Fa-f]{1,4}:){5}(((:[0-9A-Fa-f]{1,4}){1,2})|:((25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)(\\.(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)){3})|:))|(([0-9A-Fa-f]{1,4}:){4}(((:[0-9A-Fa-f]{1,4}){1,3})|((:[0-9A-Fa-f]{1,4})?:((25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)(\\.(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){3}(((:[0-9A-Fa-f]{1,4}){1,4})|((:[0-9A-Fa-f]{1,4}){0,2}:((25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)(\\.(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){2}(((:[0-9A-Fa-f]{1,4}){1,5})|((:[0-9A-Fa-f]{1,4}){0,3}:((25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)(\\.(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){1}(((:[0-9A-Fa-f]{1,4}){1,6})|((:[0-9A-Fa-f]{1,4}){0,4}:((25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)(\\.(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)){3}))|:))|(:(((:[0-9A-Fa-f]{1,4}){1,7})|((:[0-9A-Fa-f]{1,4}){0,5}:((25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)(\\.(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)){3}))|:)))(%.+)?\\s*\$))"
-        Response response = splunk.getSearchResults(splunk_username, splunk_password, splunk_url, searchID)
+        Response response = splunk.getSearchResults(splunk_username, splunk_password, splunkBaseURL, searchID)
         response.then().
                 body("results.remote_address", Matchers.hasItems(Matchers.matchesRegex(IPv4andIPv6Regex))).
                 body("results.upload_size", Matchers.notNullValue())
@@ -158,14 +136,14 @@ class SplunkTest extends DataAnalyticsSteps{
         downloadArtifact(count, calls)
         // Create a search job in Splunk with given parameters, return Search ID
         def search_string = 'search=search (sourcetype="jfrog.rt.artifactory.request" OR log_source="jfrog.rt.artifactory.request") request_content_length!="-1" | eval gb=request_content_length/1073741824 | stats sum(gb) as download_size by remote_address | top limit=10 remote_address,download_size | fields - count,percent'
-        Response createSearch = splunk.createSearch(splunk_username, splunk_password, splunk_url, search_string)
+        Response createSearch = splunk.createSearch(splunk_username, splunk_password, splunkBaseURL, search_string)
         createSearch.then().statusCode(201)
-        def searchID = splunk.getSplunkSearchID(splunk_username, splunk_password, splunk_url, search_string)
+        def searchID = splunk.getSplunkSearchID(splunk_username, splunk_password, splunkBaseURL, search_string)
 
         Awaitility.await().atMost(120, TimeUnit.SECONDS).until(() ->
-                (splunk.getSearchResults(splunk_username, splunk_password, splunk_url, searchID)).then().extract().statusCode() == 200)
+                (splunk.getSearchResults(splunk_username, splunk_password, splunkBaseURL, searchID)).then().extract().statusCode() == 200)
         def IPv4andIPv6Regex = "((^\\s*((([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]))\\s*\$)|(^\\s*((([0-9A-Fa-f]{1,4}:){7}([0-9A-Fa-f]{1,4}|:))|(([0-9A-Fa-f]{1,4}:){6}(:[0-9A-Fa-f]{1,4}|((25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)(\\.(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)){3})|:))|(([0-9A-Fa-f]{1,4}:){5}(((:[0-9A-Fa-f]{1,4}){1,2})|:((25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)(\\.(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)){3})|:))|(([0-9A-Fa-f]{1,4}:){4}(((:[0-9A-Fa-f]{1,4}){1,3})|((:[0-9A-Fa-f]{1,4})?:((25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)(\\.(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){3}(((:[0-9A-Fa-f]{1,4}){1,4})|((:[0-9A-Fa-f]{1,4}){0,2}:((25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)(\\.(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){2}(((:[0-9A-Fa-f]{1,4}){1,5})|((:[0-9A-Fa-f]{1,4}){0,3}:((25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)(\\.(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){1}(((:[0-9A-Fa-f]{1,4}){1,6})|((:[0-9A-Fa-f]{1,4}){0,4}:((25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)(\\.(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)){3}))|:))|(:(((:[0-9A-Fa-f]{1,4}){1,7})|((:[0-9A-Fa-f]{1,4}){0,5}:((25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)(\\.(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)){3}))|:)))(%.+)?\\s*\$))"
-        Response response = splunk.getSearchResults(splunk_username, splunk_password, splunk_url, searchID)
+        Response response = splunk.getSearchResults(splunk_username, splunk_password, splunkBaseURL, searchID)
         response.then().
                 body("results.remote_address", Matchers.hasItems(Matchers.matchesRegex(IPv4andIPv6Regex))).
                 body("results.upload_size", Matchers.notNullValue())
@@ -185,11 +163,11 @@ class SplunkTest extends DataAnalyticsSteps{
         Thread.sleep(60000)
         // Create a search job in Splunk with given parameters, return Search ID
         def search_string = 'search=search (sourcetype="jfrog.rt.artifactory.request" OR log_source="jfrog.rt.artifactory.request") request_url="/api/docker/*" repo!="NULL" image!="NULL" repo!="" image!="" repo!="latest" earliest=-10m | timechart span=300 count by image'
-        def searchID = splunk.getSplunkSearchID(splunk_username, splunk_password, splunk_url, search_string)
+        def searchID = splunk.getSplunkSearchID(splunk_username, splunk_password, splunkBaseURL, search_string)
 
         Awaitility.await().atMost(120, TimeUnit.SECONDS).until(() ->
-                (splunk.getSearchResults(splunk_username, splunk_password, splunk_url, searchID)).then().extract().statusCode() == 200)
-        Response response = splunk.getSearchResults(splunk_username, splunk_password, splunk_url, searchID)
+                (splunk.getSearchResults(splunk_username, splunk_password, splunkBaseURL, searchID)).then().extract().statusCode() == 200)
+        Response response = splunk.getSearchResults(splunk_username, splunk_password, splunkBaseURL, searchID)
         JsonPath jsonPathEvaluator = response.jsonPath()
         for (int i = 1; i <= numberOfImages; i++) {
             List<Integer> result = jsonPathEvaluator.getList("results.${image}${i}", Integer.class)
@@ -211,11 +189,11 @@ class SplunkTest extends DataAnalyticsSteps{
         }
         Thread.sleep(30000)
         def search_string = 'search=search (sourcetype="jfrog.rt.artifactory.request" OR log_source="jfrog.rt.artifactory.request") request_url="/api/docker/*" repo!="NULL" image!="NULL" repo!="" image!="" repo!="latest" earliest=-10m | timechart span=300 count by repo'
-        def searchID = splunk.getSplunkSearchID(splunk_username, splunk_password, splunk_url, search_string)
+        def searchID = splunk.getSplunkSearchID(splunk_username, splunk_password, splunkBaseURL, search_string)
 
         Awaitility.await().atMost(120, TimeUnit.SECONDS).until(() ->
-                (splunk.getSearchResults(splunk_username, splunk_password, splunk_url, searchID)).then().extract().statusCode() == 200)
-        Response response = splunk.getSearchResults(splunk_username, splunk_password, splunk_url, searchID)
+                (splunk.getSearchResults(splunk_username, splunk_password, splunkBaseURL, searchID)).then().extract().statusCode() == 200)
+        Response response = splunk.getSearchResults(splunk_username, splunk_password, splunkBaseURL, searchID)
         JsonPath jsonPathEvaluator = response.jsonPath()
         def repoNames = ["docker-dev-local", "docker-local"]
         for (i in repoNames) {
@@ -233,11 +211,11 @@ class SplunkTest extends DataAnalyticsSteps{
     void dataTransferUploadeTest() throws Exception {
 
         def search_string = 'search=search (sourcetype="jfrog.rt.artifactory.request" OR log_source="jfrog.rt.artifactory.request") request_url="/api/docker/*" repo!="NULL" image!="NULL" repo!="" image!="" repo!="latest" | eval gb=response_content_length/1073741824 | stats sum(gb) as GB by repo | where GB > 0'
-        def searchID = splunk.getSplunkSearchID(splunk_username, splunk_password, splunk_url, search_string)
+        def searchID = splunk.getSplunkSearchID(splunk_username, splunk_password, splunkBaseURL, search_string)
 
         Awaitility.await().atMost(120, TimeUnit.SECONDS).until(() ->
-                (splunk.getSearchResults(splunk_username, splunk_password, splunk_url, searchID)).then().extract().statusCode() == 200)
-        Response response = splunk.getSearchResults(splunk_username, splunk_password, splunk_url, searchID)
+                (splunk.getSearchResults(splunk_username, splunk_password, splunkBaseURL, searchID)).then().extract().statusCode() == 200)
+        Response response = splunk.getSearchResults(splunk_username, splunk_password, splunkBaseURL, searchID)
         List<String> repoNames = ["docker-dev-local", "docker-local"]
         for(repo in repoNames) {
             response.then().
@@ -251,11 +229,11 @@ class SplunkTest extends DataAnalyticsSteps{
     void dataTransferDownloadsTest() throws Exception {
 
         def search_string = 'search=search (sourcetype="jfrog.rt.artifactory.request" OR log_source="jfrog.rt.artifactory.request") request_url="/api/docker/*" repo!="NULL" image!="NULL" repo!="" image!="" repo!="latest" | eval gb=request_content_length/1073741824 | stats sum(gb) by repo'
-        def searchID = splunk.getSplunkSearchID(splunk_username, splunk_password, splunk_url, search_string)
+        def searchID = splunk.getSplunkSearchID(splunk_username, splunk_password, splunkBaseURL, search_string)
 
         Awaitility.await().atMost(120, TimeUnit.SECONDS).until(() ->
-                (splunk.getSearchResults(splunk_username, splunk_password, splunk_url, searchID)).then().extract().statusCode() == 200)
-        Response response = splunk.getSearchResults(splunk_username, splunk_password, splunk_url, searchID)
+                (splunk.getSearchResults(splunk_username, splunk_password, splunkBaseURL, searchID)).then().extract().statusCode() == 200)
+        Response response = splunk.getSearchResults(splunk_username, splunk_password, splunkBaseURL, searchID)
         List<String> repoNames = ["docker-dev-local", "docker-local"]
         for(repo in repoNames) {
             response.then().
@@ -278,13 +256,13 @@ class SplunkTest extends DataAnalyticsSteps{
         http500(count, calls)
         // Create a search job in Splunk with given parameters, return Search ID
         def search_string = 'search=search log_source!="NULL" | timechart count by log_source'
-        Response createSearch = splunk.createSearch(splunk_username, splunk_password, splunk_url, search_string)
+        Response createSearch = splunk.createSearch(splunk_username, splunk_password, splunkBaseURL, search_string)
         createSearch.then().statusCode(201)
-        def searchID = splunk.getSplunkSearchID(splunk_username, splunk_password, splunk_url, search_string)
+        def searchID = splunk.getSplunkSearchID(splunk_username, splunk_password, splunkBaseURL, search_string)
 
         Awaitility.await().atMost(120, TimeUnit.SECONDS).until(() ->
-                (splunk.getSearchResults(splunk_username, splunk_password, splunk_url, searchID)).then().extract().statusCode() == 200)
-        Response response = splunk.getSearchResults(splunk_username, splunk_password, splunk_url, searchID)
+                (splunk.getSearchResults(splunk_username, splunk_password, splunkBaseURL, searchID)).then().extract().statusCode() == 200)
+        Response response = splunk.getSearchResults(splunk_username, splunk_password, splunkBaseURL, searchID)
 
         int size = response.then().extract().body().path("results.size()")
         String date = response.then().extract().body().path("results[${size-1}]._time")
@@ -314,12 +292,12 @@ class SplunkTest extends DataAnalyticsSteps{
         // 'earliest=' and 'span=' added to the original query to optimize the output
         def search_string = 'search=search (sourcetype="jfrog.rt.artifactory.service" OR log_source="jfrog.rt.artifactory.service") log_level="ERROR" | timechart count by log_level'
 
-        Response createSearch = splunk.createSearch(splunk_username, splunk_password, splunk_url, search_string)
+        Response createSearch = splunk.createSearch(splunk_username, splunk_password, splunkBaseURL, search_string)
         createSearch.then().statusCode(201)
-        def searchID = splunk.getSplunkSearchID(splunk_username, splunk_password, splunk_url, search_string)
+        def searchID = splunk.getSplunkSearchID(splunk_username, splunk_password, splunkBaseURL, search_string)
         Awaitility.await().atMost(120, TimeUnit.SECONDS).until(() ->
-                (splunk.getSearchResults(splunk_username, splunk_password, splunk_url, searchID)).then().extract().statusCode() == 200)
-        Response response = splunk.getSearchResults(splunk_username, splunk_password, splunk_url, searchID)
+                (splunk.getSearchResults(splunk_username, splunk_password, splunkBaseURL, searchID)).then().extract().statusCode() == 200)
+        Response response = splunk.getSearchResults(splunk_username, splunk_password, splunkBaseURL, searchID)
 
         JsonPath jsonPathEvaluator = response.jsonPath()
         List<Integer> errorCount = jsonPathEvaluator.getList("results.ERROR", Integer.class)
@@ -353,12 +331,12 @@ class SplunkTest extends DataAnalyticsSteps{
     void rtAuditByUsersTest() throws Exception {
         // Create a search job in Splunk with given parameters, return Search ID
         def search_string = 'search=search (sourcetype="jfrog.rt.access.audit" OR log_source="jfrog.rt.access.audit") user!="UNKNOWN" | stats count by user'
-        Response createSearch = splunk.createSearch(splunk_username, splunk_password, splunk_url, search_string)
+        Response createSearch = splunk.createSearch(splunk_username, splunk_password, splunkBaseURL, search_string)
         createSearch.then().statusCode(201)
-        def searchID = splunk.getSplunkSearchID(splunk_username, splunk_password, splunk_url, search_string)
+        def searchID = splunk.getSplunkSearchID(splunk_username, splunk_password, splunkBaseURL, search_string)
         Awaitility.await().atMost(120, TimeUnit.SECONDS).until(() ->
-                (splunk.getSearchResults(splunk_username, splunk_password, splunk_url, searchID)).then().extract().statusCode() == 200)
-        Response response = splunk.getSearchResults(splunk_username, splunk_password, splunk_url, searchID)
+                (splunk.getSearchResults(splunk_username, splunk_password, splunkBaseURL, searchID)).then().extract().statusCode() == 200)
+        Response response = splunk.getSearchResults(splunk_username, splunk_password, splunkBaseURL, searchID)
         response.then().assertThat().statusCode(200)
                 .body("results[0].user", equalTo(username))
         JsonPath jsonPathEvaluator = response.jsonPath()
@@ -372,12 +350,12 @@ class SplunkTest extends DataAnalyticsSteps{
     void rtDeniedActionByUsersTest() throws Exception {
         // Create a search job in Splunk with given parameters, return Search ID
         def search_string = 'search=search (sourcetype="jfrog.rt.artifactory.access" OR log_source="jfrog.rt.artifactory.access") action_response="DENIED*" username!="NA " | stats  count by username'
-        Response createSearch = splunk.createSearch(splunk_username, splunk_password, splunk_url, search_string)
+        Response createSearch = splunk.createSearch(splunk_username, splunk_password, splunkBaseURL, search_string)
         createSearch.then().statusCode(201)
-        def searchID = splunk.getSplunkSearchID(splunk_username, splunk_password, splunk_url, search_string)
+        def searchID = splunk.getSplunkSearchID(splunk_username, splunk_password, splunkBaseURL, search_string)
         Awaitility.await().atMost(120, TimeUnit.SECONDS).until(() ->
-                (splunk.getSearchResults(splunk_username, splunk_password, splunk_url, searchID)).then().extract().statusCode() == 200)
-        Response response = splunk.getSearchResults(splunk_username, splunk_password, splunk_url, searchID)
+                (splunk.getSearchResults(splunk_username, splunk_password, splunkBaseURL, searchID)).then().extract().statusCode() == 200)
+        Response response = splunk.getSearchResults(splunk_username, splunk_password, splunkBaseURL, searchID)
 
         JsonPath jsonPathEvaluator = response.jsonPath()
         List<Integer> errorCount = jsonPathEvaluator.getList("results.count", Integer.class)
@@ -395,12 +373,12 @@ class SplunkTest extends DataAnalyticsSteps{
     void rtDeniedActionByUserIPTest() throws Exception {
         // Create a search job in Splunk with given parameters, return Search ID
         def search_string = 'search=search (sourcetype="jfrog.rt.artifactory.access" OR log_source="jfrog.rt.artifactory.access")  action_response="DENIED LOGIN" username!="NA " | stats count by ip,username'
-        Response createSearch = splunk.createSearch(splunk_username, splunk_password, splunk_url, search_string)
+        Response createSearch = splunk.createSearch(splunk_username, splunk_password, splunkBaseURL, search_string)
         createSearch.then().statusCode(201)
-        def searchID = splunk.getSplunkSearchID(splunk_username, splunk_password, splunk_url, search_string)
+        def searchID = splunk.getSplunkSearchID(splunk_username, splunk_password, splunkBaseURL, search_string)
         Awaitility.await().atMost(120, TimeUnit.SECONDS).until(() ->
-                (splunk.getSearchResults(splunk_username, splunk_password, splunk_url, searchID)).then().extract().statusCode() == 200)
-        Response response = splunk.getSearchResults(splunk_username, splunk_password, splunk_url, searchID)
+                (splunk.getSearchResults(splunk_username, splunk_password, splunkBaseURL, searchID)).then().extract().statusCode() == 200)
+        Response response = splunk.getSearchResults(splunk_username, splunk_password, splunkBaseURL, searchID)
 
         def IPv4andIPv6Regex = "([0-9A-Fa-f]{1,4}:){7}[0-9A-Fa-f]{1,4}|(\\d{1,3}\\.){3}\\d{1,3}"
         JsonPath jsonPathEvaluator = response.jsonPath()
@@ -420,12 +398,12 @@ class SplunkTest extends DataAnalyticsSteps{
     void rtDeniedLoginsByIPTest() throws Exception {
         // Create a search job in Splunk with given parameters, return Search ID
         def search_string = 'search=search (sourcetype="jfrog.rt.artifactory.access" OR log_source="jfrog.rt.artifactory.access") action_response="DENIED LOGIN" | stats count by ip'
-        Response createSearch = splunk.createSearch(splunk_username, splunk_password, splunk_url, search_string)
+        Response createSearch = splunk.createSearch(splunk_username, splunk_password, splunkBaseURL, search_string)
         createSearch.then().statusCode(201)
-        def searchID = splunk.getSplunkSearchID(splunk_username, splunk_password, splunk_url, search_string)
+        def searchID = splunk.getSplunkSearchID(splunk_username, splunk_password, splunkBaseURL, search_string)
         Awaitility.await().atMost(120, TimeUnit.SECONDS).until(() ->
-                (splunk.getSearchResults(splunk_username, splunk_password, splunk_url, searchID)).then().extract().statusCode() == 200)
-        Response response = splunk.getSearchResults(splunk_username, splunk_password, splunk_url, searchID)
+                (splunk.getSearchResults(splunk_username, splunk_password, splunkBaseURL, searchID)).then().extract().statusCode() == 200)
+        Response response = splunk.getSearchResults(splunk_username, splunk_password, splunkBaseURL, searchID)
 
         def IPv4andIPv6Regex = "([0-9A-Fa-f]{1,4}:){7}[0-9A-Fa-f]{1,4}|(\\d{1,3}\\.){3}\\d{1,3}"
         JsonPath jsonPathEvaluator = response.jsonPath()
@@ -441,12 +419,12 @@ class SplunkTest extends DataAnalyticsSteps{
     void rtDeniedActionsByIPTest() throws Exception {
         // Create a search job in Splunk with given parameters, return Search ID
         def search_string = 'search=search (sourcetype="jfrog.rt.artifactory.access" OR log_source="jfrog.rt.artifactory.access") action_response="DENIED*" | stats count by ip'
-        Response createSearch = splunk.createSearch(splunk_username, splunk_password, splunk_url, search_string)
+        Response createSearch = splunk.createSearch(splunk_username, splunk_password, splunkBaseURL, search_string)
         createSearch.then().statusCode(201)
-        def searchID = splunk.getSplunkSearchID(splunk_username, splunk_password, splunk_url, search_string)
+        def searchID = splunk.getSplunkSearchID(splunk_username, splunk_password, splunkBaseURL, search_string)
         Awaitility.await().atMost(120, TimeUnit.SECONDS).until(() ->
-                (splunk.getSearchResults(splunk_username, splunk_password, splunk_url, searchID)).then().extract().statusCode() == 200)
-        Response response = splunk.getSearchResults(splunk_username, splunk_password, splunk_url, searchID)
+                (splunk.getSearchResults(splunk_username, splunk_password, splunkBaseURL, searchID)).then().extract().statusCode() == 200)
+        Response response = splunk.getSearchResults(splunk_username, splunk_password, splunkBaseURL, searchID)
 
         def IPv4andIPv6Regex = "([0-9A-Fa-f]{1,4}:){7}[0-9A-Fa-f]{1,4}|(\\d{1,3}\\.){3}\\d{1,3}"
         JsonPath jsonPathEvaluator = response.jsonPath()
@@ -462,12 +440,12 @@ class SplunkTest extends DataAnalyticsSteps{
     void rtAcceptedDeploysByUsernameTest() throws Exception {
         // Create a search job in Splunk with given parameters, return Search ID
         def search_string = 'search=search (sourcetype="jfrog.rt.artifactory.access" OR log_source="jfrog.rt.artifactory.access") action_response="ACCEPTED DEPLOY" | stats count by username'
-        Response createSearch = splunk.createSearch(splunk_username, splunk_password, splunk_url, search_string)
+        Response createSearch = splunk.createSearch(splunk_username, splunk_password, splunkBaseURL, search_string)
         createSearch.then().statusCode(201)
-        def searchID = splunk.getSplunkSearchID(splunk_username, splunk_password, splunk_url, search_string)
+        def searchID = splunk.getSplunkSearchID(splunk_username, splunk_password, splunkBaseURL, search_string)
         Awaitility.await().atMost(120, TimeUnit.SECONDS).until(() ->
-                (splunk.getSearchResults(splunk_username, splunk_password, splunk_url, searchID)).then().extract().statusCode() == 200)
-        Response response = splunk.getSearchResults(splunk_username, splunk_password, splunk_url, searchID)
+                (splunk.getSearchResults(splunk_username, splunk_password, splunkBaseURL, searchID)).then().extract().statusCode() == 200)
+        Response response = splunk.getSearchResults(splunk_username, splunk_password, splunkBaseURL, searchID)
 
         JsonPath jsonPathEvaluator = response.jsonPath()
         List<Integer> errorCount = jsonPathEvaluator.getList("results.count", Integer.class)
@@ -490,13 +468,13 @@ class SplunkTest extends DataAnalyticsSteps{
         xray201(count, calls)
         // Create a search job in Splunk with given parameters, return Search ID
         def search_string = 'search=search sourcetype!="NULL" | timechart count by log_source'
-        Response createSearch = splunk.createSearch(splunk_username, splunk_password, splunk_url, search_string)
+        Response createSearch = splunk.createSearch(splunk_username, splunk_password, splunkBaseURL, search_string)
         createSearch.then().statusCode(201)
-        def searchID = splunk.getSplunkSearchID(splunk_username, splunk_password, splunk_url, search_string)
+        def searchID = splunk.getSplunkSearchID(splunk_username, splunk_password, splunkBaseURL, search_string)
 
         Awaitility.await().atMost(120, TimeUnit.SECONDS).until(() ->
-                (splunk.getSearchResults(splunk_username, splunk_password, splunk_url, searchID)).then().extract().statusCode() == 200)
-        Response response = splunk.getSearchResults(splunk_username, splunk_password, splunk_url, searchID)
+                (splunk.getSearchResults(splunk_username, splunk_password, splunkBaseURL, searchID)).then().extract().statusCode() == 200)
+        Response response = splunk.getSearchResults(splunk_username, splunk_password, splunkBaseURL, searchID)
         response.then().
                 body("results.jfrog.rt.access.audit", Matchers.notNullValue()).
                 body("results.jfrog.rt.access.request", Matchers.notNullValue()).
@@ -528,13 +506,13 @@ class SplunkTest extends DataAnalyticsSteps{
         // Create a search job in Splunk with given parameters, return Search ID
         // 'earliest=' and 'span=' added to the original query to optimize the output
         def search_string = 'search=search (sourcetype="jfrog.xray.*.service" OR log_source="jfrog.xray.*.service") log_level="ERROR" earliest=-10m | timechart span=300 count by log_level'
-        Response createSearch = splunk.createSearch(splunk_username, splunk_password, splunk_url, search_string)
+        Response createSearch = splunk.createSearch(splunk_username, splunk_password, splunkBaseURL, search_string)
         createSearch.then().statusCode(201)
-        def searchID = splunk.getSplunkSearchID(splunk_username, splunk_password, splunk_url, search_string)
+        def searchID = splunk.getSplunkSearchID(splunk_username, splunk_password, splunkBaseURL, search_string)
 
         Awaitility.await().atMost(120, TimeUnit.SECONDS).until(() ->
-                (splunk.getSearchResults(splunk_username, splunk_password, splunk_url, searchID)).then().extract().statusCode() == 200)
-        Response response = splunk.getSearchResults(splunk_username, splunk_password, splunk_url, searchID)
+                (splunk.getSearchResults(splunk_username, splunk_password, splunkBaseURL, searchID)).then().extract().statusCode() == 200)
+        Response response = splunk.getSearchResults(splunk_username, splunk_password, splunkBaseURL, searchID)
         JsonPath jsonPathEvaluator = response.jsonPath()
         List<Integer> errorCount = jsonPathEvaluator.getList("results.ERROR", Integer.class)
         Assert.assertTrue((errorCount.sum()) >= calls)
@@ -556,13 +534,13 @@ class SplunkTest extends DataAnalyticsSteps{
         // Create a search job in Splunk with given parameters, return Search ID
         // 'earliest=' and 'span=' added to the original query to optimize the output
         def search_string = 'search=search (sourcetype="jfrog.xray.xray.request" OR log_source="jfrog.xray.xray.request") return_status="5*" earliest=-10m | timechart span=300 count by return_status'
-        Response createSearch = splunk.createSearch(splunk_username, splunk_password, splunk_url, search_string)
+        Response createSearch = splunk.createSearch(splunk_username, splunk_password, splunkBaseURL, search_string)
         createSearch.then().statusCode(201)
-        def searchID = splunk.getSplunkSearchID(splunk_username, splunk_password, splunk_url, search_string)
+        def searchID = splunk.getSplunkSearchID(splunk_username, splunk_password, splunkBaseURL, search_string)
 
         Awaitility.await().atMost(120, TimeUnit.SECONDS).until(() ->
-                (splunk.getSearchResults(splunk_username, splunk_password, splunk_url, searchID)).then().extract().statusCode() == 200)
-        Response response = splunk.getSearchResults(splunk_username, splunk_password, splunk_url, searchID)
+                (splunk.getSearchResults(splunk_username, splunk_password, splunkBaseURL, searchID)).then().extract().statusCode() == 200)
+        Response response = splunk.getSearchResults(splunk_username, splunk_password, splunkBaseURL, searchID)
         int size = response.then().extract().body().path("results.size()")
         String date = response.then().extract().body().path("results[${size-1}]._time")
         Assert.assertTrue((date.substring(0,10)) == utils.getUTCdate())
@@ -587,13 +565,13 @@ class SplunkTest extends DataAnalyticsSteps{
         // Create a search job in Splunk with given parameters, return Search ID
         // 'earliest=' and 'span=' added to the original query to optimize the output
         def search_string = 'search=search (sourcetype="jfrog.xray.xray.request" OR log_source="jfrog.xray.xray.request") earliest=-10m | timechart span=300 count by return_status'
-        Response createSearch = splunk.createSearch(splunk_username, splunk_password, splunk_url, search_string)
+        Response createSearch = splunk.createSearch(splunk_username, splunk_password, splunkBaseURL, search_string)
         createSearch.then().statusCode(201)
-        def searchID = splunk.getSplunkSearchID(splunk_username, splunk_password, splunk_url, search_string)
+        def searchID = splunk.getSplunkSearchID(splunk_username, splunk_password, splunkBaseURL, search_string)
 
         Awaitility.await().atMost(120, TimeUnit.SECONDS).until(() ->
-                (splunk.getSearchResults(splunk_username, splunk_password, splunk_url, searchID)).then().extract().statusCode() == 200)
-        Response response = splunk.getSearchResults(splunk_username, splunk_password, splunk_url, searchID)
+                (splunk.getSearchResults(splunk_username, splunk_password, splunkBaseURL, searchID)).then().extract().statusCode() == 200)
+        Response response = splunk.getSearchResults(splunk_username, splunk_password, splunkBaseURL, searchID)
         int size = response.then().extract().body().path("results.size()")
         String date = response.then().extract().body().path("results[${size-1}]._time")
         Assert.assertTrue((date.substring(0,10)) == utils.getUTCdate())

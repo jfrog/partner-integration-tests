@@ -22,6 +22,8 @@ Run Gradle wrapper to invoke Gradle task:
 ```
 ./gradlew <task_name>
 ```
+Test project can use environment variables to substitute values in testenv.yaml file. Check ```src/test/groovy/tests/TestSetup.groovy``` to see which variables are available. 
+
 
 ### Run as a docker container
 Build the image or pull the image ``partnership-partner-integration-tests.jfrog.io/jfrog-tester``

@@ -9,7 +9,6 @@ import org.testng.Assert
 import org.testng.Reporter
 import org.testng.annotations.BeforeSuite
 import org.testng.annotations.Test
-import org.yaml.snakeyaml.Yaml
 import steps.DataAnalyticsSteps
 import steps.DatadogSteps
 import steps.RepositorySteps
@@ -26,40 +25,16 @@ import java.util.concurrent.TimeUnit
 
 
 class DatadogTest extends DataAnalyticsSteps {
-
-    Yaml yaml = new Yaml()
-    def configFile = new File("./src/test/resources/testenv.yaml")
-    def config = yaml.load(configFile.text)
     def artifact = new File("./src/test/resources/repositories/artifact.zip")
     def repoSteps = new RepositorySteps()
     def securitySteps = new SecuritytSteps()
     def datadog = new DatadogSteps()
     def utils = new Utils()
-    def dockerURL
-    def distribution
-    def artifactoryURL
-    def artifactoryBaseURL
-    def username
-    def password
-    def datadog_api_key
-    def datadog_application_key
-    def datadog_url
     def testUsers = ["testuser1", "testuser2", "testuser3", "testuser4"]
 
     @BeforeSuite(groups=["testing", "datadog", "datadog_xray"])
     def setUp() {
-        dockerURL = config.artifactory.url
-        protocol = config.artifactory.protocol
-        artifactoryURL = config.artifactory.external_ip
-        artifactoryBaseURL = "${protocol}${config.artifactory.external_ip}/artifactory"
-        distribution = config.artifactory.distribution
-        username = config.artifactory.rt_username
-        password = config.artifactory.rt_password
-        datadog_api_key = config.datadog.api_key
-        datadog_application_key = config.datadog.application_key
-        datadog_url = "https://api.datadoghq.com"
         RestAssured.useRelaxedHTTPSValidation()
-
     }
 
     @Test(priority=0, groups=["datadog", "datadog_xray"], testName = "Data generation for Datadog testing")
@@ -109,7 +84,6 @@ class DatadogTest extends DataAnalyticsSteps {
     }
 
 
-
     @Test(priority=1, groups=["datadog", "datadog_xray"], testName = "Denied Actions by Username")
     void deniedActionsByUsernameTest(){
         int count = 1
@@ -118,8 +92,8 @@ class DatadogTest extends DataAnalyticsSteps {
         def from_timestamp = (now.getTime()-1800000).toString().substring(0,10)
         def to_timestamp = (now.getTime()).toString().substring(0,10)
         def query = "sum:denied_actions_by_username{!username:na} by {username}.as_count()"
-        Response response = datadog.datadogQueryTimeSeriesPoints(datadog_url,
-                datadog_api_key, datadog_application_key, from_timestamp, to_timestamp, query)
+        Response response = datadog.datadogQueryTimeSeriesPoints(datadogBaseURL,
+                datadogApiKey, datadogApplicationKey, from_timestamp, to_timestamp, query)
         response.then().assertThat().log().ifValidationFails().statusCode(200).
                 body("series.pointlist", Matchers.notNullValue()).
                 body("query", Matchers.equalTo(query))
@@ -147,8 +121,8 @@ class DatadogTest extends DataAnalyticsSteps {
         def from_timestamp = (now.getTime()-1800000).toString().substring(0,10)
         def to_timestamp = (now.getTime()).toString().substring(0,10)
         def query = "sum:denied_actions_based_on_ip{*} by {ip}.as_count()"
-        Response response = datadog.datadogQueryTimeSeriesPoints(datadog_url,
-                datadog_api_key, datadog_application_key, from_timestamp, to_timestamp, query)
+        Response response = datadog.datadogQueryTimeSeriesPoints(datadogBaseURL,
+                datadogApiKey, datadogApplicationKey, from_timestamp, to_timestamp, query)
         def IPv4andIPv6Regex = "(^ip:)(([a-za-z:])([0-9A-Fa-f]{1,4}:){7}[0-9A-Fa-f]{1,4}|(\\d{1,3}\\.){3}\\d{1,3})"
         response.then().assertThat().log().ifValidationFails().statusCode(200).
                 body("series.scope", Matchers.hasItems(Matchers.matchesRegex(IPv4andIPv6Regex))).
@@ -164,8 +138,8 @@ class DatadogTest extends DataAnalyticsSteps {
         def from_timestamp = (now.getTime()-1800000).toString().substring(0,10)
         def to_timestamp = (now.getTime()).toString().substring(0,10)
         def query = "count:accepted_deploys_based_on_username{*} by {username}.as_count()"
-        Response response = datadog.datadogQueryTimeSeriesPoints(datadog_url,
-                datadog_api_key, datadog_application_key, from_timestamp, to_timestamp, query)
+        Response response = datadog.datadogQueryTimeSeriesPoints(datadogBaseURL,
+                datadogApiKey, datadogApplicationKey, from_timestamp, to_timestamp, query)
         response.then().assertThat().log().ifValidationFails().statusCode(200)
 
         JsonPath jsonPathEvaluator = response.jsonPath()
@@ -189,8 +163,8 @@ class DatadogTest extends DataAnalyticsSteps {
         def from_timestamp = (now.getTime()-1800000).toString().substring(0,10)
         def to_timestamp = (now.getTime()).toString().substring(0,10)
         def query = "count:denied_logins_based_on_ip{*} by {ip}.as_count()"
-        Response response = datadog.datadogQueryTimeSeriesPoints(datadog_url,
-                datadog_api_key, datadog_application_key, from_timestamp, to_timestamp, query)
+        Response response = datadog.datadogQueryTimeSeriesPoints(datadogBaseURL,
+                datadogApiKey, datadogApplicationKey, from_timestamp, to_timestamp, query)
         def IPv4andIPv6Regex = "(^ip:)(([a-za-z:])([0-9A-Fa-f]{1,4}:){7}[0-9A-Fa-f]{1,4}|(\\d{1,3}\\.){3}\\d{1,3})"
         response.then().assertThat().log().ifValidationFails().statusCode(200).
                 body("series.scope", Matchers.hasItems(Matchers.matchesRegex(IPv4andIPv6Regex))).
@@ -210,8 +184,8 @@ class DatadogTest extends DataAnalyticsSteps {
         def from_timestamp = (now.getTime()-1800000).toString().substring(0,10)
         def to_timestamp = (now.getTime()).toString().substring(0,10)
         def query = "count:denied_logins_by_username{!username:na} by {username}.as_count()"
-        Response response = datadog.datadogQueryTimeSeriesPoints(datadog_url,
-                datadog_api_key, datadog_application_key, from_timestamp, to_timestamp, query)
+        Response response = datadog.datadogQueryTimeSeriesPoints(datadogBaseURL,
+                datadogApiKey, datadogApplicationKey, from_timestamp, to_timestamp, query)
         response.then().assertThat().log().ifValidationFails().statusCode(200).
                 body("series.pointlist", Matchers.notNullValue()).
                 body("query", Matchers.equalTo(query))
@@ -240,8 +214,8 @@ class DatadogTest extends DataAnalyticsSteps {
         def from_timestamp = (now.getTime()-1800000).toString().substring(0,10)
         def to_timestamp = (now.getTime()).toString().substring(0,10)
         def query = "avg:artifactory_http_500_errors{*}.as_count()"
-        Response response = datadog.datadogQueryTimeSeriesPoints(datadog_url,
-                datadog_api_key, datadog_application_key, from_timestamp, to_timestamp, query)
+        Response response = datadog.datadogQueryTimeSeriesPoints(datadogBaseURL,
+                datadogApiKey, datadogApplicationKey, from_timestamp, to_timestamp, query)
         Awaitility.await().atMost(120, TimeUnit.SECONDS).until(() ->
                 (response.then().assertThat().extract().path("series.pointlist.size()") > 0))
         def numbers = getDatadogFloatList(response)
@@ -262,8 +236,8 @@ class DatadogTest extends DataAnalyticsSteps {
         def from_timestamp = (now.getTime()-1800000).toString().substring(0,10)
         def to_timestamp = (now.getTime()).toString().substring(0,10)
         def query = "count:accessed_images{*} by {image}.as_count()"
-        Response response = datadog.datadogQueryTimeSeriesPoints(datadog_url,
-                datadog_api_key, datadog_application_key, from_timestamp, to_timestamp, query)
+        Response response = datadog.datadogQueryTimeSeriesPoints(datadogBaseURL,
+                datadogApiKey, datadogApplicationKey, from_timestamp, to_timestamp, query)
         response.then().assertThat().
                 body("series.pointlist.size()", Matchers.greaterThan(0)).
                 body("query", Matchers.equalTo(query)).
@@ -296,8 +270,8 @@ class DatadogTest extends DataAnalyticsSteps {
         def from_timestamp = (now.getTime()-1800000).toString().substring(0,10)
         def to_timestamp = (now.getTime()).toString().substring(0,10)
         def query = "count:accessed_repos{*} by {repo}.as_count()"
-        Response response = datadog.datadogQueryTimeSeriesPoints(datadog_url,
-                datadog_api_key, datadog_application_key, from_timestamp, to_timestamp, query)
+        Response response = datadog.datadogQueryTimeSeriesPoints(datadogBaseURL,
+                datadogApiKey, datadogApplicationKey, from_timestamp, to_timestamp, query)
         response.then().assertThat().log().ifValidationFails().statusCode(200).
                 body("series.pointlist.size()", Matchers.greaterThanOrEqualTo(1)).
                 body("query", Matchers.equalTo(query))
@@ -324,8 +298,8 @@ class DatadogTest extends DataAnalyticsSteps {
         def from_timestamp = (now.getTime()-1800000).toString().substring(0,10)
         def to_timestamp = (now.getTime()).toString().substring(0,10)
         def query = "sum:upload_data_transfer_by_repo{*} by {repo}.as_count()"
-        Response response = datadog.datadogQueryTimeSeriesPoints(datadog_url,
-                datadog_api_key, datadog_application_key, from_timestamp, to_timestamp, query)
+        Response response = datadog.datadogQueryTimeSeriesPoints(datadogBaseURL,
+                datadogApiKey, datadogApplicationKey, from_timestamp, to_timestamp, query)
         response.then().assertThat().log().ifValidationFails().statusCode(200).
                 body("series.pointlist.size()", Matchers.greaterThanOrEqualTo(1)).
                 body("query", Matchers.equalTo(query))
@@ -345,8 +319,8 @@ class DatadogTest extends DataAnalyticsSteps {
         def from_timestamp = (now.getTime()-1800000).toString().substring(0,10)
         def to_timestamp = (now.getTime()).toString().substring(0,10)
         def query = "sum:download_data_transfer_by_repo{*} by {repo}.as_count()"
-        Response response = datadog.datadogQueryTimeSeriesPoints(datadog_url,
-                datadog_api_key, datadog_application_key, from_timestamp, to_timestamp, query)
+        Response response = datadog.datadogQueryTimeSeriesPoints(datadogBaseURL,
+                datadogApiKey, datadogApplicationKey, from_timestamp, to_timestamp, query)
         response.then().assertThat().log().ifValidationFails().statusCode(200).
                 body("series.pointlist.size()", Matchers.greaterThanOrEqualTo(1)).
                 body("query", Matchers.equalTo(query))
@@ -369,8 +343,8 @@ class DatadogTest extends DataAnalyticsSteps {
         def from_timestamp = (now.getTime()-1800000).toString().substring(0,10)
         def to_timestamp = (now.getTime()).toString().substring(0,10)
         def query = "sum:active_downloading_ips{*} by {remote_address}.as_count()"
-        Response response = datadog.datadogQueryTimeSeriesPoints(datadog_url,
-                datadog_api_key, datadog_application_key, from_timestamp, to_timestamp, query)
+        Response response = datadog.datadogQueryTimeSeriesPoints(datadogBaseURL,
+                datadogApiKey, datadogApplicationKey, from_timestamp, to_timestamp, query)
         def IPv4andIPv6Regex = "(^remote_address:)(([a-za-z:])([0-9A-Fa-f]{1,4}:){7}[0-9A-Fa-f]{1,4}|(\\d{1,3}\\.){3}\\d{1,3})"
         response.then().assertThat().log().ifValidationFails().statusCode(200).
                 body("series.scope", Matchers.hasItems(Matchers.matchesRegex(IPv4andIPv6Regex))).
@@ -386,8 +360,8 @@ class DatadogTest extends DataAnalyticsSteps {
         def from_timestamp = (now.getTime()-1800000).toString().substring(0,10)
         def to_timestamp = (now.getTime()).toString().substring(0,10)
         def query = "sum:active_uploading_ips{*} by {remote_address}.as_count()"
-        Response response = datadog.datadogQueryTimeSeriesPoints(datadog_url,
-                datadog_api_key, datadog_application_key, from_timestamp, to_timestamp, query)
+        Response response = datadog.datadogQueryTimeSeriesPoints(datadogBaseURL,
+                datadogApiKey, datadogApplicationKey, from_timestamp, to_timestamp, query)
         def IPv4andIPv6Regex = "(^remote_address:)(([a-za-z:])([0-9A-Fa-f]{1,4}:){7}[0-9A-Fa-f]{1,4}|(\\d{1,3}\\.){3}\\d{1,3})"
         response.then().assertThat().log().ifValidationFails().statusCode(200).
                 body("series.scope", Matchers.hasItems(Matchers.matchesRegex(IPv4andIPv6Regex))).
@@ -403,8 +377,8 @@ class DatadogTest extends DataAnalyticsSteps {
         def from_timestamp = (now.getTime()-1800000).toString().substring(0,10)
         def to_timestamp = (now.getTime()).toString().substring(0,10)
         def query = "avg:artifactory_errors{*}.as_count()"
-        Response response = datadog.datadogQueryTimeSeriesPoints(datadog_url,
-                datadog_api_key, datadog_application_key, from_timestamp, to_timestamp, query)
+        Response response = datadog.datadogQueryTimeSeriesPoints(datadogBaseURL,
+                datadogApiKey, datadogApplicationKey, from_timestamp, to_timestamp, query)
         response.then().assertThat().log().ifValidationFails().statusCode(200).
                 body("series.pointlist.size()", Matchers.greaterThanOrEqualTo(1)).
                 body("query", Matchers.equalTo(query))
