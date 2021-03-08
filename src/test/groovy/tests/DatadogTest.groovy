@@ -51,7 +51,7 @@ class DatadogTest extends DataAnalyticsSteps {
         for(user in testUsers) {
             createUsers(user, emailRt, passwordRt)
             addPermissions(user)
-            deployArtifactAs(user, passwordRt)
+            deployArtifactAs(user, passwordRt, 201)
         }
         // Denied Logins by IP
         createUsers401(count, calls)

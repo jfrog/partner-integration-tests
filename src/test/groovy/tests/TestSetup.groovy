@@ -18,6 +18,7 @@ class TestSetup {
     protected final splunkPort = System.env.SPLUNK_PORT ?: config.splunk.port
     protected final splunk_username = System.env.SPLUNK_USERNAME ?: config.splunk.username
     protected final splunk_password = System.env.SPLUNK_PASSWORD ?: config.splunk.password
+    // Port must be added for Splunk
     protected final splunkBaseURL = "${splunkProtocol}${splunkUri}" + ":" + "${splunkPort}"
 
     protected final prometheusProtocol = System.env.PROMETHEUS_PROTOCOL ?: config.prometheus.protocol
