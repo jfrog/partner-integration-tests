@@ -35,7 +35,7 @@ class DataAnalyticsSteps extends TestSetup{
 
     def http200(count, calls){
         while (count <= calls) {
-            Response http200 = getRepos
+            Response http200 = getRepos()
             http200.then().statusCode(200)
             count++
         }
