@@ -360,7 +360,7 @@ class SplunkTest extends DataAnalyticsSteps{
         JsonPath jsonPathEvaluator = response.jsonPath()
         List<Integer> errorCount = jsonPathEvaluator.getList("results.count", Integer.class)
         Assert.assertTrue((errorCount.sum()) >= 1)
-        List<String> usernames = ["testUser0 ", "testUser1 ", "testUser2 "]
+        List<String> usernames = ["testuser0 ", "testuser1 ", "testuser2 "]
         for(user in usernames) {
             response.then().
                     body("results.username", hasItems(user))
@@ -386,7 +386,7 @@ class SplunkTest extends DataAnalyticsSteps{
         Assert.assertTrue((errorCount.sum()) >= 1)
 //        response.then().
 //            body("results.ip", hasItems(Matchers.matchesRegex(IPv4andIPv6Regex)))
-        List<String> usernames = ["testUser0 ", "testUser1 ", "testUser2 "]
+        List<String> usernames = ["testuser0 ", "testuser1 ", "testuser2 "]
         for(user in usernames) {
             response.then().
                     body("results.username", hasItems(user))
@@ -556,12 +556,12 @@ class SplunkTest extends DataAnalyticsSteps{
     void httpResponsesTest() throws Exception {
         int count = 1
         int calls = 5
-        // Generate xray calls
+        // Generate xray calls (on a clean instance initial run of xray409() will return 201, because record doesn't exist)
         xray200(count, calls)
         xray201(count, calls)
-        xray409(count, calls)
+        xray409(count, calls+1)
         xray500(count, calls)
-        Thread.sleep(30000)
+        Thread.sleep(35000)
         // Create a search job in Splunk with given parameters, return Search ID
         // 'earliest=' and 'span=' added to the original query to optimize the output
         def search_string = 'search=search (sourcetype="jfrog.xray.xray.request" OR log_source="jfrog.xray.xray.request") earliest=-10m | timechart span=300 count by return_status'
