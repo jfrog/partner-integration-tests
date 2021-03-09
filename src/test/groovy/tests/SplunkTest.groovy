@@ -313,7 +313,7 @@ class SplunkTest extends DataAnalyticsSteps{
     @Test(priority=11, groups=["splunk"], dataProvider = "users", testName = "Artifcatory, Audit. Generate data with data provider")
     void generateDataTest(usernameRt, emailRt, passwordRt, incorrectPasswordRt) {
         // Deploy as non-existent users, 401
-        deployArtifactAs(usernameRt, passwordRt, 401)
+        deployArtifactAs(usernameRt, passwordRt, 403)
         createUsers(usernameRt, emailRt, passwordRt)
         // Deploy with incorrect password, 401 expected
         deployArtifactAs(usernameRt, incorrectPasswordRt, 401)
@@ -450,7 +450,7 @@ class SplunkTest extends DataAnalyticsSteps{
         JsonPath jsonPathEvaluator = response.jsonPath()
         List<Integer> errorCount = jsonPathEvaluator.getList("results.count", Integer.class)
         Assert.assertTrue((errorCount.sum()) >= 1)
-        List<String> usernames = ["testUser0 ", "testUser1 ", "testUser2 "]
+        List<String> usernames = ["testuser0 ", "testuser1 ", "testuser2 "]
         for(user in usernames) {
             response.then().
                     body("results.username", hasItems(user))

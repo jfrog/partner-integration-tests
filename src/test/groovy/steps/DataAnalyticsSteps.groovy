@@ -219,14 +219,15 @@ class DataAnalyticsSteps extends TestSetup{
             repoSteps.createRepositories(artifactoryURL, body, username, password)
             Response response = repoSteps.deployArtifactAs(artifactoryURL, usernameRt, passwordRt, repoName, directoryName, artifact, filename, sha256, sha1, md5)
             response.then().log().status()
+            //response.then().log().ifValidationFails().statusCode(expectedResponseCode)
     }
 
     def addPermissions(usernameRt){
         def permissionName = "testPermission"
-        def repository = "ANY"
+        def repository = "generic-dev-local"
         def user1 = usernameRt
-        def action1 = "read"
-        def action2 = "write"
+        def action1 = "write"
+        def action2 = "read"
         def action3 = "manage"
         Response response = securitySteps.createSinglePermission(artifactoryURL, username, password, permissionName, repository, user1,
                 action1, action2, action3)
@@ -274,11 +275,11 @@ class DataAnalyticsSteps extends TestSetup{
     @DataProvider(name="users")
     public Object[][] users() {
         return new Object[][]{
-                ["testUser0", "email0@jfrog.com", "Password123", "incorrectPassword"],
-                ["testUser1", "email1@jfrog.com", "Password123", "incorrectPassword"],
-                ["testUser2", "email2@jfrog.com", "Password123", "incorrectPassword"],
-                ["testUser3", "email3@jfrog.com", "Password123", "incorrectPassword"],
-                ["testUser4", "email4@jfrog.com", "Password123", "incorrectPassword"]
+                ["testuser0", "email0@jfrog.com", "Password1", "incorrectPassword"],
+                ["testuser1", "email1@jfrog.com", "Password1", "incorrectPassword"],
+                ["testuser2", "email2@jfrog.com", "Password1", "incorrectPassword"],
+                ["testuser3", "email3@jfrog.com", "Password1", "incorrectPassword"],
+                ["testuser4", "email4@jfrog.com", "Password1", "incorrectPassword"]
 
         }
     }
