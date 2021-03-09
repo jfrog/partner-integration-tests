@@ -19,9 +19,9 @@ class SecuritytSteps {
                         "  \"password\": \"${passwordRt}\",\n" +
                         "  \"name\": \"${usernameRt}\"\n" +
                         "}")
-                .when().log().all()
+                .when()
                 .put("${artifactoryURL}/api/security/users/${usernameRt}")
-                .then().log().everything()
+                .then()
                 .extract().response()
     }
 
