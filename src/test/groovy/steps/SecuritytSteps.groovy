@@ -16,7 +16,8 @@ class SecuritytSteps {
                 .header("content-Type", "application/json")
                 .body("{\n" +
                         "  \"email\" : \"${emailRt}\",\n" +
-                        "  \"password\": \"${passwordRt}\"\n" +
+                        "  \"password\": \"${passwordRt}\",\n" +
+                        "  \"name\": \"${usernameRt}\"\n" +
                         "}")
                 .when()
                 .put("${artifactoryURL}/api/security/users/${usernameRt}")
@@ -151,21 +152,21 @@ class SecuritytSteps {
                 .header("Cache-Control", "no-cache")
                 .header("content-Type", "application/json")
                 .body("{\n" +
-                        "  \"name\": \"${permissionName}\",\n" +
-                        "  \"repo\": {\n" +
-                        "    \"repositories\": [\n" +
-                        "      \"${repository}\"\n" +
-                        "    ],\n" +
-                        "    \"actions\": {\n" +
-                        "      \"users\": {\n" +
-                        "        \"${user1}\": [\n" +
-                        "          \"${action1}\",\n" +
-                        "          \"${action2}\",\n" +
-                        "          \"${action3}\"\n" +
-                        "        ]\n" +
-                        "      }\n" +
+                        "    \"name\": \"${permissionName}\",\n" +
+                        "    \"repo\": {\n" +
+                        "        \"repositories\": [\n" +
+                        "            \"${repository}\"\n" +
+                        "        ],\n" +
+                        "        \"actions\": {\n" +
+                        "            \"users\": {\n" +
+                        "                \"${user1}\": [\n" +
+                        "                    \"${action1}\",\n" +
+                        "                    \"${action2}\",\n" +
+                        "                    \"${action3}\"\n" +
+                        "                ]\n" +
+                        "            }\n" +
+                        "        }\n" +
                         "    }\n" +
-                        "  }\n" +
                         "}")
                 .when()
                 .put("${artifactoryURL}/api/v2/security/permissions/${permissionName}")

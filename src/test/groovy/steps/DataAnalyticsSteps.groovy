@@ -35,7 +35,7 @@ class DataAnalyticsSteps extends TestSetup{
 
     def http200(count, calls){
         while (count <= calls) {
-            Response http200 = getRepos
+            Response http200 = getRepos()
             http200.then().statusCode(200)
             count++
         }
@@ -45,9 +45,9 @@ class DataAnalyticsSteps extends TestSetup{
         while (count <= calls) {
             def usernameRt = "user${count}"
             def emailRt = "email+${count}@server.com"
-            def passwordRt = "password"
+            def passwordRt = "Password1"
             Response http201 = createUser(usernameRt, emailRt, passwordRt)
-            http201.then().statusCode(201)
+            http201.then().log().ifValidationFails().statusCode(201)
             count++
         }
     }
@@ -73,7 +73,7 @@ class DataAnalyticsSteps extends TestSetup{
     def http401(count, calls){
         def repoName = "generic-dev-local"
         (count..calls) {
-            repoSteps.deleteRepository(artifactoryURL, repoName, "user1", "password").then().log().ifValidationFails().statusCode(403)
+            repoSteps.deleteRepository(artifactoryURL, repoName, "user1", "Password1").then().log().ifValidationFails().statusCode(403)
         }
     }
 
@@ -82,7 +82,7 @@ class DataAnalyticsSteps extends TestSetup{
     def http403(count, calls){
         while (count <= calls) {
             def repoName = "generic-dev-local"
-            Response http403 = repoSteps.deleteRepository(artifactoryURL, repoName, "user1", "password")
+            Response http403 = repoSteps.deleteRepository(artifactoryURL, repoName, "user1", "Password1")
             http403.then().log().ifValidationFails().statusCode(403)
             count++
         }
@@ -92,8 +92,8 @@ class DataAnalyticsSteps extends TestSetup{
     def createUsers401(count, calls){
         def usernameRt = "dummyuser"
         def emailRt = "email"
-        def passwordRt = "password"
-        def password = "fakepassword"
+        def passwordRt = "Password1"
+        def password = "Fakepassword1"
         while (count <= calls) {
             def username = "fakeuser-${count}"
             Response response = createUser(usernameRt, emailRt, passwordRt)
@@ -208,7 +208,7 @@ class DataAnalyticsSteps extends TestSetup{
         response.then().statusCode(200)
     }
 
-    def deployArtifactAs(usernameRt, passwordRt){
+    def deployArtifactAs(usernameRt, passwordRt, expectedResponseCode){
             def repoName = "generic-dev-local"
             def directoryName = "test-directory"
             def filename = "artifact-test.zip"
@@ -218,15 +218,16 @@ class DataAnalyticsSteps extends TestSetup{
             def body = repoListHA
             repoSteps.createRepositories(artifactoryURL, body, username, password)
             Response response = repoSteps.deployArtifactAs(artifactoryURL, usernameRt, passwordRt, repoName, directoryName, artifact, filename, sha256, sha1, md5)
-            response.then().log().ifValidationFails().statusCode(201)
+            response.then().log().status()
+            //response.then().log().ifValidationFails().statusCode(expectedResponseCode)
     }
 
     def addPermissions(usernameRt){
         def permissionName = "testPermission"
-        def repository = "ANY"
+        def repository = "generic-dev-local"
         def user1 = usernameRt
-        def action1 = "read"
-        def action2 = "write"
+        def action1 = "write"
+        def action2 = "read"
         def action3 = "manage"
         Response response = securitySteps.createSinglePermission(artifactoryURL, username, password, permissionName, repository, user1,
                 action1, action2, action3)
@@ -274,11 +275,11 @@ class DataAnalyticsSteps extends TestSetup{
     @DataProvider(name="users")
     public Object[][] users() {
         return new Object[][]{
-                ["testUser0", "email0@jfrog.com", "password123", "incorrectPassword"],
-                ["testUser1", "email1@jfrog.com", "password123", "incorrectPassword"],
-                ["testUser2", "email2@jfrog.com", "password123", "incorrectPassword"],
-                ["testUser3", "email3@jfrog.com", "password123", "incorrectPassword"],
-                ["testUser4", "email4@jfrog.com", "password123", "incorrectPassword"]
+                ["testuser0", "email0@jfrog.com", "Password1", "incorrectPassword"],
+                ["testuser1", "email1@jfrog.com", "Password1", "incorrectPassword"],
+                ["testuser2", "email2@jfrog.com", "Password1", "incorrectPassword"],
+                ["testuser3", "email3@jfrog.com", "Password1", "incorrectPassword"],
+                ["testuser4", "email4@jfrog.com", "Password1", "incorrectPassword"]
 
         }
     }

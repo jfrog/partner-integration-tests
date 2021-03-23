@@ -158,18 +158,18 @@ class PrometheusTest extends DataAnalyticsSteps{
     @Test(priority=5, groups=["prometheus"], dataProvider = "users", testName = "Artifcatory, Audit. Generate data with data provider")
     void generateDataTest(usernameRt, emailRt, passwordRt, incorrectPasswordRt) {
         // Deploy as non-existent users, 401
-        deployArtifactAs(usernameRt, passwordRt)
+        deployArtifactAs(usernameRt, passwordRt, 401)
         createUsers(usernameRt, emailRt, passwordRt)
-        // Deploy with incorrect password
-        deployArtifactAs(usernameRt, incorrectPasswordRt)
+        // Deploy with incorrect password, 401 expected
+        deployArtifactAs(usernameRt, incorrectPasswordRt, 401)
         // Users have no access to target repo, 403 expected
-        deployArtifactAs(usernameRt, passwordRt)
+        deployArtifactAs(usernameRt, passwordRt, 403)
         // Give access
         addPermissions(usernameRt)
-        // Deploy again
-        deployArtifactAs(usernameRt, passwordRt)
+        // Deploy again, 201 expected
+        deployArtifactAs(usernameRt, passwordRt, 201)
         // Delete users
-        securitySteps.deleteUser(usernameRt)
+        securitySteps.deleteUser(artifactoryURL, usernameRt)
     }
 
     @Test(priority=6, groups=["prometheus"], testName = "Artifcatory, Audit. Audit Actions by Users")

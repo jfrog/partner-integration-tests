@@ -154,7 +154,7 @@ class SplunkTest extends DataAnalyticsSteps{
     @Test(priority=5, groups=["splunk"], testName = "Artifactory. Accessed Docker Images")
     void accessedImagesTest() throws Exception {
         def image = "busybox"
-        def numberOfImages = 5
+        def numberOfImages = 3
         def repos = ["docker-dev-local", "docker-local"]
         // Docker login, pull busybox, generate and push multiple dummy images
         utils.dockerLogin(username, password, dockerURL)
@@ -313,18 +313,18 @@ class SplunkTest extends DataAnalyticsSteps{
     @Test(priority=11, groups=["splunk"], dataProvider = "users", testName = "Artifcatory, Audit. Generate data with data provider")
     void generateDataTest(usernameRt, emailRt, passwordRt, incorrectPasswordRt) {
         // Deploy as non-existent users, 401
-        deployArtifactAs(usernameRt, passwordRt)
+        deployArtifactAs(usernameRt, passwordRt, 403)
         createUsers(usernameRt, emailRt, passwordRt)
-        // Deploy with incorrect password
-        deployArtifactAs(usernameRt, incorrectPasswordRt)
+        // Deploy with incorrect password, 401 expected
+        deployArtifactAs(usernameRt, incorrectPasswordRt, 401)
         // Users have no access to target repo, 403 expected
-        deployArtifactAs(usernameRt, passwordRt)
+        deployArtifactAs(usernameRt, passwordRt, 403)
         // Give access
         addPermissions(usernameRt)
-        // Deploy again
-        deployArtifactAs(usernameRt, passwordRt)
+        // Deploy again, 201 expected
+        deployArtifactAs(usernameRt, passwordRt, 201)
         // Delete users
-        securitySteps.deleteUser(usernameRt)
+        securitySteps.deleteUser(artifactoryURL, usernameRt)
     }
 
     @Test(priority=12, groups=["splunk"], testName = "Artifcatory, Audit. Audit Actions by Users")
@@ -360,7 +360,7 @@ class SplunkTest extends DataAnalyticsSteps{
         JsonPath jsonPathEvaluator = response.jsonPath()
         List<Integer> errorCount = jsonPathEvaluator.getList("results.count", Integer.class)
         Assert.assertTrue((errorCount.sum()) >= 1)
-        List<String> usernames = ["testUser0 ", "testUser1 ", "testUser2 "]
+        List<String> usernames = ["testuser0 ", "testuser1 ", "testuser2 "]
         for(user in usernames) {
             response.then().
                     body("results.username", hasItems(user))
@@ -386,7 +386,7 @@ class SplunkTest extends DataAnalyticsSteps{
         Assert.assertTrue((errorCount.sum()) >= 1)
 //        response.then().
 //            body("results.ip", hasItems(Matchers.matchesRegex(IPv4andIPv6Regex)))
-        List<String> usernames = ["splunktest0 ", "splunktest1 ", "splunktest2 "]
+        List<String> usernames = ["testuser0 ", "testuser1 ", "testuser2 "]
         for(user in usernames) {
             response.then().
                     body("results.username", hasItems(user))
@@ -450,7 +450,7 @@ class SplunkTest extends DataAnalyticsSteps{
         JsonPath jsonPathEvaluator = response.jsonPath()
         List<Integer> errorCount = jsonPathEvaluator.getList("results.count", Integer.class)
         Assert.assertTrue((errorCount.sum()) >= 1)
-        List<String> usernames = ["splunktest0 ", "splunktest1 ", "splunktest2 "]
+        List<String> usernames = ["testuser0 ", "testuser1 ", "testuser2 "]
         for(user in usernames) {
             response.then().
                     body("results.username", hasItems(user))
@@ -556,12 +556,12 @@ class SplunkTest extends DataAnalyticsSteps{
     void httpResponsesTest() throws Exception {
         int count = 1
         int calls = 5
-        // Generate xray calls
+        // Generate xray calls (on a clean instance initial run of xray409() will return 201, because record doesn't exist)
         xray200(count, calls)
         xray201(count, calls)
-        xray409(count, calls)
+        xray409(count, calls+1)
         xray500(count, calls)
-        Thread.sleep(30000)
+        Thread.sleep(35000)
         // Create a search job in Splunk with given parameters, return Search ID
         // 'earliest=' and 'span=' added to the original query to optimize the output
         def search_string = 'search=search (sourcetype="jfrog.xray.xray.request" OR log_source="jfrog.xray.xray.request") earliest=-10m | timechart span=300 count by return_status'
