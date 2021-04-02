@@ -11,10 +11,11 @@ IP_ADDR=$3
 LICENSE1=$4
 
 echo "### Add licenses ###"
-curl -X POST -u ${RT_USERNAME}:${RT_PASSWORD} \
+curl -s -S -X POST -u ${RT_USERNAME}:${RT_PASSWORD} \
   http://${IP_ADDR}/artifactory/api/system/licenses \
   -H 'Cache-Control: no-cache' \
   -H 'Content-Type: application/json' \
   -d '{
           "licenseKey": "'${LICENSE1}'"
-       }'
+       }' \
+  --fail > /dev/null
