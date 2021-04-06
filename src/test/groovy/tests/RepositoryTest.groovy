@@ -198,8 +198,8 @@ class RepositoryTest extends RepositorySteps{
         LocalDate startDate = LocalDate.now().minusDays(5)
         LocalDate endDate = LocalDate.now()
         Response response = createSupportBundle(artifactoryURL, name, startDate, endDate)
-        response.then().assertThat().statusCode(200)
-                .body("artifactory.bundle_url", containsString(artifactoryURL))
+        response.then().assertThat().log().ifValidationFails().statusCode(200)
+                .body("artifactory.bundle_url", containsString(artifactoryBaseURL))
 
         Reporter.log("- Create support bundle. Successfully created", true)
     }
@@ -210,7 +210,7 @@ class RepositoryTest extends RepositorySteps{
         LocalDate startDate = LocalDate.now().minusDays(5)
         LocalDate endDate = LocalDate.now()
         Response response = createSupportBundle(artifactoryURL, name, startDate, endDate)
-        response.then().assertThat().statusCode(400)
+        response.then().assertThat().log().ifValidationFails().statusCode(400)
                 .body("errors[0].message",
                         containsStringIgnoringCase("This REST API is available only in Artifactory Pro"))
 

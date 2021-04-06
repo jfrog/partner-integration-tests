@@ -5,7 +5,7 @@ resources:
       gitProvider: danielMiakotkinGitHub
       path: jfrog/partner-integration-tests
       branches:
-        include: pipelines
+        include: master
       buildOn:
         commit: true
   - name: partnerIntegrationTest
