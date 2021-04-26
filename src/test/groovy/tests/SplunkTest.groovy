@@ -564,7 +564,6 @@ class SplunkTest extends DataAnalyticsSteps{
         def searchID = splunk.getSplunkSearchID(splunk_username, splunk_password, splunkBaseURL, search_string)
         splunk.waitForTheResponse(splunk_username, splunk_password, splunkBaseURL, searchID, 120)
         Response response = splunk.getSearchResults(splunk_username, splunk_password, splunkBaseURL, searchID)
-        response.then().log().everything()
         JsonPath jsonPathEvaluator = response.jsonPath()
         List<Integer> errorCount = jsonPathEvaluator.getList("results.count", Integer.class)
         Assert.assertTrue((errorCount.sum()) >= 1)
