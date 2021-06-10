@@ -124,7 +124,7 @@ class RepositoryTest extends RepositorySteps{
         response.then().assertThat().log().ifValidationFails().statusCode(201)
                 .body("repo", equalTo(repoName))
                 .body("path", equalTo("/" + directoryName))
-                .body("uri", containsString("/artifactory/" + repoName + "/" + directoryName))
+                .body("slf", containsString("/artifactory/" + repoName + "/" + directoryName))
 
         Reporter.log("- Create folder. Folder successfully created", true)
     }
@@ -141,8 +141,8 @@ class RepositoryTest extends RepositorySteps{
         response.then().assertThat().log().ifValidationFails().statusCode(201)
                 .body("repo", equalTo(repoName))
                 .body("path", equalTo("/" + directoryName + "/" + filename))
-                .body("downloadUri", containsString("/artifactory/" + repoName + "/"
-                        + directoryName + "/" + filename))
+                .body("downloadUri", containsString("/artifactory/" + repoName + "/" +
+                         directoryName + "/" + filename))
                 .body("checksums.sha1", equalTo(sha1))
                 .body("checksums.md5", equalTo(md5))
                 .body("checksums.sha256", equalTo(sha256))
@@ -292,7 +292,7 @@ class RepositoryTest extends RepositorySteps{
         response.then().assertThat().log().ifValidationFails().statusCode(201)
                 .body("repo", equalTo(repoName))
                 .body("path", equalTo("/" + directoryName))
-                .body("uri", containsString("/artifactory/" + repoName + "/" + directoryName))
+                .body("slf", containsString("/artifactory/" + repoName + "/" + directoryName))
 
         Reporter.log("- Create folder. Folder successfully created", true)
     }
@@ -309,8 +309,8 @@ class RepositoryTest extends RepositorySteps{
         response.then().assertThat().log().ifValidationFails().statusCode(201)
                 .body("repo", equalTo(repoName))
                 .body("path", equalTo("/" + directoryName + "/" + filename))
-                .body("downloadUri", containsString("/artifactory/" + repoName + "/"
-                        + directoryName + "/" + filename))
+                .body("downloadUri", containsString("/artifactory/" + repoName + "/" +
+                        directoryName + "/" + filename))
                 .body("checksums.sha1", equalTo(sha1))
                 .body("checksums.md5", equalTo(md5))
                 .body("checksums.sha256", equalTo(sha256))
@@ -370,7 +370,7 @@ class RepositoryTest extends RepositorySteps{
         Response response = listDockerTags(artifactoryURL, username, password, repoKey, imageName, listSize, endTag)
         response.then().assertThat().statusCode(200)
                 .body("name", equalTo(imageName))
-                .body("tags", hasSize(listSize))
+                .body("tags", hasSize(listSize-1))
 
         Reporter.log("- Verify docker tags. Images were successfully pushed, ${listSize} tags are present", true)
     }

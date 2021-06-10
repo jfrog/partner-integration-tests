@@ -64,6 +64,17 @@ task unified_test(type: Test) {
     }
 }
 
+task xray_test(type: Test) {
+    useTestNG() {
+        useDefaultListeners = true
+        suites 'src/test/groovy/testng.xml'
+        includeGroups('xray_generate_data')
+    }
+    testLogging {
+        showStandardStreams = true
+    }
+}
+
 task artifactory_ha_docker_test(type: Test) {
     useTestNG() {
         useDefaultListeners = true

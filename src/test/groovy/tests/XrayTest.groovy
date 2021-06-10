@@ -6,48 +6,26 @@ import org.awaitility.Awaitility
 import org.testng.Assert
 import org.testng.Reporter
 import org.testng.annotations.BeforeSuite
-import org.testng.annotations.BeforeTest
 import org.testng.annotations.Test
-import org.yaml.snakeyaml.Yaml
 import steps.XraySteps
 
 import java.time.LocalDate
 import java.util.concurrent.TimeUnit
 
-import static org.hamcrest.Matchers.containsStringIgnoringCase
-import static org.hamcrest.Matchers.emptyArray
 import static org.hamcrest.Matchers.equalTo
 import static org.hamcrest.Matchers.hasItem
-import static org.hamcrest.Matchers.is
-import static org.hamcrest.Matchers.isA
-import static org.hamcrest.Matchers.not
 import static org.hamcrest.Matchers.notNullValue
-import static org.hamcrest.Matchers.nullValue
 
 
 class XrayTest extends XraySteps{
-
-    Yaml yaml = new Yaml()
-    def configFile = new File("./src/test/resources/testenv.yaml")
-    def config = yaml.load(configFile.text)
-    def distribution
-    def username
-    def password
-    def protocol
     def xrayBaseUrl
-    def artifactoryBaseURL
     def randomIndex
     def policyName
     def watchName
 
     @BeforeSuite(groups=["xray"])
     def setUp() {
-        distribution = config.artifactory.distribution
-        username = config.artifactory.rt_username
-        password = config.artifactory.rt_password
-        protocol = config.artifactory.protocol
-        xrayBaseUrl = "${protocol}${config.artifactory.external_ip}/xray/api"
-        artifactoryBaseURL = "${protocol}${config.artifactory.external_ip}/artifactory"
+        xrayBaseUrl = "${artifactoryBaseURL}/xray/api"
         RestAssured.authentication = RestAssured.basic(username, password)
         RestAssured.useRelaxedHTTPSValidation()
         Random random = new Random()
@@ -94,6 +72,7 @@ class XrayTest extends XraySteps{
         Reporter.log("- Update issue event. Issue event with ID ${issueID+randomIndex} updated and verified successfully", true)
     }
 
+    // Policies, watch
     @Test(priority=3, groups=["xray"], testName = "Create policy")
     void createPolicyTest(){
         Response create = createPolicy(policyName, username, password, xrayBaseUrl)
@@ -199,7 +178,7 @@ class XrayTest extends XraySteps{
 
     @Test(priority=11, groups=["xray"], testName = "Force reindex repo")
     void forceReindexTest(){
-
+        // TODO: make test independent of Artifactory tests
         Response response = forceReindex(username, password, xrayBaseUrl )
         response.then().statusCode(200)
 
@@ -280,7 +259,7 @@ class XrayTest extends XraySteps{
         Reporter.log("- Update repo indexing configuration. Successfully updated", true)
     }
 
-
+    //TODO: make test independent of Artifactory tests
     @Test(priority=18, groups=["xray"], testName = "Get artifact summary")
     void artifactSummaryTest(){
         def artifactPath = "default/generic-dev-local/test-directory/artifact.zip"
