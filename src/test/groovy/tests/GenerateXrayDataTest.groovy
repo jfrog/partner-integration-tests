@@ -56,7 +56,7 @@ class GenerateXrayDataTest extends XraySteps{
         Reporter.log("- Create repositories for HA distribution. Successfully created", true)
     }
 
-    @Test(priority=3, groups=["xray_generate_data"], testName = "Create policy and watch. Assign policy to watch")
+    @Test(priority=2, groups=["xray_generate_data"], testName = "Create policy and watch. Assign policy to watch")
     void createPolicyTest(){
 
 
@@ -82,7 +82,7 @@ class GenerateXrayDataTest extends XraySteps{
     }
 
 
-    @Test(priority=2, groups=["xray_generate_data"], dataProvider = "artifacts", testName = "Deploy files to generic repo")
+    @Test(priority=3, groups=["xray_generate_data"], dataProvider = "artifacts", testName = "Deploy files to generic repo")
     void deployArtifactToGenericTest(artifactName){
         def repoName = "generic-dev-local"
         def directoryName = "test-directory"
@@ -108,7 +108,7 @@ class GenerateXrayDataTest extends XraySteps{
     }
 
 
-    @Test(priority = 1, groups = ["xray_generate_data"], dataProvider = "multipleIssueEvents", testName = "Create Issue Events")
+    @Test(priority = 4, groups = ["xray_generate_data"], dataProvider = "multipleIssueEvents", testName = "Create Issue Events")
     void createIssueEventsTest(issueID, cve, summary, description, issueType) {
         def sha256 = utils.generateSHA256(artifact)
         def artifactNames = ["artifact_0.zip", "artifact_1.zip", "artifact_2.zip", "artifact_3.zip", "artifact_4.zip",
@@ -133,7 +133,7 @@ class GenerateXrayDataTest extends XraySteps{
     }
 
 
-    @Test(priority=5, groups=["xray_generate_data"], testName = "Download artifacts with vulnerabilities")
+    @Test(priority=6, groups=["xray_generate_data"], testName = "Download artifacts with vulnerabilities")
     void downloadArtifactsTest(){
         def repoName = "generic-dev-local"
         def directoryName = "test-directory"
@@ -148,7 +148,7 @@ class GenerateXrayDataTest extends XraySteps{
     }
 
 
-    @Test(priority=18, groups=["xray_generate_data"], testName = "Get artifact summary")
+    @Test(priority=7, groups=["xray_generate_data"], testName = "Get artifact summary")
     void artifactSummaryTest(){
         def artifactPath = "default/docker-local/nginx/1.0.0/"
         Response post = artifactSummary(username, password, artifactPath, xrayBaseUrl)
@@ -159,7 +159,7 @@ class GenerateXrayDataTest extends XraySteps{
     }
 
 
-    @Test(priority=18, groups=["xray_generate_data"], testName = "Get violations")
+    @Test(priority=8, groups=["xray_generate_data"], testName = "Get violations")
     void getViolationsTest(){
         Response post = xrayGetViolations("security", "all-repositories_404550_security",
                 username, password, xrayBaseUrl)
