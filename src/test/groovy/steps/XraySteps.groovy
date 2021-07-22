@@ -1,5 +1,6 @@
 package steps
 
+import io.restassured.http.ContentType
 import io.restassured.response.Response
 import org.testng.annotations.DataProvider
 import tests.TestSetup
@@ -11,6 +12,57 @@ import static org.hamcrest.Matchers.containsString
 import static org.hamcrest.Matchers.equalTo
 
 class XraySteps extends TestSetup{
+
+    def getUILoginHeaders(url, username, password) {
+        def login = given()
+                .auth()
+                .basic("${username}", "${password}")
+                .headers("X-Requested-With", "XMLHttpRequest") // Needed to use UI api
+                .contentType(ContentType.JSON)
+                .body("{\n" +
+                        "   \"user\":\"${username}\",\n" +
+                        "   \"password\":\"${password}\",\n" +
+                        "   \"type\":\"login\"\n" +
+                        "}")
+                .when()
+                .post(url + "/ui/api/v1/ui/auth/login")
+                .then()
+                .assertThat()
+                .statusCode(200).and()
+                .cookie("ACCESSTOKEN").and()
+                .cookie("REFRESHTOKEN")
+                .extract().response()
+
+        return given()
+                .cookies(login.getDetailedCookies())
+                .headers("X-Requested-With", "XMLHttpRequest") // Needed to use UI api
+    }
+
+    def assign0BSDToArtifact(loginHeaders, url, artifactName, sha256) {
+        return loginHeaders
+                .contentType(ContentType.JSON)
+                .body("{\n" +
+                        "   \"component\": {\n" +
+                        "       \"component_name\":\"${artifactName}\",\n" +
+                        "       \"package_id\":\"generic://sha256:${sha256}/${artifactName}\",\n" +
+                        "       \"package_type\":\"generic\",\n" +
+                        "       \"version\":\"\"\n" +
+                        "   },\n" +
+                        "   \"license\":{\n" +
+                        "       \"name\":\"0BSD\",\n" +
+                        "       \"full_name\":\"BSD Zero Clause License\",\n" +
+                        "       \"references\":[\n" +
+                        "           \"https://spdx.org/licenses/0BSD\",\n" +
+                        "           \"https://spdx.org/licenses/0BSD.html\",\n" +
+                        "           \"http://landley.net/toybox/license.html\"\n" +
+                        "       ]\n" +
+                        "   }\n" +
+                        "}")
+                .when()
+                .post(url+"/ui/api/v1/xray/ui/licenses")
+                .then()
+                .extract().response()
+    }
 
     def createIssueEvent(issueID, cve, summary, description, username, password, url) {
         return given()

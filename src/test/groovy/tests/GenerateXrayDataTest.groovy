@@ -22,6 +22,7 @@ class GenerateXrayDataTest extends XraySteps{
     def securityPolicyName
     def licensePolicyName
     def watchName
+    def UILoginHeaders
     def repoListHA = new File("./src/test/resources/repositories/CreateDefault.yaml")
     def artifact = new File("./src/test/resources/repositories/artifact.zip")
     def artifactoryURL = "${artifactoryBaseURL}/artifactory"
@@ -36,6 +37,7 @@ class GenerateXrayDataTest extends XraySteps{
         securityPolicyName = "security_policy_${randomIndex}"
         licensePolicyName = "license_policy_${randomIndex}"
         watchName = "all-repositories_${randomIndex}"
+        UILoginHeaders = getUILoginHeaders("${artifactoryBaseURL}", username, password)
     }
 
     // Push several docker images/artifacts? What if there is no SSL, then no docker
@@ -130,6 +132,15 @@ class GenerateXrayDataTest extends XraySteps{
             Assert.assertTrue(description == descriptionVerification)
             }
         Reporter.log("- Create issue event. Issue event with ID ${issueID + randomIndex} created and verified successfully", true)
+    }
+
+
+    @Test(priority=5, groups=["xray_generate_data"], dataProvider = "artifacts", testName = "Assign license to artifacts")
+    void assignLicense(artifactName) {
+        def sha256 = utils.generateSHA256(artifact)
+        Response response = assign0BSDToArtifact(UILoginHeaders, artifactoryBaseURL, artifactName, sha256)
+        response.then().log().ifValidationFails().statusCode(200)
+        Reporter.log("- Assigned ${artifactName} 0BSD license", true)
     }
 
 
