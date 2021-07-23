@@ -11,6 +11,9 @@ import steps.RepositorySteps
 import steps.XraySteps
 import utils.Utils
 
+import java.util.zip.ZipEntry
+import java.util.zip.ZipOutputStream
+
 import static org.hamcrest.Matchers.containsString
 import static org.hamcrest.Matchers.equalTo
 
@@ -24,7 +27,7 @@ class GenerateXrayDataTest extends XraySteps{
     def watchName
     def UILoginHeaders
     def repoListHA = new File("./src/test/resources/repositories/CreateDefault.yaml")
-    def artifact = new File("./src/test/resources/repositories/artifact.zip")
+    def artifact
     def artifactoryURL = "${artifactoryBaseURL}/artifactory"
     def utils = new Utils()
 
@@ -38,6 +41,15 @@ class GenerateXrayDataTest extends XraySteps{
         licensePolicyName = "license_policy_${randomIndex}"
         watchName = "all-repositories_${randomIndex}"
         UILoginHeaders = getUILoginHeaders("${artifactoryBaseURL}", username, password)
+
+        // Create zip file
+        ZipOutputStream zipFile = new ZipOutputStream(new FileOutputStream("./src/test/resources/repositories/artifact.zip"))
+        zipFile.putNextEntry(new ZipEntry("content.txt"))
+        byte[] buffer = random.nextLong().toString().getBytes() // random string
+        zipFile.write(buffer, 0, buffer.length)
+        zipFile.closeEntry()
+        zipFile.close()
+        artifact = new File("./src/test/resources/repositories/artifact.zip")
     }
 
     // Push several docker images/artifacts? What if there is no SSL, then no docker
