@@ -441,7 +441,7 @@ class SplunkTest extends DataAnalyticsSteps{
         http404(count, calls)
         http500(count, calls)
         // Create a search job in Splunk with given parameters, return Search ID
-        def search_string = 'search=search log_source!="NULL" | timechart count by log_source'
+        def search_string = 'search=search log_source!="NULL" log_source!="jfrog.xray.*" | timechart count by log_source'
         Response createSearch = splunk.createSearch(splunk_username, splunk_password, splunkBaseURL, search_string)
         createSearch.then().statusCode(201)
         def searchID = splunk.getSplunkSearchID(splunk_username, splunk_password, splunkBaseURL, search_string)
@@ -655,7 +655,7 @@ class SplunkTest extends DataAnalyticsSteps{
         xray200(count, calls)
         xray201(count, calls)
         // Create a search job in Splunk with given parameters, return Search ID
-        def search_string = 'search=search sourcetype!="NULL" | timechart count by log_source'
+        def search_string = 'search=search sourcetype!="NULL" log_source="jfrog.xray.*" | timechart count by log_source'
         Response createSearch = splunk.createSearch(splunk_username, splunk_password, splunkBaseURL, search_string)
         createSearch.then().statusCode(201)
         def searchID = splunk.getSplunkSearchID(splunk_username, splunk_password, splunkBaseURL, search_string)
