@@ -121,13 +121,13 @@ class GenerateXrayDataTest extends XraySteps{
 
 
     @Test(priority = 4, groups = ["xray_generate_data"], dataProvider = "multipleIssueEvents", testName = "Create Issue Events")
-    void createSecurityIssueEventsTest(issueID, cve, summary, description, issueType) {
+    void createSecurityIssueEventsTest(issueID, cve, summary, description, issueType, severity) {
         def sha256 = utils.generateSHA256(artifact)
         def artifactNames = ["artifact_0.zip", "artifact_1.zip", "artifact_2.zip", "artifact_3.zip", "artifact_4.zip",
                              "artifact_5.zip", "artifact_6.zip", "artifact_7.zip", "artifact_8.zip", "artifact_9.zip"]
         for (artifactName in artifactNames) {
             Response create = xraySteps.createSecurityIssueEvents(issueID + artifactName + randomIndex, cve, summary,
-                    description, issueType, sha256, artifactName, username, password, xrayBaseUrl)
+                    description, issueType, severity, sha256, artifactName, username, password, xrayBaseUrl)
             create.then().log().everything() //.statusCode(201)
 
             Response get = xraySteps.getIssueEvent(issueID + artifactName + randomIndex, username, password, xrayBaseUrl)
