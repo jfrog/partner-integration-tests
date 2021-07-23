@@ -56,10 +56,8 @@ class GenerateXrayDataTest extends XraySteps{
         Reporter.log("- Create repositories for HA distribution. Successfully created", true)
     }
 
-    @Test(priority=3, groups=["xray_generate_data"], testName = "Create policy and watch. Assign policy to watch")
+    @Test(priority=4, groups=["xray_generate_data"], testName = "Create policy and watch. Assign policy to watch")
     void createPolicyTest(){
-
-
         Response createSecurityPolicy = xraySteps.createPolicy(securityPolicyName, username, password, xrayBaseUrl)
         createSecurityPolicy.then().statusCode(201)
         Response getPolicy = xraySteps.getPolicy(securityPolicyName, username, password, xrayBaseUrl)
@@ -109,12 +107,12 @@ class GenerateXrayDataTest extends XraySteps{
 
 
     @Test(priority = 1, groups = ["xray_generate_data"], dataProvider = "multipleIssueEvents", testName = "Create Issue Events")
-    void createIssueEventsTest(issueID, cve, summary, description, issueType) {
+    void createSecurityIssueEventsTest(issueID, cve, summary, description, issueType) {
         def sha256 = utils.generateSHA256(artifact)
         def artifactNames = ["artifact_0.zip", "artifact_1.zip", "artifact_2.zip", "artifact_3.zip", "artifact_4.zip",
                              "artifact_5.zip", "artifact_6.zip", "artifact_7.zip", "artifact_8.zip", "artifact_9.zip"]
         for (artifactName in artifactNames) {
-            Response create = xraySteps.createIssueEvents(issueID + artifactName + randomIndex, cve, summary,
+            Response create = xraySteps.createSecurityIssueEvents(issueID + artifactName + randomIndex, cve, summary,
                     description, issueType, sha256, artifactName, username, password, xrayBaseUrl)
             create.then().log().everything() //.statusCode(201)
 
@@ -130,6 +128,19 @@ class GenerateXrayDataTest extends XraySteps{
             Assert.assertTrue(description == descriptionVerification)
             }
         Reporter.log("- Create issue event. Issue event with ID ${issueID + randomIndex} created and verified successfully", true)
+    }
+
+    @Test(priority = 3, groups = ["xray_generate_data"], dataProvider = "multipleLicenseIssueEvents")
+    void createLicenseEventsTest(license_name, liense_full_name, license_references) {
+        def sha256 = utils.generateSHA256(artifact)
+        def UILoginHeaders = xraySteps.getUILoginHeaders("${artifactoryBaseURL}", username, password)
+        def artifactNames = ["artifact_0.zip", "artifact_1.zip", "artifact_2.zip", "artifact_3.zip", "artifact_4.zip",
+                             "artifact_5.zip", "artifact_6.zip", "artifact_7.zip", "artifact_8.zip", "artifact_9.zip"]
+        for (artifactName in artifactNames) {
+            Response response = xraySteps.assignLicenseToArtifact(UILoginHeaders, artifactoryBaseURL, artifactName, sha256, license_name, liense_full_name, license_references)
+            response.then().log().ifValidationFails().statusCode(200)
+            Reporter.log("- Assigned ${artifactName} ${license_name}", true)
+        }
     }
 
 
@@ -161,7 +172,7 @@ class GenerateXrayDataTest extends XraySteps{
 
     @Test(priority=18, groups=["xray_generate_data"], testName = "Get violations")
     void getViolationsTest(){
-        Response post = xrayGetViolations("security", "all-repositories_404550_security",
+        Response post = xrayGetViolations("license",
                 username, password, xrayBaseUrl)
         post.then().log().body()
 
