@@ -1,6 +1,7 @@
 package steps
 
 import io.restassured.response.Response
+import io.restassured.http.ContentType
 import org.testng.annotations.DataProvider
 import tests.TestSetup
 
@@ -53,7 +54,7 @@ class XraySteps extends TestSetup{
                 .extract().response()
     }
 
-    def createIssueEvents(issueID, cve, summary, description, issueType, sha256, artifactName, username, password, url) {
+    def createSecurityIssueEvents(issueID, cve, summary, description, issueType, sha256, artifactName, username, password, url) {
         return given()
                 .auth()
                 .preemptive()
@@ -90,6 +91,55 @@ class XraySteps extends TestSetup{
                         "}")
                 .when()
                 .post(url + "/v1/events")
+                .then()
+                .extract().response()
+    }
+
+    def getUILoginHeaders(url, username, password) {
+        def login = given()
+                .auth()
+                .basic("${username}", "${password}")
+                .headers("X-Requested-With", "XMLHttpRequest") // Needed to use UI api
+                .contentType(ContentType.JSON)
+                .body("{\n" +
+                        "   \"user\":\"${username}\",\n" +
+                        "   \"password\":\"${password}\",\n" +
+                        "   \"type\":\"login\"\n" +
+                        "}")
+                .when()
+                .post(url + "/ui/api/v1/ui/auth/login")
+                .then()
+                .assertThat()
+                .statusCode(200).and()
+                .cookie("ACCESSTOKEN").and()
+                .cookie("REFRESHTOKEN")
+                .extract().response()
+
+        return given()
+                .cookies(login.getDetailedCookies())
+                .headers("X-Requested-With", "XMLHttpRequest") // Needed to use UI api
+    }
+
+    def assignLicenseToArtifact(loginHeaders, url, artifactName, sha256, license_name, license_full_name, license_references) {
+        return loginHeaders
+                .contentType(ContentType.JSON)
+                .body("{\n" +
+                        "   \"component\": {\n" +
+                        "       \"component_name\":\"${artifactName}\",\n" +
+                        "       \"package_id\":\"generic://sha256:${sha256}/${artifactName}\",\n" +
+                        "       \"package_type\":\"generic\",\n" +
+                        "       \"version\":\"\"\n" +
+                        "   },\n" +
+                        "   \"license\":{\n" +
+                        "       \"name\":\"${license_name}\",\n" +
+                        "       \"full_name\":\"${license_full_name}\",\n" +
+                        "       \"references\":[\n" +
+                        "           \"${license_references}\"\n" +
+                        "       ]\n" +
+                        "   }\n" +
+                        "}")
+                .when()
+                .post(url+"/ui/api/v1/xray/ui/licenses")
                 .then()
                 .extract().response()
     }
@@ -733,7 +783,7 @@ class XraySteps extends TestSetup{
                 .extract().response()
     }
 
-    def xrayGetViolations(violationType, watchName, username, password, url) {
+    def xrayGetViolations(violationType, username, password, url) {
         return given()
                 .auth()
                 .preemptive()
@@ -744,9 +794,8 @@ class XraySteps extends TestSetup{
                         "    \"filters\": {\n" +
                         "        \"name_contains\": \"*\",\n" +
                         "        \"violation_type\": \"${violationType}\",\n" +
-                        "        \"watch_name\": \"${watchName}\",\n" +
                         "        \"min_severity\": \"Low\",\n" +
-                        "        \"created_from\": \"2018-06-06T12:22:16+03:00\"\n" +
+                        "        \"created_from\": \"1970-01-01T00:00:00Z\"\n" +
                         "    },\n" +
                         "    \"pagination\": {\n" +
                         "        \"order_by\": \"updated\",\n" +
@@ -790,17 +839,23 @@ class XraySteps extends TestSetup{
     @DataProvider(name = "multipleIssueEvents")
     public Object[][] multipleIssueEvents() {
         return new Object[][]{
-                ["XRAY0-", "CVE-2017-2000386", "Custom issue 0", "The Hackers can get access to your source code", "Security"],
-                ["XRAY1-", "CVE-2018-2000568", "Custom issue 1", "Root access could be granted to a stranger", "Security"],
-                ["XRAY2-", "CVE-2020-2000554", "Custom issue 2", "Everything will fall apart if you use this binary", "Security"],
-                ["XRAY3-", "CVE-2021-2001325", "Custom issue 3", "Never use the binary with this issue", "Security"],
-                ["XRAY4-", "CVE-2019-2005843", "Custom issue 4", "Beware of this zip file", "Security"],
-                ["XRAY5-", "CVE-2018-2003578", "Bad license 0", "A very important license issue", "License"],
-                ["XRAY6-", "CVE-2021-2001234", "Bad license 1", "A very important license issue", "License"],
-                ["XRAY7-", "CVE-2020-2002548", "Bad license 2", "A very important license issue", "License"],
-                ["XRAY8-", "CVE-2015-2003256", "Bad license 3", "A very important license issue", "License"],
-                ["XRAY9-", "CVE-2018-2008753", "Bad license 4", "A very important license issue", "License"]
+                ["XRAYS0-", "CVE-2017-2000386", "Custom issue 0", "The Hackers can get access to your source code", "Security"],
+                ["XRAYS1-", "CVE-2018-2000568", "Custom issue 1", "Root access could be granted to a stranger", "Security"],
+                ["XRAYS2-", "CVE-2020-2000554", "Custom issue 2", "Everything will fall apart if you use this binary", "Security"],
+                ["XRAYS3-", "CVE-2021-2001325", "Custom issue 3", "Never use the binary with this issue", "Security"],
+                ["XRAYS4-", "CVE-2019-2005843", "Custom issue 4", "Beware of this zip file", "Security"]
 
+        }
+    }
+
+    @DataProvider(name = "multipleLicenseIssueEvents")
+    public Object[][] multipleLicenseIssueEvents() {
+        return new Object[][]{
+                ["0BSD", "BSD Zero Clause License", "https://spdx.org/licenses/0BSD.html"],
+                ["AAL", "Attribution Assurance License", "https://spdx.org/licenses/AAL.html"],
+                ["Abstyles", "Abstyles License", "https://spdx.org/licenses/Abstyles.html"],
+                ["Adobe-2006", "Adobe Systems Incorporated Source Code License Agreement", "https://spdx.org/licenses/Adobe-2006.html"],
+                ["Adobe-Glyph", "Adobe Glyph List License", "https://spdx.org/licenses/Adobe-Glyph.html"]
         }
     }
 
