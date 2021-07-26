@@ -2,6 +2,7 @@ package steps
 
 import io.restassured.http.ContentType
 import io.restassured.response.Response
+import io.restassured.http.ContentType
 import org.testng.annotations.DataProvider
 import tests.TestSetup
 

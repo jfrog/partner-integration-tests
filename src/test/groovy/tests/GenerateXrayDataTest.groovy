@@ -162,7 +162,6 @@ class GenerateXrayDataTest extends XraySteps{
     }
 
 
-
     @Test(priority=6, groups=["xray_generate_data"], testName = "Download artifacts with vulnerabilities")
     void downloadArtifactsTest(){
         def repoName = "generic-dev-local"
@@ -191,7 +190,7 @@ class GenerateXrayDataTest extends XraySteps{
 
     @Test(priority=8, groups=["xray_generate_data"], testName = "Get violations")
     void getViolationsTest(){
-        Response post = xrayGetViolations("security",
+        Response post = xrayGetViolations("license",
                 username, password, xrayBaseUrl)
         post.then().log().body()
 
