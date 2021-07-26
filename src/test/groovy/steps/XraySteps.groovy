@@ -220,7 +220,7 @@ class XraySteps extends TestSetup{
                 .extract().response()
     }
 
-    def createLicensePolicy(policyName, username, password, url) {
+    def createLicensePolicy(policyName, username, password, url, licenseName) {
         return given()
                 .auth()
                 .preemptive()
@@ -233,12 +233,11 @@ class XraySteps extends TestSetup{
                         "  \"description\": \"License issue\",\n" +
                         "  \"rules\": [\n" +
                         "    {\n" +
-                        "      \"name\": \"LicenseRule\",\n" +
+                        "      \"name\": \"License${licenseName}Rule\",\n" +
                         "      \"priority\": 1,\n" +
                         "      \"criteria\": {\n" +
                         "        \"banned_licenses\": [\n" +
-                        "          \"0BSD\",\n" +
-                        "          \"AAL\"\n" +
+                        "          \"${licenseName}\"\n" +
                         "        ],\n" +
                         "        \"allow_unknown\": false\n" +
                         "      }\n" +

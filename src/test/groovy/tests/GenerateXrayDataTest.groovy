@@ -78,16 +78,18 @@ class GenerateXrayDataTest extends XraySteps{
         getPolicy.then().statusCode(200)
         def policyNameVerification = getPolicy.then().extract().path("name")
         Assert.assertTrue(securityPolicyName == policyNameVerification)
-
-        Response createLicensePolicy = xraySteps.createLicensePolicy(licensePolicyName, username, password, xrayBaseUrl)
-        createLicensePolicy.then().statusCode(201)
-        Response getLicensePolicy = xraySteps.getPolicy(licensePolicyName, username, password, xrayBaseUrl)
-        getLicensePolicy.then().statusCode(200)
-        def licensePolicyNameVerification = getLicensePolicy.then().extract().path("name")
-        Assert.assertTrue(licensePolicyName == licensePolicyNameVerification)
-
         xraySteps.createWatch(watchName + "_security", securityPolicyName, "security", username, password, xrayBaseUrl)
-        xraySteps.createWatch(watchName + "_license", licensePolicyName, "license", username, password, xrayBaseUrl)
+
+        for(license in ["0BSD", "AAL", "Abstyles"]) {
+            Response createLicensePolicy = xraySteps.createLicensePolicy(licensePolicyName+"_${license}", username, password, xrayBaseUrl, license)
+            createLicensePolicy.then().statusCode(201)
+            Response getLicensePolicy = xraySteps.getPolicy(licensePolicyName+"_${license}", username, password, xrayBaseUrl)
+            getLicensePolicy.then().statusCode(200)
+            def licensePolicyNameVerification = getLicensePolicy.then().extract().path("name")
+            Assert.assertTrue(licensePolicyName+"_${license}" == licensePolicyNameVerification)
+
+            xraySteps.createWatch(watchName + "_license_${license}", licensePolicyName+"_${license}", "license", username, password, xrayBaseUrl)
+        }
 
         Reporter.log("- Create policies and assign them to watches.", true)
 
@@ -128,10 +130,10 @@ class GenerateXrayDataTest extends XraySteps{
         for (artifactName in artifactNames) {
             Response create = xraySteps.createSecurityIssueEvents(issueID + artifactName + randomIndex, cve, summary,
                     description, issueType, severity, sha256, artifactName, username, password, xrayBaseUrl)
-            create.then().log().everything() //.statusCode(201)
+            create.then().log().ifValidationFails().statusCode(201)
 
             Response get = xraySteps.getIssueEvent(issueID + artifactName + randomIndex, username, password, xrayBaseUrl)
-            get.then().statusCode(200).log().body()
+            get.then().statusCode(200).log().ifValidationFails()
             def issueIDverification = get.then().extract().path("id")
             def cveVerification = get.then().extract().path("source_id")
             def summaryVerification = get.then().extract().path("summary")
@@ -152,6 +154,7 @@ class GenerateXrayDataTest extends XraySteps{
         def artifactNames = ["artifact_0.zip", "artifact_1.zip", "artifact_2.zip", "artifact_3.zip", "artifact_4.zip",
                              "artifact_5.zip", "artifact_6.zip", "artifact_7.zip", "artifact_8.zip", "artifact_9.zip"]
         for (artifactName in artifactNames) {
+            sleep(2000)  // UI requests are finicky. Let server settle.
             Response response = xraySteps.assignLicenseToArtifact(UILoginHeaders, artifactoryBaseURL, artifactName, sha256, license_name, liense_full_name, license_references)
             response.then().log().ifValidationFails().statusCode(200)
             Reporter.log("- Assigned ${artifactName} ${license_name}", true)
