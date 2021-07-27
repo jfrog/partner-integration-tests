@@ -78,7 +78,7 @@ class XraySteps extends TestSetup{
                         "    \"cves\": [\n" +
                         "        {\n" +
                         "            \"cve\": \"${cve}\",\n" +
-                        "            \"cvss_v2\": \"2.4\"\n" +
+                        "            \"cvss_v2\": \"5.0/CVSS:2.0/AV:N/AC:L/Au:N/C:N/I:P/A:N\"\n" +
                         "        }\n" +
                         "    ],\n" +
                         "    \"summary\": \"${summary}\",\n" +
