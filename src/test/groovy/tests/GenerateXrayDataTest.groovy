@@ -84,8 +84,8 @@ class GenerateXrayDataTest extends XraySteps{
         Reporter.log("- Create repositories for HA distribution. Successfully created", true)
     }
 
-    @Test(priority=2, groups=["xray_generate_data"], testName = "Create policy and watch. Assign policy to watch")
-    void createPolicyTest(){
+    @Test(priority=2, groups=["xray_generate_data"], testName = "Create security policy and watch. Assign policy to watch")
+    void createSecurityPolicyTest(){
         Response createSecurityPolicy = xraySteps.createPolicy(securityPolicyName, username, password, xrayBaseUrl)
         createSecurityPolicy.then().statusCode(201)
         Response getPolicy = xraySteps.getPolicy(securityPolicyName, username, password, xrayBaseUrl)
@@ -94,19 +94,19 @@ class GenerateXrayDataTest extends XraySteps{
         Assert.assertTrue(securityPolicyName == policyNameVerification)
         xraySteps.createWatch(watchName + "_security", securityPolicyName, "security", username, password, xrayBaseUrl)
 
-        for(license in ["0BSD", "AAL", "Abstyles"]) {
-            Response createLicensePolicy = xraySteps.createLicensePolicy(licensePolicyName+"_${license}", username, password, xrayBaseUrl, license)
-            createLicensePolicy.then().statusCode(201)
-            Response getLicensePolicy = xraySteps.getPolicy(licensePolicyName+"_${license}", username, password, xrayBaseUrl)
-            getLicensePolicy.then().statusCode(200)
-            def licensePolicyNameVerification = getLicensePolicy.then().extract().path("name")
-            Assert.assertTrue(licensePolicyName+"_${license}" == licensePolicyNameVerification)
-
-            xraySteps.createWatch(watchName + "_license_${license}", licensePolicyName+"_${license}", "license", username, password, xrayBaseUrl)
-        }
-
         Reporter.log("- Create policies and assign them to watches.", true)
+    }
 
+    @Test(priority=2, groups=["xray_generate_data"], dataProvider = "multipleLicenseIssueEvents", testName = "Create license policy and watch. Assign policy to watch")
+    void createLicensePolicyTest(license, _, __){
+        Response createLicensePolicy = xraySteps.createLicensePolicy("${ licensePolicyName }_${license}", username, password, xrayBaseUrl, license)
+        createLicensePolicy.then().statusCode(201)
+        Response getLicensePolicy = xraySteps.getPolicy("${ licensePolicyName }_${license}", username, password, xrayBaseUrl)
+        getLicensePolicy.then().statusCode(200)
+        def licensePolicyNameVerification = getLicensePolicy.then().extract().path("name")
+        Assert.assertTrue(licensePolicyName+"_${license}" == licensePolicyNameVerification)
+
+        xraySteps.createWatch("${ watchName }_license_${license}", "${licensePolicyName}_${license}", "license", username, password, xrayBaseUrl)
     }
 
 
@@ -157,8 +157,8 @@ class GenerateXrayDataTest extends XraySteps{
             Assert.assertTrue(cve == cveVerification)
             Assert.assertTrue(summary == summaryVerification)
             Assert.assertTrue(description == descriptionVerification)
-            }
-        Reporter.log("- Create issue event. Issue event with ID ${issueID + randomIndex} created and verified successfully", true)
+            Reporter.log("- Create issue event for ${artifactName}. Issue event with ID ${issueID + randomIndex} created and verified successfully", true)
+        }
     }
 
 
