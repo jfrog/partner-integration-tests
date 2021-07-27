@@ -5,14 +5,13 @@ import io.restassured.response.Response
 import org.hamcrest.Matchers
 import org.testng.Assert
 import org.testng.Reporter
+import org.testng.annotations.AfterSuite
 import org.testng.annotations.BeforeSuite
 import org.testng.annotations.Test
 import steps.RepositorySteps
 import steps.XraySteps
 import utils.Utils
 
-import java.util.zip.ZipEntry
-import java.util.zip.ZipOutputStream
 
 import static org.hamcrest.Matchers.containsString
 import static org.hamcrest.Matchers.equalTo
@@ -27,9 +26,11 @@ class GenerateXrayDataTest extends XraySteps{
     def watchName
     def UILoginHeaders
     def repoListHA = new File("./src/test/resources/repositories/CreateDefault.yaml")
-    def artifact
     def artifactoryURL = "${artifactoryBaseURL}/artifactory"
     def utils = new Utils()
+    def artifactCount = 10
+    def artifactsPath = "./src/test/resources/repositories/"
+    def artifactFormat = {int i -> "artifact_${i}.zip"}
 
 
     @BeforeSuite(groups = ["xray_generate_data"])
@@ -43,13 +44,25 @@ class GenerateXrayDataTest extends XraySteps{
         UILoginHeaders = getUILoginHeaders("${artifactoryBaseURL}", username, password)
 
         // Create zip file
-        ZipOutputStream zipFile = new ZipOutputStream(new FileOutputStream("./src/test/resources/repositories/artifact.zip"))
-        zipFile.putNextEntry(new ZipEntry("content.txt"))
-        byte[] buffer = random.nextLong().toString().getBytes() // random string
-        zipFile.write(buffer, 0, buffer.length)
-        zipFile.closeEntry()
-        zipFile.close()
-        artifact = new File("./src/test/resources/repositories/artifact.zip")
+        for (def i in 0..(artifactCount-1)) {
+            Utils.createArtifact(artifactFormat(i))
+        }
+    }
+
+    @AfterSuite(groups = ["xray_generate_data"])
+    def cleanUp() {
+        for (def i in 0..(artifactCount-1)) {
+            def artifact = new File("${artifactsPath}${artifactFormat(i)}")
+            try {
+                if(artifact.delete()) {
+                    println("Deleted local ${artifactFormat(i)}")
+                } else {
+                    println("Could not delete ${artifactFormat(i)}.")
+                }
+            } catch (SecurityException ignored) {
+                println("Could not delete ${artifactFormat(i)}.")
+            }
+        }
     }
 
     // Push several docker images/artifacts? What if there is no SSL, then no docker
@@ -101,6 +114,7 @@ class GenerateXrayDataTest extends XraySteps{
         def repoName = "generic-dev-local"
         def directoryName = "test-directory"
         def filename = artifactName
+        def artifact = new File("${artifactsPath}${filename}")
         def sha256 = utils.generateSHA256(artifact)
         def sha1 = utils.generateSHA1(artifact)
         def md5 = utils.generateMD5(artifact)
@@ -124,10 +138,10 @@ class GenerateXrayDataTest extends XraySteps{
 
     @Test(priority = 4, groups = ["xray_generate_data"], dataProvider = "multipleIssueEvents", testName = "Create Issue Events")
     void createSecurityIssueEventsTest(issueID, cve, summary, description, issueType, severity) {
-        def sha256 = utils.generateSHA256(artifact)
-        def artifactNames = ["artifact_0.zip", "artifact_1.zip", "artifact_2.zip", "artifact_3.zip", "artifact_4.zip",
-                             "artifact_5.zip", "artifact_6.zip", "artifact_7.zip", "artifact_8.zip", "artifact_9.zip"]
-        for (artifactName in artifactNames) {
+        for (i in 0..(artifactCount - 1)) {
+            def artifactName = artifactFormat(i)
+            def artifact = new File("${artifactsPath}${artifactName}")
+            def sha256 = utils.generateSHA256(artifact)
             Response create = xraySteps.createSecurityIssueEvents(issueID + artifactName + randomIndex, cve, summary,
                     description, issueType, severity, sha256, artifactName, username, password, xrayBaseUrl)
             create.then().log().ifValidationFails().statusCode(201)
@@ -149,11 +163,11 @@ class GenerateXrayDataTest extends XraySteps{
 
     @Test(priority = 5, groups = ["xray_generate_data"], dataProvider = "multipleLicenseIssueEvents")
     void createLicenseEventsTest(license_name, liense_full_name, license_references) {
-        def sha256 = utils.generateSHA256(artifact)
         def UILoginHeaders = xraySteps.getUILoginHeaders("${artifactoryBaseURL}", username, password)
-        def artifactNames = ["artifact_0.zip", "artifact_1.zip", "artifact_2.zip", "artifact_3.zip", "artifact_4.zip",
-                             "artifact_5.zip", "artifact_6.zip", "artifact_7.zip", "artifact_8.zip", "artifact_9.zip"]
-        for (artifactName in artifactNames) {
+        for (i in 0..(artifactCount - 1)) {
+            def artifactName = artifactFormat(i)
+            def artifact = new File("${artifactsPath}${artifactName}")
+            def sha256 = utils.generateSHA256(artifact)
             sleep(2000)  // UI requests are finicky. Let server settle.
             Response response = xraySteps.assignLicenseToArtifact(UILoginHeaders, artifactoryBaseURL, artifactName, sha256, license_name, liense_full_name, license_references)
             response.then().log().ifValidationFails().statusCode(200)
@@ -162,18 +176,14 @@ class GenerateXrayDataTest extends XraySteps{
     }
 
 
-    @Test(priority=6, groups=["xray_generate_data"], testName = "Download artifacts with vulnerabilities")
-    void downloadArtifactsTest(){
+    @Test(priority=6, groups=["xray_generate_data"], dataProvider="artifacts", testName = "Download artifacts with vulnerabilities")
+    void downloadArtifactsTest(artifactName){
         def repoName = "generic-dev-local"
         def directoryName = "test-directory"
-        def artifactNames = ["artifact_0.zip", "artifact_1.zip", "artifact_2.zip", "artifact_3.zip", "artifact_4.zip",
-                             "artifact_5.zip", "artifact_6.zip", "artifact_7.zip", "artifact_8.zip", "artifact_9.zip"]
-        for (artifactName in artifactNames) {
-            Response response = repositorySteps.downloadArtifact(artifactoryURL, username, password, repoName,
-                    directoryName, artifactName)
-            response.then().log().ifValidationFails().statusCode(200)
-        }
-        Reporter.log("- Download artifacts with vulnerabilities", true)
+        Response response = repositorySteps.downloadArtifact(artifactoryURL, username, password, repoName,
+                directoryName, artifactName)
+        response.then().log().ifValidationFails().statusCode(200)
+        Reporter.log("- Downloaded ${artifactName} with vulnerabilities", true)
     }
 
 

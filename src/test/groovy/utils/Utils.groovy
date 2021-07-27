@@ -5,6 +5,8 @@ import org.testng.Assert
 import java.security.DigestInputStream
 import java.security.MessageDigest
 import java.text.SimpleDateFormat
+import java.util.zip.ZipEntry
+import java.util.zip.ZipOutputStream
 
 import static io.restassured.RestAssured.given
 
@@ -99,6 +101,22 @@ class Utils {
                 whatismyip2.openStream()))
         final String ip2 = in2.readLine()
         return ip2
+    }
+
+    /**
+     * Create an artifact with a random SHA256 in {@code ./src/test/resources/repositories/} <br>
+     * Example usage: {@code Utils.createArtifact("artifact_1.zip")}
+     *
+     * @param name of the artifact. Do not include the directory.
+     */
+    static def createArtifact(String filename){
+        ZipOutputStream zipFile = new ZipOutputStream(new FileOutputStream("./src/test/resources/repositories/${filename}"))
+        zipFile.putNextEntry(new ZipEntry("content.txt"))
+        Random random = new Random()
+        byte[] buffer = random.nextLong().toString().getBytes() // random string
+        zipFile.write(buffer, 0, buffer.length)
+        zipFile.closeEntry()
+        zipFile.close()
     }
 
 }
