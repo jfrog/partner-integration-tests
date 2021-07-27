@@ -1,15 +1,50 @@
 package steps
 
-import io.restassured.http.ContentType
 import io.restassured.response.Response
 import io.restassured.http.ContentType
+import org.awaitility.Awaitility
+import org.testng.Reporter
 import org.testng.annotations.DataProvider
 import tests.TestSetup
+
+import java.util.concurrent.TimeUnit
 
 import static io.restassured.RestAssured.given
 import static org.hamcrest.Matchers.equalTo
 
 class XraySteps extends TestSetup{
+
+    static void deleteExistingWatches(namePrefix, artifactoryBaseURL, username, password) {
+        def watches = given()
+                .auth().preemptive().basic(username, password)
+                .when().get("${artifactoryBaseURL}/xray/api/v2/watches")
+                .then().extract().body().jsonPath().getList("\$").stream()
+                .map({it.getAt("general_data").getAt("name").toString()})
+                .filter({it.startsWith(namePrefix)})
+                .collect()
+        watches.forEach { name ->
+            given().auth().preemptive().basic(username, password)
+                    .when().delete("${artifactoryBaseURL}/xray/api/v2/watches/${name}")
+                    .then().statusCode(200)
+        }
+
+        println("Successfully deleted ${watches.size()} watch${watches.size() == 1 ? "" : "es"}.")
+
+        def policies = given()
+                .auth().preemptive().basic(username, password)
+                .when().get("${artifactoryBaseURL}/xray/api/v2/policies")
+                .then().extract().body().jsonPath().getList("\$").stream()
+                .map({it.getAt("name").toString()})
+                .filter({it.startsWith(namePrefix)})
+                .collect()
+        policies.forEach { name ->
+            given().auth().preemptive().basic(username, password)
+                    .when().delete("${artifactoryBaseURL}/xray/api/v2/policies/${name}")
+                    .then().log().ifValidationFails().statusCode(200)
+        }
+
+        println("Successfully deleted ${policies.size()} polic${policies.size() == 1 ? "y" : "ies"}.")
+    }
 
     static def getUILoginHeaders(url, username, password) {
         def login = given()
@@ -58,6 +93,23 @@ class XraySteps extends TestSetup{
                 .post(url+"/ui/api/v1/xray/ui/licenses")
                 .then()
                 .extract().response()
+    }
+
+    static def ensureAssignLicense(UILoginHeaders, artifactoryBaseURL, username, password, artifactName, sha256,
+                            license_name, license_full_name, license_references) {
+        int tries = 0
+        Awaitility.await().atMost(120, TimeUnit.SECONDS).with()
+                .pollDelay(1, TimeUnit.SECONDS).and().pollInterval(500, TimeUnit.MILLISECONDS).until { ->
+            def success = assignLicenseToArtifact(UILoginHeaders, artifactoryBaseURL, artifactName, sha256,
+                    license_name, license_full_name, license_references)
+                    .then().extract().statusCode() == 200
+            if(!success) {
+                // reauthenticate
+                Reporter.log("Failed to add ${license_name} to ${artifactName} ${++tries} time(s).", true)
+                UILoginHeaders = getUILoginHeaders("${artifactoryBaseURL}", username, password)
+            }
+            return success
+        }
     }
 
     def createIssueEvent(issueID, cve, summary, description, username, password, url) {
