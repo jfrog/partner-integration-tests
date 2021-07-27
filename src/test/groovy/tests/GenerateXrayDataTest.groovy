@@ -11,6 +11,9 @@ import steps.RepositorySteps
 import steps.XraySteps
 import utils.Utils
 
+import java.util.zip.ZipEntry
+import java.util.zip.ZipOutputStream
+
 import static org.hamcrest.Matchers.containsString
 import static org.hamcrest.Matchers.equalTo
 
@@ -22,8 +25,9 @@ class GenerateXrayDataTest extends XraySteps{
     def securityPolicyName
     def licensePolicyName
     def watchName
+    def UILoginHeaders
     def repoListHA = new File("./src/test/resources/repositories/CreateDefault.yaml")
-    def artifact = new File("./src/test/resources/repositories/artifact.zip")
+    def artifact
     def artifactoryURL = "${artifactoryBaseURL}/artifactory"
     def utils = new Utils()
 
@@ -36,6 +40,16 @@ class GenerateXrayDataTest extends XraySteps{
         securityPolicyName = "security_policy_${randomIndex}"
         licensePolicyName = "license_policy_${randomIndex}"
         watchName = "all-repositories_${randomIndex}"
+        UILoginHeaders = getUILoginHeaders("${artifactoryBaseURL}", username, password)
+
+        // Create zip file
+        ZipOutputStream zipFile = new ZipOutputStream(new FileOutputStream("./src/test/resources/repositories/artifact.zip"))
+        zipFile.putNextEntry(new ZipEntry("content.txt"))
+        byte[] buffer = random.nextLong().toString().getBytes() // random string
+        zipFile.write(buffer, 0, buffer.length)
+        zipFile.closeEntry()
+        zipFile.close()
+        artifact = new File("./src/test/resources/repositories/artifact.zip")
     }
 
     // Push several docker images/artifacts? What if there is no SSL, then no docker
@@ -56,7 +70,7 @@ class GenerateXrayDataTest extends XraySteps{
         Reporter.log("- Create repositories for HA distribution. Successfully created", true)
     }
 
-    @Test(priority=4, groups=["xray_generate_data"], testName = "Create policy and watch. Assign policy to watch")
+    @Test(priority=2, groups=["xray_generate_data"], testName = "Create policy and watch. Assign policy to watch")
     void createPolicyTest(){
         Response createSecurityPolicy = xraySteps.createPolicy(securityPolicyName, username, password, xrayBaseUrl)
         createSecurityPolicy.then().statusCode(201)
@@ -64,23 +78,25 @@ class GenerateXrayDataTest extends XraySteps{
         getPolicy.then().statusCode(200)
         def policyNameVerification = getPolicy.then().extract().path("name")
         Assert.assertTrue(securityPolicyName == policyNameVerification)
-
-        Response createLicensePolicy = xraySteps.createLicensePolicy(licensePolicyName, username, password, xrayBaseUrl)
-        createLicensePolicy.then().statusCode(201)
-        Response getLicensePolicy = xraySteps.getPolicy(licensePolicyName, username, password, xrayBaseUrl)
-        getLicensePolicy.then().statusCode(200)
-        def licensePolicyNameVerification = getLicensePolicy.then().extract().path("name")
-        Assert.assertTrue(licensePolicyName == licensePolicyNameVerification)
-
         xraySteps.createWatch(watchName + "_security", securityPolicyName, "security", username, password, xrayBaseUrl)
-        xraySteps.createWatch(watchName + "_license", licensePolicyName, "license", username, password, xrayBaseUrl)
+
+        for(license in ["0BSD", "AAL", "Abstyles"]) {
+            Response createLicensePolicy = xraySteps.createLicensePolicy(licensePolicyName+"_${license}", username, password, xrayBaseUrl, license)
+            createLicensePolicy.then().statusCode(201)
+            Response getLicensePolicy = xraySteps.getPolicy(licensePolicyName+"_${license}", username, password, xrayBaseUrl)
+            getLicensePolicy.then().statusCode(200)
+            def licensePolicyNameVerification = getLicensePolicy.then().extract().path("name")
+            Assert.assertTrue(licensePolicyName+"_${license}" == licensePolicyNameVerification)
+
+            xraySteps.createWatch(watchName + "_license_${license}", licensePolicyName+"_${license}", "license", username, password, xrayBaseUrl)
+        }
 
         Reporter.log("- Create policies and assign them to watches.", true)
 
     }
 
 
-    @Test(priority=2, groups=["xray_generate_data"], dataProvider = "artifacts", testName = "Deploy files to generic repo")
+    @Test(priority=3, groups=["xray_generate_data"], dataProvider = "artifacts", testName = "Deploy files to generic repo")
     void deployArtifactToGenericTest(artifactName){
         def repoName = "generic-dev-local"
         def directoryName = "test-directory"
@@ -106,18 +122,18 @@ class GenerateXrayDataTest extends XraySteps{
     }
 
 
-    @Test(priority = 1, groups = ["xray_generate_data"], dataProvider = "multipleIssueEvents", testName = "Create Issue Events")
-    void createSecurityIssueEventsTest(issueID, cve, summary, description, issueType) {
+    @Test(priority = 4, groups = ["xray_generate_data"], dataProvider = "multipleIssueEvents", testName = "Create Issue Events")
+    void createSecurityIssueEventsTest(issueID, cve, summary, description, issueType, severity) {
         def sha256 = utils.generateSHA256(artifact)
         def artifactNames = ["artifact_0.zip", "artifact_1.zip", "artifact_2.zip", "artifact_3.zip", "artifact_4.zip",
                              "artifact_5.zip", "artifact_6.zip", "artifact_7.zip", "artifact_8.zip", "artifact_9.zip"]
         for (artifactName in artifactNames) {
             Response create = xraySteps.createSecurityIssueEvents(issueID + artifactName + randomIndex, cve, summary,
-                    description, issueType, sha256, artifactName, username, password, xrayBaseUrl)
-            create.then().log().everything() //.statusCode(201)
+                    description, issueType, severity, sha256, artifactName, username, password, xrayBaseUrl)
+            create.then().log().ifValidationFails().statusCode(201)
 
             Response get = xraySteps.getIssueEvent(issueID + artifactName + randomIndex, username, password, xrayBaseUrl)
-            get.then().statusCode(200).log().body()
+            get.then().statusCode(200).log().ifValidationFails()
             def issueIDverification = get.then().extract().path("id")
             def cveVerification = get.then().extract().path("source_id")
             def summaryVerification = get.then().extract().path("summary")
@@ -130,13 +146,15 @@ class GenerateXrayDataTest extends XraySteps{
         Reporter.log("- Create issue event. Issue event with ID ${issueID + randomIndex} created and verified successfully", true)
     }
 
-    @Test(priority = 3, groups = ["xray_generate_data"], dataProvider = "multipleLicenseIssueEvents")
+
+    @Test(priority = 5, groups = ["xray_generate_data"], dataProvider = "multipleLicenseIssueEvents")
     void createLicenseEventsTest(license_name, liense_full_name, license_references) {
         def sha256 = utils.generateSHA256(artifact)
         def UILoginHeaders = xraySteps.getUILoginHeaders("${artifactoryBaseURL}", username, password)
         def artifactNames = ["artifact_0.zip", "artifact_1.zip", "artifact_2.zip", "artifact_3.zip", "artifact_4.zip",
                              "artifact_5.zip", "artifact_6.zip", "artifact_7.zip", "artifact_8.zip", "artifact_9.zip"]
         for (artifactName in artifactNames) {
+            sleep(2000)  // UI requests are finicky. Let server settle.
             Response response = xraySteps.assignLicenseToArtifact(UILoginHeaders, artifactoryBaseURL, artifactName, sha256, license_name, liense_full_name, license_references)
             response.then().log().ifValidationFails().statusCode(200)
             Reporter.log("- Assigned ${artifactName} ${license_name}", true)
@@ -144,7 +162,7 @@ class GenerateXrayDataTest extends XraySteps{
     }
 
 
-    @Test(priority=5, groups=["xray_generate_data"], testName = "Download artifacts with vulnerabilities")
+    @Test(priority=6, groups=["xray_generate_data"], testName = "Download artifacts with vulnerabilities")
     void downloadArtifactsTest(){
         def repoName = "generic-dev-local"
         def directoryName = "test-directory"
@@ -159,7 +177,7 @@ class GenerateXrayDataTest extends XraySteps{
     }
 
 
-    @Test(priority=18, groups=["xray_generate_data"], testName = "Get artifact summary")
+    @Test(priority=7, groups=["xray_generate_data"], testName = "Get artifact summary")
     void artifactSummaryTest(){
         def artifactPath = "default/docker-local/nginx/1.0.0/"
         Response post = artifactSummary(username, password, artifactPath, xrayBaseUrl)
@@ -170,7 +188,7 @@ class GenerateXrayDataTest extends XraySteps{
     }
 
 
-    @Test(priority=18, groups=["xray_generate_data"], testName = "Get violations")
+    @Test(priority=8, groups=["xray_generate_data"], testName = "Get violations")
     void getViolationsTest(){
         Response post = xrayGetViolations("license",
                 username, password, xrayBaseUrl)

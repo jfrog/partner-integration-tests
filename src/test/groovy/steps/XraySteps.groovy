@@ -1,99 +1,15 @@
 package steps
 
+import io.restassured.http.ContentType
 import io.restassured.response.Response
 import io.restassured.http.ContentType
 import org.testng.annotations.DataProvider
 import tests.TestSetup
 
-import java.util.regex.Matcher
-
 import static io.restassured.RestAssured.given
-import static org.hamcrest.Matchers.containsString
 import static org.hamcrest.Matchers.equalTo
 
 class XraySteps extends TestSetup{
-
-    def createIssueEvent(issueID, cve, summary, description, username, password, url) {
-        return given()
-                .auth()
-                .preemptive()
-                .basic("${username}", "${password}")
-                .header("Cache-Control", "no-cache")
-                .header("content-Type", "application/json")
-                .body("{\n" +
-                        "    \"id\": \"${issueID}\",\n" +
-                        "    \"type\": \"Security\",\n" +
-                        "    \"provider\": \"JFrog\",\n" +
-                        "    \"package_type\": \"maven\",\n" +
-                        "    \"severity\": \"High\",\n" +
-                        "    \"components\": [\n" +
-                        "        {\n" +
-                        "            \"id\": \"aero:aero\",\n" +
-                        "            \"vulnerable_versions\": [\n" +
-                        "                \"[0.2.3]\"\n" +
-                        "            ]\n" +
-                        "        }\n" +
-                        "    ],\n" +
-                        "    \"cves\": [\n" +
-                        "        {\n" +
-                        "            \"cve\": \"${cve}\",\n" +
-                        "            \"cvss_v2\": \"2.4\"\n" +
-                        "        }\n" +
-                        "    ],\n" +
-                        "    \"summary\": \"${summary}\",\n" +
-                        "    \"description\": \"${description}\",\n" +
-                        "    \"sources\": [\n" +
-                        "        {\n" +
-                        "            \"source_id\": \"${cve}\"\n" +
-                        "        }\n" +
-                        "    ]\n" +
-                        "}")
-                .when()
-                .post(url + "/v1/events")
-                .then()
-                .extract().response()
-    }
-
-    def createSecurityIssueEvents(issueID, cve, summary, description, issueType, sha256, artifactName, username, password, url) {
-        return given()
-                .auth()
-                .preemptive()
-                .basic("${username}", "${password}")
-                .header("Cache-Control", "no-cache")
-                .header("content-Type", "application/json")
-                .body("{\n" +
-                        "    \"id\": \"${issueID}\",\n" +
-                        "    \"type\": \"${issueType}\",\n" +
-                        "    \"provider\": \"JFrog\",\n" +
-                        "    \"package_type\": \"generic\",\n" +
-                        "    \"severity\": \"High\",\n" +
-                        "    \"components\": [\n" +
-                        "        {\n" +
-                        "            \"id\": \"sha256:${sha256}/${artifactName}\",\n" +
-                        "            \"vulnerable_versions\": [\n" +
-                        "                \"[1.0.0]\"\n" +
-                        "            ]\n" +
-                        "        }\n" +
-                        "    ],\n" +
-                        "    \"cves\": [\n" +
-                        "        {\n" +
-                        "            \"cve\": \"${cve}\",\n" +
-                        "            \"cvss_v2\": \"2.4\"\n" +
-                        "        }\n" +
-                        "    ],\n" +
-                        "    \"summary\": \"${summary}\",\n" +
-                        "    \"description\": \"${description}\",\n" +
-                        "    \"sources\": [\n" +
-                        "        {\n" +
-                        "            \"source_id\": \"${cve}\"\n" +
-                        "        }\n" +
-                        "    ]\n" +
-                        "}")
-                .when()
-                .post(url + "/v1/events")
-                .then()
-                .extract().response()
-    }
 
     def getUILoginHeaders(url, username, password) {
         def login = given()
@@ -140,6 +56,88 @@ class XraySteps extends TestSetup{
                         "}")
                 .when()
                 .post(url+"/ui/api/v1/xray/ui/licenses")
+                .then()
+                .extract().response()
+    }
+
+    def createIssueEvent(issueID, cve, summary, description, username, password, url) {
+        return given()
+                .auth()
+                .preemptive()
+                .basic("${username}", "${password}")
+                .header("Cache-Control", "no-cache")
+                .header("content-Type", "application/json")
+                .body("{\n" +
+                        "    \"id\": \"${issueID}\",\n" +
+                        "    \"type\": \"Security\",\n" +
+                        "    \"provider\": \"JFrog\",\n" +
+                        "    \"package_type\": \"maven\",\n" +
+                        "    \"severity\": \"High\",\n" +
+                        "    \"components\": [\n" +
+                        "        {\n" +
+                        "            \"id\": \"aero:aero\",\n" +
+                        "            \"vulnerable_versions\": [\n" +
+                        "                \"[0.2.3]\"\n" +
+                        "            ]\n" +
+                        "        }\n" +
+                        "    ],\n" +
+                        "    \"cves\": [\n" +
+                        "        {\n" +
+                        "            \"cve\": \"${cve}\",\n" +
+                        "            \"cvss_v2\": \"2.4\"\n" +
+                        "        }\n" +
+                        "    ],\n" +
+                        "    \"summary\": \"${summary}\",\n" +
+                        "    \"description\": \"${description}\",\n" +
+                        "    \"sources\": [\n" +
+                        "        {\n" +
+                        "            \"source_id\": \"${cve}\"\n" +
+                        "        }\n" +
+                        "    ]\n" +
+                        "}")
+                .when()
+                .post(url + "/v1/events")
+                .then()
+                .extract().response()
+    }
+
+    def createSecurityIssueEvents(issueID, cve, summary, description, issueType, severity, sha256, artifactName, username, password, url) {
+        return given()
+                .auth()
+                .preemptive()
+                .basic("${username}", "${password}")
+                .header("Cache-Control", "no-cache")
+                .header("content-Type", "application/json")
+                .body("{\n" +
+                        "    \"id\": \"${issueID}\",\n" +
+                        "    \"type\": \"${issueType}\",\n" +
+                        "    \"provider\": \"JFrog\",\n" +
+                        "    \"package_type\": \"generic\",\n" +
+                        "    \"severity\": \"${severity}\",\n" +
+                        "    \"components\": [\n" +
+                        "        {\n" +
+                        "            \"id\": \"sha256:${sha256}/${artifactName}\",\n" +
+                        "            \"vulnerable_versions\": [\n" +
+                        "                \"[1.0.0]\"\n" +
+                        "            ]\n" +
+                        "        }\n" +
+                        "    ],\n" +
+                        "    \"cves\": [\n" +
+                        "        {\n" +
+                        "            \"cve\": \"${cve}\",\n" +
+                        "            \"cvss_v2\": \"2.4\"\n" +
+                        "        }\n" +
+                        "    ],\n" +
+                        "    \"summary\": \"${summary}\",\n" +
+                        "    \"description\": \"${description}\",\n" +
+                        "    \"sources\": [\n" +
+                        "        {\n" +
+                        "            \"source_id\": \"${cve}\"\n" +
+                        "        }\n" +
+                        "    ]\n" +
+                        "}")
+                .when()
+                .post(url + "/v1/events")
                 .then()
                 .extract().response()
     }
@@ -223,7 +221,7 @@ class XraySteps extends TestSetup{
                 .extract().response()
     }
 
-    def createLicensePolicy(policyName, username, password, url) {
+    def createLicensePolicy(policyName, username, password, url, licenseName) {
         return given()
                 .auth()
                 .preemptive()
@@ -236,12 +234,11 @@ class XraySteps extends TestSetup{
                         "  \"description\": \"License issue\",\n" +
                         "  \"rules\": [\n" +
                         "    {\n" +
-                        "      \"name\": \"LicenseRule\",\n" +
+                        "      \"name\": \"License${licenseName}Rule\",\n" +
                         "      \"priority\": 1,\n" +
                         "      \"criteria\": {\n" +
                         "        \"banned_licenses\": [\n" +
-                        "          \"0BSD\",\n" +
-                        "          \"AAL\"\n" +
+                        "          \"${licenseName}\"\n" +
                         "        ],\n" +
                         "        \"allow_unknown\": false\n" +
                         "      }\n" +
@@ -839,11 +836,11 @@ class XraySteps extends TestSetup{
     @DataProvider(name = "multipleIssueEvents")
     public Object[][] multipleIssueEvents() {
         return new Object[][]{
-                ["XRAYS0-", "CVE-2017-2000386", "Custom issue 0", "The Hackers can get access to your source code", "Security"],
-                ["XRAYS1-", "CVE-2018-2000568", "Custom issue 1", "Root access could be granted to a stranger", "Security"],
-                ["XRAYS2-", "CVE-2020-2000554", "Custom issue 2", "Everything will fall apart if you use this binary", "Security"],
-                ["XRAYS3-", "CVE-2021-2001325", "Custom issue 3", "Never use the binary with this issue", "Security"],
-                ["XRAYS4-", "CVE-2019-2005843", "Custom issue 4", "Beware of this zip file", "Security"]
+                ["XRAYS0-", "CVE-2017-2000386", "Custom issue 0", "The Hackers can get access to your source code", "Security", "Medium"],
+                ["XRAYS1-", "CVE-2018-2000568", "Custom issue 1", "Root access could be granted to a stranger", "Security", "High"],
+                ["XRAYS2-", "CVE-2020-2000554", "Custom issue 2", "Everything will fall apart if you use this binary", "Security", "High"],
+                ["XRAYS3-", "CVE-2021-2001325", "Custom issue 3", "Never use the binary with this issue", "Security", "Medium"],
+                ["XRAYS4-", "CVE-2019-2005843", "Custom issue 4", "Beware of this zip file", "Security", "Low"]
 
         }
     }
