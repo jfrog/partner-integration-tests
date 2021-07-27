@@ -13,7 +13,6 @@ class DataAnalyticsSteps extends TestSetup{
     def repoSteps = new RepositorySteps()
     def securitySteps = new SecuritytSteps()
     def xraySteps = new XraySteps()
-    def utils = new Utils()
     def artifact = new File("./src/test/resources/repositories/artifact.zip")
     def repoListHA = new File("./src/test/resources/repositories/CreateDefault.yaml")
     def xrayURL = "${artifactoryBaseURL}/xray/api"
@@ -58,9 +57,9 @@ class DataAnalyticsSteps extends TestSetup{
             def repoName = "generic-dev-local"
             def directoryName = "test-directory"
             def filename = "artifact.zip"
-            def sha256 = utils.generateSHA256(artifact)
-            def sha1 = utils.generateSHA1(artifact)
-            def md5 = utils.generateMD5(artifact)
+            def sha256 = Utils.generateSHA256(artifact)
+            def sha1 = Utils.generateSHA1(artifact)
+            def md5 = Utils.generateMD5(artifact)
             def body = repoListHA
             repoSteps.createRepositories(artifactoryURL, body, username, password)
             repoSteps.deployArtifact(artifactoryURL, username, password, repoName, directoryName, artifact, filename, sha256, sha1, md5)
@@ -141,9 +140,9 @@ class DataAnalyticsSteps extends TestSetup{
         create.then().statusCode(200)
         def repoName = "generic-dev-local"
         def directoryName = "test-directory"
-        def sha256 = utils.generateSHA256(artifact)
-        def sha1 = utils.generateSHA1(artifact)
-        def md5 = utils.generateMD5(artifact)
+        def sha256 = Utils.generateSHA256(artifact)
+        def sha1 = Utils.generateSHA1(artifact)
+        def md5 = Utils.generateMD5(artifact)
 
         for (int i = 1; i <= calls; i++) {
             def filename = "artifact.zip"
@@ -212,9 +211,9 @@ class DataAnalyticsSteps extends TestSetup{
             def repoName = "generic-dev-local"
             def directoryName = "test-directory"
             def filename = "artifact-test.zip"
-            def sha256 = utils.generateSHA256(artifact)
-            def sha1 = utils.generateSHA1(artifact)
-            def md5 = utils.generateMD5(artifact)
+            def sha256 = Utils.generateSHA256(artifact)
+            def sha1 = Utils.generateSHA1(artifact)
+            def md5 = Utils.generateMD5(artifact)
             def body = repoListHA
             repoSteps.createRepositories(artifactoryURL, body, username, password)
             Response response = repoSteps.deployArtifactAs(artifactoryURL, usernameRt, passwordRt, repoName, directoryName, artifact, filename, sha256, sha1, md5)

@@ -27,7 +27,6 @@ class GenerateXrayDataTest extends XraySteps{
     def UILoginHeaders
     def repoListHA = new File("./src/test/resources/repositories/CreateDefault.yaml")
     def artifactoryURL = "${artifactoryBaseURL}/artifactory"
-    def utils = new Utils()
     def artifactCount = 10
     def artifactsPath = "./src/test/resources/repositories/"
     def artifactFormat = {int i -> "artifact_${i}.zip"}
@@ -115,9 +114,9 @@ class GenerateXrayDataTest extends XraySteps{
         def directoryName = "test-directory"
         def filename = artifactName
         def artifact = new File("${artifactsPath}${filename}")
-        def sha256 = utils.generateSHA256(artifact)
-        def sha1 = utils.generateSHA1(artifact)
-        def md5 = utils.generateMD5(artifact)
+        def sha256 = Utils.generateSHA256(artifact)
+        def sha1 = Utils.generateSHA1(artifact)
+        def md5 = Utils.generateMD5(artifact)
         Response response = repositorySteps.deployArtifact(artifactoryURL, username, password, repoName,
                 directoryName, artifact, filename, sha256, sha1, md5)
         response.then().assertThat().log().ifValidationFails().statusCode(201)
@@ -141,7 +140,7 @@ class GenerateXrayDataTest extends XraySteps{
         for (i in 0..(artifactCount - 1)) {
             def artifactName = artifactFormat(i)
             def artifact = new File("${artifactsPath}${artifactName}")
-            def sha256 = utils.generateSHA256(artifact)
+            def sha256 = Utils.generateSHA256(artifact)
             Response create = xraySteps.createSecurityIssueEvents(issueID + artifactName + randomIndex, cve, summary,
                     description, issueType, severity, sha256, artifactName, username, password, xrayBaseUrl)
             create.then().log().ifValidationFails().statusCode(201)
@@ -167,7 +166,7 @@ class GenerateXrayDataTest extends XraySteps{
         for (i in 0..(artifactCount - 1)) {
             def artifactName = artifactFormat(i)
             def artifact = new File("${artifactsPath}${artifactName}")
-            def sha256 = utils.generateSHA256(artifact)
+            def sha256 = Utils.generateSHA256(artifact)
             sleep(2000)  // UI requests are finicky. Let server settle.
             Response response = xraySteps.assignLicenseToArtifact(UILoginHeaders, artifactoryBaseURL, artifactName, sha256, license_name, liense_full_name, license_references)
             response.then().log().ifValidationFails().statusCode(200)

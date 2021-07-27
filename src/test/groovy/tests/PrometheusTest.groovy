@@ -12,7 +12,6 @@ import steps.DataAnalyticsSteps
 import steps.RepositorySteps
 import steps.SecuritytSteps
 import steps.PrometheusSteps
-import utils.Utils
 
 import static org.hamcrest.Matchers.equalTo
 import static org.hamcrest.Matchers.hasItems
@@ -23,7 +22,6 @@ class PrometheusTest extends DataAnalyticsSteps{
     def repoSteps = new RepositorySteps()
     def securitySteps = new SecuritytSteps()
     def prometheus = new PrometheusSteps()
-    def utils = new Utils()
 
     @BeforeSuite(groups=["prometheus", "prometheus_xray"])
     def setUp() {
