@@ -2,6 +2,7 @@ package tests
 
 
 import io.restassured.response.Response
+import org.awaitility.Awaitility
 import org.hamcrest.Matchers
 import org.testng.Assert
 import org.testng.Reporter
@@ -12,6 +13,7 @@ import steps.RepositorySteps
 import steps.XraySteps
 import utils.Utils
 
+import java.util.concurrent.TimeUnit
 
 import static org.hamcrest.Matchers.containsString
 import static org.hamcrest.Matchers.equalTo
@@ -161,15 +163,26 @@ class GenerateXrayDataTest extends XraySteps{
 
 
     @Test(priority = 5, groups = ["xray_generate_data"], dataProvider = "multipleLicenseIssueEvents")
-    void createLicenseEventsTest(license_name, liense_full_name, license_references) {
-        def UILoginHeaders = xraySteps.getUILoginHeaders("${artifactoryBaseURL}", username, password)
+    void createLicenseEventsTest(license_name, license_full_name, license_references) {
         for (i in 0..(artifactCount - 1)) {
             def artifactName = artifactFormat(i)
             def artifact = new File("${artifactsPath}${artifactName}")
             def sha256 = Utils.generateSHA256(artifact)
-            sleep(2000)  // UI requests are finicky. Let server settle.
-            Response response = xraySteps.assignLicenseToArtifact(UILoginHeaders, artifactoryBaseURL, artifactName, sha256, license_name, liense_full_name, license_references)
-            response.then().log().ifValidationFails().statusCode(200)
+            sleep(1000)  // UI requests are finicky. Let server settle.
+            int tries = 0
+            Awaitility.await().atMost(120, TimeUnit.SECONDS).with()
+                    .pollDelay(1, TimeUnit.SECONDS).and().pollInterval(500, TimeUnit.MILLISECONDS).until { ->
+                println "$artifactName try: ${tries++}"
+                def success = assignLicenseToArtifact(UILoginHeaders, artifactoryBaseURL, artifactName, sha256,
+                        license_name, license_full_name, license_references)
+                .then().extract().statusCode() == 200
+                if(!success) {
+                    // reauthenticate
+                    UILoginHeaders = getUILoginHeaders("${artifactoryBaseURL}", username, password)
+                }
+                return success
+            }
+
             Reporter.log("- Assigned ${artifactName} ${license_name}", true)
         }
     }

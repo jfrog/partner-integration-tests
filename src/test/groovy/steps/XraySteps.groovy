@@ -11,7 +11,7 @@ import static org.hamcrest.Matchers.equalTo
 
 class XraySteps extends TestSetup{
 
-    def getUILoginHeaders(url, username, password) {
+    static def getUILoginHeaders(url, username, password) {
         def login = given()
                 .auth()
                 .basic("${username}", "${password}")
@@ -36,7 +36,7 @@ class XraySteps extends TestSetup{
                 .headers("X-Requested-With", "XMLHttpRequest") // Needed to use UI api
     }
 
-    def assignLicenseToArtifact(loginHeaders, url, artifactName, sha256, license_name, license_full_name, license_references) {
+    static Response assignLicenseToArtifact(loginHeaders, url, artifactName, sha256, license_name, license_full_name, license_references) {
         return loginHeaders
                 .contentType(ContentType.JSON)
                 .body("{\n" +
