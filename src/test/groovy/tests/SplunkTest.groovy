@@ -29,7 +29,6 @@ class SplunkTest extends DataAnalyticsSteps{
     def repoSteps = new RepositorySteps()
     def securitySteps = new SecuritytSteps()
     def splunk = new SplunkSteps()
-    def utils = new Utils()
 
     @BeforeSuite(groups=["splunk", "splunk_xray"])
     def setUp() {
@@ -64,7 +63,7 @@ class SplunkTest extends DataAnalyticsSteps{
         // Verify the last record in the response has current date
         int size = response.then().extract().body().path("results.size()")
         String date = response.then().extract().body().path("results[${size-1}]._time")
-        utils.verifySplunkDate(date)
+        Utils.verifySplunkDate(date)
 
         Reporter.log("- Splunk. Splunk successfully detects the number of errors in the past " +
                 "24 hours in the Artifactory log. Number of errors: ${errorCounts.sum()} date: ${date.substring(0,10)}", true)
@@ -102,7 +101,7 @@ class SplunkTest extends DataAnalyticsSteps{
         // Verify the last record in the response has current date
         int size = response.then().extract().body().path("results.size()")
         String date = response.then().extract().body().path("results[${size-1}]._time")
-        Assert.assertTrue((date.substring(0,10)) == utils.getUTCdate())
+        Assert.assertTrue((date.substring(0,10)) == Utils.getUTCdate())
 
         Reporter.log("- Splunk. Splunk successfully detects the number of HTTP responses in the Artifactory log", true)
     }
@@ -165,9 +164,9 @@ class SplunkTest extends DataAnalyticsSteps{
     @Test(priority=5, groups=["splunk", "splunk_rt_docker"], testName = "Artifactory - Docker. Dockerhub Pull Requests Trends Per 6 Hours")
     void dockerhubPRTrendsTest() throws Exception {
         def images = ["traefik", "alpine", "hello-world", "busybox"]
-        utils.dockerLogin(username, password, dockerURL)
+        Utils.dockerLogin(username, password, dockerURL)
         for(imageName in images) {
-            utils.dockerPullImage("${dockerURL}" + "/docker-remote/" + imageName)
+            Utils.dockerPullImage("${dockerURL}" + "/docker-remote/" + imageName)
         }
         // Clean up docker remote repository cache, to prevent Artifactory using it on the next run
         splunk.dockerCleanupCache(artifactoryBaseURL, username, password,
@@ -181,7 +180,7 @@ class SplunkTest extends DataAnalyticsSteps{
             Assert.fail("Empty response from Splunk")
         } else {
             String date = response.then().extract().body().path("results[${size - 1}]._time")
-            utils.verifySplunkDate(date)
+            Utils.verifySplunkDate(date)
             def requests = response.then().extract().body().path("results[${size - 1}].DockerPullRequests") as Integer
             Assert.assertTrue(requests >= images.size())
             Reporter.log("The number of image pulls - " + requests, true)
@@ -194,11 +193,11 @@ class SplunkTest extends DataAnalyticsSteps{
     @Test(priority=6, groups=["splunk", "splunk_rt_docker"], testName = "Artifactory - Docker. Docker Repositories Cache Hit Ratio")
     void dockerhubCacheHitRatioTest() throws Exception {
         def images = ["traefik", "alpine", "hello-world", "busybox"]
-        utils.dockerLogin(username, password, dockerURL)
+        Utils.dockerLogin(username, password, dockerURL)
         // Run docker pull from the remote repository twice. First loop will use dockerhub, second - Artifactory cache
         2.times {
             for(imageName in images) {
-                utils.dockerPullImage("${dockerURL}" + "/docker-remote/" + imageName)
+                Utils.dockerPullImage("${dockerURL}" + "/docker-remote/" + imageName)
             }
         }
         splunk.dockerCleanupCache(artifactoryBaseURL, username, password,
@@ -226,9 +225,9 @@ class SplunkTest extends DataAnalyticsSteps{
     @Test(priority=7, groups=["splunk", "splunk_rt_docker"], testName = "Artifactory - Docker. Dockerhub Pull Requests in rolling 6 Hr window")
     void dockerhubPRsIn6hrWindowTest() throws Exception {
         def images = ["traefik", "alpine", "hello-world", "busybox"]
-        utils.dockerLogin(username, password, dockerURL)
+        Utils.dockerLogin(username, password, dockerURL)
         for(imageName in images) {
-            utils.dockerPullImage("${dockerURL}" + "/docker-remote/" + imageName)
+            Utils.dockerPullImage("${dockerURL}" + "/docker-remote/" + imageName)
         }
         splunk.dockerCleanupCache(artifactoryBaseURL, username, password,
                 "artifactory/docker-remote-cache/library/", images)
@@ -253,9 +252,9 @@ class SplunkTest extends DataAnalyticsSteps{
     @Test(priority=8, groups=["splunk", "splunk_rt_docker"], testName = "Artifactory - Docker. Dockerhub Pull Requests Total")
     void dockerhubPRsTotalTest() throws Exception {
         def images = ["traefik", "alpine", "hello-world", "busybox"]
-        utils.dockerLogin(username, password, dockerURL)
+        Utils.dockerLogin(username, password, dockerURL)
         for(imageName in images) {
-            utils.dockerPullImage("${dockerURL}" + "/docker-remote/" + imageName)
+            Utils.dockerPullImage("${dockerURL}" + "/docker-remote/" + imageName)
         }
         splunk.dockerCleanupCache(artifactoryBaseURL, username, password,
                 "artifactory/docker-remote-cache/library/", images)
@@ -279,9 +278,9 @@ class SplunkTest extends DataAnalyticsSteps{
     @Test(priority=9, groups=["splunk", "splunk_rt_docker"], testName = "Artifactory - Docker. Top 10 Users By Docker Pulls")
     void dockerhubTop10UsersTest() throws Exception {
         def images = ["traefik", "alpine", "hello-world", "busybox"]
-        utils.dockerLogin(username, password, dockerURL)
+        Utils.dockerLogin(username, password, dockerURL)
         for(imageName in images) {
-            utils.dockerPullImage("${dockerURL}" + "/docker-remote/" + imageName)
+            Utils.dockerPullImage("${dockerURL}" + "/docker-remote/" + imageName)
         }
         splunk.dockerCleanupCache(artifactoryBaseURL, username, password,
                 "artifactory/docker-remote-cache/library/", images)
@@ -304,9 +303,9 @@ class SplunkTest extends DataAnalyticsSteps{
     @Test(priority=10, groups=["splunk", "splunk_rt_docker"], testName = "Artifactory - Docker. Top 10 IPs By Docker Pulls")
     void dockerhubTop10IPsTest() throws Exception {
         def images = ["traefik", "alpine", "hello-world", "busybox"]
-        utils.dockerLogin(username, password, dockerURL)
+        Utils.dockerLogin(username, password, dockerURL)
         for(imageName in images) {
-            utils.dockerPullImage("${dockerURL}" + "/docker-remote/" + imageName)
+            Utils.dockerPullImage("${dockerURL}" + "/docker-remote/" + imageName)
         }
         splunk.dockerCleanupCache(artifactoryBaseURL, username, password,
                 "artifactory/docker-remote-cache/library/", images)
@@ -335,9 +334,9 @@ class SplunkTest extends DataAnalyticsSteps{
         def numberOfImages = 3
         def repos = ["docker-dev-local", "docker-local"]
         // Docker login, pull busybox, generate and push multiple dummy images
-        utils.dockerLogin(username, password, dockerURL)
-        utils.dockerPullImage(image)
-        utils.dockerGenerateImages(repos, numberOfImages, image, dockerURL)
+        Utils.dockerLogin(username, password, dockerURL)
+        Utils.dockerPullImage(image)
+        Utils.dockerGenerateImages(repos, numberOfImages, image, dockerURL)
         Thread.sleep(60000)
         // Create a search job in Splunk with given parameters, return Search ID
         def search_string = 'search=search (sourcetype="jfrog.rt.artifactory.request" OR ' +
@@ -355,7 +354,7 @@ class SplunkTest extends DataAnalyticsSteps{
         }
         int size = response.then().extract().body().path("results.size()")
         String date = response.then().extract().body().path("results[${size-1}]._time")
-        utils.verifySplunkDate(date)
+        Utils.verifySplunkDate(date)
 
         Reporter.log("- Splunk. Accessed Docker Images information is verified", true)
     }
@@ -363,9 +362,9 @@ class SplunkTest extends DataAnalyticsSteps{
     @Test(priority=12, groups=["splunk", "splunk_rt_docker"], testName = "Artifactory - Docker. Accessed Docker Repos")
     void accessedReposTest() throws Exception {
         def repos = ["${dockerURL}/docker-dev-local/busybox1:1.1", "${dockerURL}/docker-local/busybox1:1.1"]
-        utils.dockerLogin(username, password, dockerURL)
+        Utils.dockerLogin(username, password, dockerURL)
         for(i in repos) {
-            utils.dockerPullImage(i)
+            Utils.dockerPullImage(i)
         }
         Thread.sleep(30000)
         def search_string = 'search=search (sourcetype="jfrog.rt.artifactory.request" OR ' +
@@ -384,7 +383,7 @@ class SplunkTest extends DataAnalyticsSteps{
         }
         int size = response.then().extract().body().path("results.size()")
         String date = response.then().extract().body().path("results[${size-1}]._time")
-        utils.verifySplunkDate(date)
+        Utils.verifySplunkDate(date)
 
         Reporter.log("- Splunk. Accessed Docker Repos information is verified", true)
     }
@@ -451,7 +450,7 @@ class SplunkTest extends DataAnalyticsSteps{
 
         int size = response.then().extract().body().path("results.size()")
         String date = response.then().extract().body().path("results[${size-1}]._time")
-        Assert.assertTrue((date.substring(0,10)) == utils.getUTCdate())
+        Assert.assertTrue((date.substring(0,10)) == Utils.getUTCdate())
 
         JsonPath jsonPathEvaluator = response.jsonPath()
         List<Integer> accessCounts = jsonPathEvaluator.getList("results.'jfrog.rt.access.request'", Integer.class)
@@ -488,7 +487,7 @@ class SplunkTest extends DataAnalyticsSteps{
         Assert.assertTrue((errorCount.sum()) >= calls)
         int size = response.then().extract().body().path("results.size()")
         String date = response.then().extract().body().path("results[${size-1}]._time")
-        Assert.assertTrue((date.substring(0,10)) == utils.getUTCdate())
+        Assert.assertTrue((date.substring(0,10)) == Utils.getUTCdate())
 
         Reporter.log("- Splunk. Artifactory, Log Errors verification. Splunk shows errors generated by Artifactory" +
                 " during the test", true)
@@ -676,7 +675,7 @@ class SplunkTest extends DataAnalyticsSteps{
                 body("results.OTHER", Matchers.notNullValue())
         int size = response.then().extract().body().path("results.size()")
         String date = response.then().extract().body().path("results[${size-1}]._time")
-        Assert.assertTrue((date.substring(0,10)) == utils.getUTCdate())
+        Assert.assertTrue((date.substring(0,10)) == Utils.getUTCdate())
 
         Reporter.log("- Splunk. Xray, Log volume verification. Each log record has values", true)
     }
@@ -705,7 +704,7 @@ class SplunkTest extends DataAnalyticsSteps{
         Assert.assertTrue((errorCount.sum()) >= calls)
         int size = response.then().extract().body().path("results.size()")
         String date = response.then().extract().body().path("results[${size-1}]._time")
-        Assert.assertTrue((date.substring(0,10)) == utils.getUTCdate())
+        Assert.assertTrue((date.substring(0,10)) == Utils.getUTCdate())
 
         Reporter.log("- Splunk. Xray, Log Errors verification. Splunk shows errors generated by Xray" +
                 " during the test", true)
@@ -731,7 +730,7 @@ class SplunkTest extends DataAnalyticsSteps{
         Response response = splunk.getSearchResults(splunk_username, splunk_password, splunkBaseURL, searchID)
         int size = response.then().extract().body().path("results.size()")
         String date = response.then().extract().body().path("results[${size-1}]._time")
-        Assert.assertTrue((date.substring(0,10)) == utils.getUTCdate())
+        Assert.assertTrue((date.substring(0,10)) == Utils.getUTCdate())
         JsonPath jsonPathEvaluator = response.jsonPath()
         List<Integer> errorCount = jsonPathEvaluator.getList("results.500", Integer.class)
         Assert.assertTrue((errorCount.sum()) >= calls)
@@ -762,7 +761,7 @@ class SplunkTest extends DataAnalyticsSteps{
         Response response = splunk.getSearchResults(splunk_username, splunk_password, splunkBaseURL, searchID)
         int size = response.then().extract().body().path("results.size()")
         String date = response.then().extract().body().path("results[${size-1}]._time")
-        Assert.assertTrue((date.substring(0,10)) == utils.getUTCdate())
+        Assert.assertTrue((date.substring(0,10)) == Utils.getUTCdate())
 
         JsonPath jsonPathEvaluator = response.jsonPath()
         def responseCodes = ["200","201","409","500"]

@@ -29,7 +29,6 @@ class DatadogTest extends DataAnalyticsSteps {
     def repoSteps = new RepositorySteps()
     def securitySteps = new SecuritytSteps()
     def datadog = new DatadogSteps()
-    def utils = new Utils()
     def testUsers = ["testuser1", "testuser2", "testuser3", "testuser4"]
 
     @BeforeSuite(groups=["testing", "datadog", "datadog_xray"])
@@ -68,9 +67,9 @@ class DatadogTest extends DataAnalyticsSteps {
         def numberOfImages = 5
         def repos = ["docker-dev-local", "docker-local", "docker-prod-local", "docker-push"]
         // Docker login, pull busybox, generate and push multiple dummy images
-        utils.dockerLogin(username, password, dockerURL)
-        utils.dockerPullImage(image)
-        utils.dockerGenerateImages(repos, numberOfImages, image, dockerURL)
+        Utils.dockerLogin(username, password, dockerURL)
+        Utils.dockerPullImage(image)
+        Utils.dockerGenerateImages(repos, numberOfImages, image, dockerURL)
         // Upload Data Transfer by Repo
         // Upload IP's by Data Volume
         uploadIntoRepo(count, calls)

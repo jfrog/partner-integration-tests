@@ -27,7 +27,6 @@ class RepositoryTest extends RepositorySteps{
     def repoListHA = new File("./src/test/resources/repositories/CreateDefault.yaml")
     def repoListJCR = new File("./src/test/resources/repositories/CreateJCR.yaml")
     def artifact = new File("./src/test/resources/repositories/artifact.zip")
-    def utils = new Utils()
     def artifactoryURL = "${artifactoryBaseURL}/artifactory"
 
     @BeforeTest(groups=["jcr", "pro", "docker"])
@@ -134,9 +133,9 @@ class RepositoryTest extends RepositorySteps{
         def repoName = "generic-dev-local"
         def directoryName = "test-directory"
         def filename = "artifact.zip"
-        def sha256 = utils.generateSHA256(artifact)
-        def sha1 = utils.generateSHA1(artifact)
-        def md5 = utils.generateMD5(artifact)
+        def sha256 = Utils.generateSHA256(artifact)
+        def sha1 = Utils.generateSHA1(artifact)
+        def md5 = Utils.generateMD5(artifact)
         Response response = deployArtifact(artifactoryURL, username, password, repoName, directoryName, artifact, filename, sha256, sha1, md5)
         response.then().assertThat().log().ifValidationFails().statusCode(201)
                 .body("repo", equalTo(repoName))
@@ -302,9 +301,9 @@ class RepositoryTest extends RepositorySteps{
         def repoName = "generic-dev-local"
         def directoryName = "test-directory"
         def filename = "artifact.zip"
-        def sha256 = utils.generateSHA256(artifact)
-        def sha1 = utils.generateSHA1(artifact)
-        def md5 = utils.generateMD5(artifact)
+        def sha256 = Utils.generateSHA256(artifact)
+        def sha1 = Utils.generateSHA1(artifact)
+        def md5 = Utils.generateMD5(artifact)
         Response response = deployArtifact(artifactoryURL, username, password, repoName, directoryName, artifact, filename, sha256, sha1, md5)
         response.then().assertThat().log().ifValidationFails().statusCode(201)
                 .body("repo", equalTo(repoName))
