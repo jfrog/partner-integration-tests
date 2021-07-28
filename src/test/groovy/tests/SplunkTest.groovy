@@ -774,4 +774,30 @@ class SplunkTest extends DataAnalyticsSteps{
                 " during the test.", true)
     }
 
+    @Test(priority = 28, groups = ["splunk_siem"], testName = "Xray, Violations. Watches")
+    void watchesCountTest() throws Exception {
+        def license_issues = ["0BSD", "AAL", "Abstyles", "Adobe-2006", "Adobe-Glyph"]
+
+        def search_string = 'search=search log_source="jfrog.xray.siem.vulnerabilities" earliest=-1h | stats dc(signature) as watches '
+        Response createSearch = splunk.createSearch(splunk_username, splunk_password, splunkBaseURL, search_string)
+        println(createSearch.then().log())
+        createSearch.then().statusCode(201)
+        def searchID = splunk.getSplunkSearchID(splunk_username, splunk_password, splunkBaseURL, search_string)
+
+        splunk.waitForTheResponse(splunk_username, splunk_password, splunkBaseURL, searchID, 120)
+        Response response = splunk.getSearchResults(splunk_username, splunk_password, splunkBaseURL, searchID)
+        int size = response.then().extract().body().path("results.size()")
+
+        if (size == 0){
+            Assert.fail("Empty response from Splunk")
+        } else {
+            def requests = response.then().extract().body().path("results[${size - 1}].watches") as Integer
+            println(requests)
+            // One watch per license in multipleLicenseIssueEvents and one watch for all security violations
+            Assert.assertTrue(requests >= license_issues.size() + 1)
+            Reporter.log("The number of watches is " + requests, true)
+        }
+
+    }
+
 }

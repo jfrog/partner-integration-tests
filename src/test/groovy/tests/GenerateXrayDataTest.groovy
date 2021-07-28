@@ -47,7 +47,7 @@ class GenerateXrayDataTest extends XraySteps{
             Utils.createArtifact(artifactFormat(i))
         }
 
-        deleteExistingWatches(namePrefix, artifactoryBaseURL, username, password)
+        //deleteExistingWatches(namePrefix, artifactoryBaseURL, username, password)
     }
 
     @AfterSuite(groups = ["xray_generate_data"])

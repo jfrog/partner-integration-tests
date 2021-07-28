@@ -140,3 +140,14 @@ task datadog_test(type: Test) {
         showStandardStreams = true
     }
 }
+
+task splunk_siem_test(type: Test) {
+    useTestNG() {
+        useDefaultListeners = true
+        suites 'src/test/groovy/testng.xml'
+        includeGroups("splunk_siem")
+    }
+    testLogging {
+        showStandardStreams = true
+    }
+}
