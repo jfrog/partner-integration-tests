@@ -34,7 +34,7 @@ class SplunkTest extends DataAnalyticsSteps{
     def splunk = new SplunkSteps()
     def xraySteps = new XraySteps()
 
-    @BeforeSuite(groups=["splunk", "splunk_xray"])
+    @BeforeSuite(groups=["splunk", "splunk_xray", "splunk_siem"])
     def setUp() {
         RestAssured.baseURI = "${artifactoryBaseURL}/artifactory"
         RestAssured.authentication = RestAssured.basic(username, password)
