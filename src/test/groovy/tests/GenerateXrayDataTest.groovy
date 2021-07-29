@@ -47,7 +47,6 @@ class GenerateXrayDataTest extends XraySteps{
             Utils.createArtifact(artifactFormat(i))
         }
 
-        //deleteExistingWatches(namePrefix, artifactoryBaseURL, username, password)
     }
 
     @AfterSuite(groups = ["xray_generate_data"])
@@ -87,6 +86,10 @@ class GenerateXrayDataTest extends XraySteps{
 
     @Test(priority=2, groups=["xray_generate_data"], testName = "Create security policy and watch. Assign policy to watch")
     void createSecurityPolicyTest(){
+        // Before we start creating new policies and watches, delete the old ones to prevent
+        // duplicate violations.
+        deleteExistingWatches(namePrefix, artifactoryBaseURL, username, password)
+
         Response createSecurityPolicy = xraySteps.createPolicy(securityPolicyName, username, password, xrayBaseUrl)
         createSecurityPolicy.then().statusCode(201)
         Response getPolicy = xraySteps.getPolicy(securityPolicyName, username, password, xrayBaseUrl)
@@ -95,7 +98,7 @@ class GenerateXrayDataTest extends XraySteps{
         Assert.assertTrue(securityPolicyName == policyNameVerification)
         xraySteps.createWatch(watchName + "_security", securityPolicyName, "security", username, password, xrayBaseUrl)
 
-        Reporter.log("- Create policies and assign them to watches.", true)
+        Reporter.log("- Create security policies and assign them to watches.", true)
     }
 
     @Test(priority=3, groups=["xray_generate_data"], dataProvider = "multipleLicenseIssueEvents", testName = "Create license policy and watch. Assign policy to watch")
@@ -108,6 +111,8 @@ class GenerateXrayDataTest extends XraySteps{
         Assert.assertTrue(licensePolicyName+"_${license}" == licensePolicyNameVerification)
 
         xraySteps.createWatch("${ watchName }_license_${license}", "${licensePolicyName}_${license}", "license", username, password, xrayBaseUrl)
+
+        Reporter.log("- Create policies for ${license} and assigned them to watches.")
     }
 
 
