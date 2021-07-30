@@ -88,10 +88,34 @@ class SplunkSteps {
         }
     }
 
-    static def getExpectedCounts(license_issues, security_issues) {
+    static Map<String, Integer> getSeverities(Response response) {
+        return response.jsonPath().getList("results").stream().collect(
+                Collectors.toMap(
+                        it -> it["severity"].toString(),
+                        it -> Integer.parseInt(it["count"].toString()),
+                        Integer::sum
+                )
+        )
+    }
+
+    static Map<String, Integer> getExpectedSeverities(license_issues, security_issues) {
+        Map<String, Integer> expected = security_issues.stream().collect(
+                Collectors.toMap(
+                        {Object[] it -> it[5].toString()},
+                        {Object[] it -> it[6].size()},
+                        Integer::sum
+                )
+        )
+        int licenseCount = license_issues.stream().reduce((int) 0, (int count, list) -> count + list[3].size())
+
+        expected.put("High", expected.getOrDefault("High", 0) + licenseCount)
+        return expected
+    }
+
+    static Map<String, Integer> getExpectedCounts(license_issues, security_issues) {
         def expected = license_issues.stream().collect(
                 Collectors.toMap(
-                        {Object[] it -> it[0]},
+                        {Object[] it -> it[0].toString()},
                         {Object[] it -> it[3].size()},
                         Integer::sum
                 )
@@ -101,11 +125,11 @@ class SplunkSteps {
         return expected
     }
 
-    static def getMatchedPolicyCounts(Response response) {
+    static Map<String, Integer> getMatchedPolicyWatchCounts(Response response, String selector) {
         return response.jsonPath().getList("results").stream().collect(
                 Collectors.toMap(
                         it -> {
-                            def policy = it["matched_policies{}.policy"].toString()
+                            def policy = it[selector].toString()
                             policy.contains("security") ? "security" : policy.substring(policy.lastIndexOf("_") + 1)
                         },
                         it -> Integer.parseInt(it["count"].toString()),
