@@ -6,6 +6,7 @@ import org.awaitility.Awaitility
 import org.yaml.snakeyaml.Yaml
 
 import java.util.concurrent.TimeUnit
+import java.util.stream.Collectors
 
 import static io.restassured.RestAssured.given
 
@@ -85,6 +86,45 @@ class SplunkSteps {
         else {
             return false
         }
+    }
+
+    static def getExpectedCounts(license_issues, security_issues) {
+        def expected = license_issues.stream().collect(
+                Collectors.toMap(
+                        {Object[] it -> it[0]},
+                        {Object[] it -> it[3].size()},
+                        Integer::sum
+                )
+        )
+
+        expected.put("security", security_issues.stream().reduce((int) 0, (int count, list) -> count + list[6].size()))
+        return expected
+    }
+
+    static def getMatchedPolicyCounts(Response response) {
+        return response.jsonPath().getList("results").stream().collect(
+                Collectors.toMap(
+                        it -> {
+                            def policy = it["matched_policies{}.policy"].toString()
+                            policy.contains("security") ? "security" : policy.substring(policy.lastIndexOf("_") + 1)
+                        },
+                        it -> Integer.parseInt(it["count"].toString()),
+                        Integer::sum
+                )
+        )
+    }
+
+    static def getMatchedRuleCounts(Response response) {
+        return response.jsonPath().getList("results").stream().collect(
+                Collectors.toMap(
+                        it -> {
+                            def policy = it["matched_policies{}.rule"].toString()
+                            policy.contains("security") ? "security" : policy.substring("License".length(), policy.lastIndexOf("Rule"))
+                        },
+                        it -> Integer.parseInt(it["count"].toString()),
+                        Integer::sum
+                )
+        )
     }
 
 }
