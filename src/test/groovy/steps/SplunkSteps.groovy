@@ -138,7 +138,7 @@ class SplunkSteps {
         )
     }
 
-    static def getMatchedRuleCounts(Response response) {
+    static Map<String, Integer> getMatchedRuleCounts(Response response) {
         return response.jsonPath().getList("results").stream().collect(
                 Collectors.toMap(
                         it -> {
@@ -149,6 +149,20 @@ class SplunkSteps {
                         Integer::sum
                 )
         )
+    }
+
+    static Map<String, Integer> squashSeveritiesOverTime(Response response) {
+        List<Map<String, String>> results = response.jsonPath().getList("results")
+        def severities = new HashMap<String, Integer>()
+
+        results.forEach {
+            it.findAll {
+                it.getKey().charAt(0) != '_' as char
+            }.forEach {key, value ->
+                severities.merge(key, Integer.parseInt(value), Integer::sum)
+            }
+        }
+        return severities
     }
 
 }
