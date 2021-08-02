@@ -196,4 +196,24 @@ class SplunkSteps {
         return componentCounts
     }
 
+    static Map<String, Integer> getCVECounts(Response response) {
+        return response.jsonPath().getList("results").stream().collect(
+                Collectors.toMap(
+                        it -> it["cve"].toString(),
+                        it -> Integer.parseInt(it["count"].toString()),
+                        Integer::sum
+                )
+        )
+    }
+
+    static Map<String, Integer> getExpectedCVECounts(security_issues) {
+        return security_issues.stream().collect(
+                Collectors.toMap(
+                        it -> it[1].toString(),
+                        it -> it[6].size(),
+                        Integer::sum
+                )
+        )
+    }
+
 }
