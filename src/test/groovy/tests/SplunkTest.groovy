@@ -991,7 +991,7 @@ class SplunkTest extends DataAnalyticsSteps{
 
         Assert.assertEquals(infected, expected)
         Reporter.log("- Splunk. Xray, Violations, Top Infected Components. " +
-                "Spunk shows all infected components")
+                "Spunk shows all infected components", true)
     }
 
     @Test(priority = 42, groups = ["splunk_siem"], testName = "Xray, Violations. Top Impacted Artifacts")
@@ -1003,7 +1003,35 @@ class SplunkTest extends DataAnalyticsSteps{
 
         Assert.assertEquals(infected, expected)
         Reporter.log("- Splunk. Xray, Violations, Top Impacted Artifacts. " +
-                "Spunk shows all impacted artifacts")
+                "Spunk shows all impacted artifacts", true)
+    }
+
+    @Test(priority = 43, groups = ["splunk_siem"], testName = "Xray, Violations. Top Impacted Artifact by Count of User Downloads")
+    void topImpactedArtifactByUserDownloads() {
+        def search_string = /search=search  log_source = "jfrog.rt.artifactory.access" username="$username " /+
+                            /earliest=$earliest action_response = "ACCEPTED DOWNLOAD" [search log_source="jfrog.xray.siem.vulnerabilities" /+
+                            /impacted_artifacts_url{}=* | stats count by impacted_artifacts_url{} | / +
+                            /rex field=impacted_artifacts_url{} "(?<impacted_artifacts_url>.*)" | return 500000 / +
+                            '$impacted_artifacts_url ] | stats count(username) by repo_path | rename repo_path as impacted_artifact'
+
+        Response response = splunk.splunkSearchResults(splunk_username, splunk_password, splunkBaseURL, search_string)
+        Assert.assertEquals(response.jsonPath().getList("results").size(), xraySteps.artifacts().length)
+        Reporter.log("- Splunk. Xray, Violations, Top Impacted Artifact by Count of User Downloads. " +
+                "Spunk shows 1 download for each artifact by user '$username'", true)
+    }
+
+    @Test(priority = 44, groups = ["splunk_siem"], testName = "Xray, Violations. Top Impacted Artifact by Count of IP Download")
+    void topImpactedArtifactByIPDownloads() {
+        def search_string = /search=search log_source = "jfrog.rt.artifactory.access" action_response = "ACCEPTED DOWNLOAD" / +
+                            /earliest=$earliest ip!=" 127.0.0.1" [search log_source="jfrog.xray.siem.vulnerabilities" / +
+                            /impacted_artifacts_url{}=* | stats count by impacted_artifacts_url{} | rex field=impacted_artifacts_url{} / +
+                            '"(?<impacted_artifacts_url>.*)" | return 500000 $impacted_artifacts_url ] | ' +
+                            /stats count(ip) by repo_path | rename repo_path as impacted_artifact/
+
+        Response response = splunk.splunkSearchResults(splunk_username, splunk_password, splunkBaseURL, search_string)
+        Assert.assertEquals(response.jsonPath().getList("results").size(), xraySteps.artifacts().length)
+        Reporter.log("- Splunk. Xray, Violations, Top Impacted Artifact by Count of IP Download. " +
+                "Spunk shows 1 download for each artifact by non-localhost IPs", true)
     }
 
 }
