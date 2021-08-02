@@ -1023,9 +1023,9 @@ class SplunkTest extends DataAnalyticsSteps{
     void topImpactedArtifactByUserDownloads() {
         def search_string = /search=search  log_source = "jfrog.rt.artifactory.access" username="$username " /+
                             /earliest=$earliest action_response = "ACCEPTED DOWNLOAD" [search log_source="jfrog.xray.siem.vulnerabilities" /+
-                            /impacted_artifacts_url{}=* | stats count by impacted_artifacts_url{} | / +
-                            /rex field=impacted_artifacts_url{} "(?<impacted_artifacts_url>.*)" | return 500000 / +
-                            '$impacted_artifacts_url ] | stats count(username) by repo_path | rename repo_path as impacted_artifact'
+                            /impacted_artifacts{}=* | stats count by impacted_artifacts{} | / +
+                            /rex field=impacted_artifacts{} "(?<impacted_artifacts>.*)" | return 500000 / +
+                            '$impacted_artifacts ] | stats count(username) by repo_path | rename repo_path as impacted_artifact'
 
         def expectedArtifactCount = SplunkSteps.getExpectedComponentCounts(license_issues, security_issues).size()
         Response response = splunk.splunkSearchResults(splunk_username, splunk_password, splunkBaseURL, search_string)
@@ -1038,8 +1038,8 @@ class SplunkTest extends DataAnalyticsSteps{
     void topImpactedArtifactByIPDownloads() {
         def search_string = /search=search log_source = "jfrog.rt.artifactory.access" action_response = "ACCEPTED DOWNLOAD" / +
                             /earliest=$earliest ip!=" 127.0.0.1" [search log_source="jfrog.xray.siem.vulnerabilities" / +
-                            /impacted_artifacts_url{}=* | stats count by impacted_artifacts_url{} | rex field=impacted_artifacts_url{} / +
-                            '"(?<impacted_artifacts_url>.*)" | return 500000 $impacted_artifacts_url ] | ' +
+                            /impacted_artifacts{}=* | stats count by impacted_artifacts{} | rex field=impacted_artifacts{} / +
+                            '"(?<impacted_artifacts>.*)" | return 500000 $impacted_artifacts ] | ' +
                             /stats count(ip) by repo_path | rename repo_path as impacted_artifact/
 
         def expectedArtifactCount = SplunkSteps.getExpectedComponentCounts(license_issues, security_issues).size()
