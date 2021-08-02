@@ -13,6 +13,7 @@ import static io.restassured.RestAssured.given
 import static org.hamcrest.Matchers.equalTo
 
 class XraySteps extends TestSetup{
+    public static artifactFormat = {int i -> "artifact_${i}.zip"}
 
     static void deleteExistingWatches(namePrefix, artifactoryBaseURL, username, password) {
         def watches = given()
@@ -888,11 +889,11 @@ class XraySteps extends TestSetup{
     @DataProvider(name = "multipleIssueEvents")
     public Object[][] multipleIssueEvents() {
         return new Object[][]{
-                ["XRAYS0-", "CVE-2017-2000386", "Custom issue 0", "The Hackers can get access to your source code", "Security", "Medium", [7,8]],
-                ["XRAYS1-", "CVE-2018-2000568", "Custom issue 1", "Root access could be granted to a stranger", "Security", "High",[4]],
-                ["XRAYS2-", "CVE-2020-2000554", "Custom issue 2", "Everything will fall apart if you use this binary", "Security", "High",[2,3]],
-                ["XRAYS3-", "CVE-2021-2001325", "Custom issue 3", "Never use the binary with this issue", "Security", "Medium",[3,5,6,8,9]],
-                ["XRAYS4-", "CVE-2019-2005843", "Custom issue 4", "Beware of this zip file", "Security", "Low",[0,1,2,3,4]]
+                ["XRAYS0-", "CVE-2017-2000386", "Custom issue 0", "The Hackers can get access to your source code", "Security", "Medium", [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]],
+                ["XRAYS1-", "CVE-2018-2000568", "Custom issue 1", "Root access could be granted to a stranger", "Security", "High",[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]],
+                ["XRAYS2-", "CVE-2020-2000554", "Custom issue 2", "Everything will fall apart if you use this binary", "Security", "High",[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]],
+                ["XRAYS3-", "CVE-2021-2001325", "Custom issue 3", "Never use the binary with this issue", "Security", "Medium",[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]],
+                ["XRAYS4-", "CVE-2019-2005843", "Custom issue 4", "Beware of this zip file", "Security", "Low",[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]]
 
         }
     }
@@ -900,11 +901,11 @@ class XraySteps extends TestSetup{
     @DataProvider(name = "multipleLicenseIssueEvents")
     public Object[][] multipleLicenseIssueEvents() {
         return new Object[][]{
-                ["0BSD", "BSD Zero Clause License", "https://spdx.org/licenses/0BSD.html", [0,1,2]],
-                ["AAL", "Attribution Assurance License", "https://spdx.org/licenses/AAL.html",[2,3,4,8,9]],
-                ["Abstyles", "Abstyles License", "https://spdx.org/licenses/Abstyles.html",[4,5,6]],
-                ["Adobe-2006", "Adobe Systems Incorporated Source Code License Agreement", "https://spdx.org/licenses/Adobe-2006.html",[7,8,9]],
-                ["Adobe-Glyph", "Adobe Glyph List License", "https://spdx.org/licenses/Adobe-Glyph.html",[0,3]]
+                ["0BSD", "BSD Zero Clause License", "https://spdx.org/licenses/0BSD.html", [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]],
+                ["AAL", "Attribution Assurance License", "https://spdx.org/licenses/AAL.html",[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]],
+                ["Abstyles", "Abstyles License", "https://spdx.org/licenses/Abstyles.html",[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]],
+                ["Adobe-2006", "Adobe Systems Incorporated Source Code License Agreement", "https://spdx.org/licenses/Adobe-2006.html",[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]],
+                ["Adobe-Glyph", "Adobe Glyph List License", "https://spdx.org/licenses/Adobe-Glyph.html",[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]]
         }
     }
 

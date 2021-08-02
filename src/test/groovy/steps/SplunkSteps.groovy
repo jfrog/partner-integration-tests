@@ -6,6 +6,7 @@ import org.awaitility.Awaitility
 import org.yaml.snakeyaml.Yaml
 
 import java.util.concurrent.TimeUnit
+import java.util.stream.Collectors
 
 import static io.restassured.RestAssured.given
 
@@ -85,6 +86,134 @@ class SplunkSteps {
         else {
             return false
         }
+    }
+
+    static Map<String, Integer> getSeverities(Response response) {
+        return response.jsonPath().getList("results").stream().collect(
+                Collectors.toMap(
+                        it -> it["severity"].toString(),
+                        it -> Integer.parseInt(it["count"].toString()),
+                        Integer::sum
+                )
+        )
+    }
+
+    static Map<String, Integer> getExpectedSeverities(license_issues, security_issues) {
+        Map<String, Integer> expected = security_issues.stream().collect(
+                Collectors.toMap(
+                        {Object[] it -> it[5].toString()},
+                        {Object[] it -> it[6].size()},
+                        Integer::sum
+                )
+        )
+        int licenseCount = license_issues.stream().reduce((int) 0, (int count, list) -> count + list[3].size())
+
+        expected.put("High", expected.getOrDefault("High", 0) + licenseCount)
+        return expected
+    }
+
+    static Map<String, Integer> getExpectedViolationCounts(license_issues, security_issues) {
+        def expected = license_issues.stream().collect(
+                Collectors.toMap(
+                        {Object[] it -> it[0].toString()},
+                        {Object[] it -> it[3].size()},
+                        Integer::sum
+                )
+        )
+
+        expected.put("security", security_issues.stream().reduce((int) 0, (int count, list) -> count + list[6].size()))
+        return expected
+    }
+
+    static Map<String, Integer> getMatchedPolicyWatchCounts(Response response, String selector) {
+        return response.jsonPath().getList("results").stream().collect(
+                Collectors.toMap(
+                        it -> {
+                            def policy = it[selector].toString()
+                            policy.contains("security") ? "security" : policy.substring(policy.lastIndexOf("_") + 1)
+                        },
+                        it -> Integer.parseInt(it["count"].toString()),
+                        Integer::sum
+                )
+        )
+    }
+
+    static Map<String, Integer> getMatchedRuleCounts(Response response) {
+        return response.jsonPath().getList("results").stream().collect(
+                Collectors.toMap(
+                        it -> {
+                            def policy = it["matched_policies{}.rule"].toString()
+                            policy.contains("security") ? "security" : policy.substring("License".length(), policy.lastIndexOf("Rule"))
+                        },
+                        it -> Integer.parseInt(it["count"].toString()),
+                        Integer::sum
+                )
+        )
+    }
+
+    static Map<String, Integer> squashSeveritiesOverTime(Response response) {
+        List<Map<String, String>> results = response.jsonPath().getList("results")
+        def severities = new HashMap<String, Integer>()
+
+        results.forEach {
+            it.findAll {
+                it.getKey().charAt(0) != '_' as char
+            }.forEach {key, value ->
+                severities.merge(key, Integer.parseInt(value), Integer::sum)
+            }
+        }
+        return severities
+    }
+
+    static Map<String, Integer> getInfectedComponentCounts(Response response, String selector) {
+        return response.jsonPath().getList("results").stream().collect(
+                Collectors.toMap(
+                        it -> {
+                            def artifact = it[selector].toString()
+                            artifact.substring(artifact.lastIndexOf("/") + 1)
+                        },
+                        it -> Integer.parseInt(it["count"].toString()),
+                        Integer::sum
+                )
+        )
+    }
+
+    static Map<String, Integer> getExpectedComponentCounts(license_issues, security_issues) {
+        def componentCounts = new HashMap<String, Integer>()
+        license_issues.forEach { it ->
+            it[3].forEach { artifactId ->
+                def artifactName = XraySteps.artifactFormat(artifactId)
+                componentCounts.put(artifactName, componentCounts.getOrDefault(artifactName, 0) + 1)
+            }
+        }
+
+        security_issues.forEach { it ->
+            it[6].forEach { artifactId ->
+                def artifactName = XraySteps.artifactFormat(artifactId)
+                componentCounts.put(artifactName, componentCounts.getOrDefault(artifactName, 0) + 1)
+            }
+        }
+        return componentCounts
+    }
+
+    static Map<String, Integer> getCVECounts(Response response) {
+        return response.jsonPath().getList("results").stream().collect(
+                Collectors.toMap(
+                        it -> it["cve"].toString(),
+                        it -> Integer.parseInt(it["count"].toString()),
+                        Integer::sum
+                )
+        )
+    }
+
+    static Map<String, Integer> getExpectedCVECounts(security_issues) {
+        return security_issues.stream().collect(
+                Collectors.toMap(
+                        it -> it[1].toString(),
+                        it -> it[6].size(),
+                        Integer::sum
+                )
+        )
     }
 
 }
