@@ -864,7 +864,7 @@ class SplunkTest extends DataAnalyticsSteps{
 
     @Test(priority = 33, groups = ["splunk_siem"], testName = "Xray, Violations. Infected Components")
     void infectedComponentsCountTest() throws Exception {
-        def infected_components_count =  xraySteps.artifacts().length
+        def infected_components_count = SplunkSteps.getExpectedComponentCounts(license_issues, security_issues).size()
 
         def search_string = /search=search log_source="jfrog.xray.siem.vulnerabilities" earliest=$earliest | stats dc(infected_components{}) as infected_components/
         Response response = splunk.splunkSearchResults(splunk_username, splunk_password, splunkBaseURL, search_string)
@@ -885,7 +885,7 @@ class SplunkTest extends DataAnalyticsSteps{
 
     @Test(priority = 34, groups = ["splunk_siem"], testName = "Xray, Violations. Impacted Artifacts")
     void impactedArtifactsCountTest() throws Exception {
-        def impacted_artifacts_count = xraySteps.artifacts().length
+        def impacted_artifacts_count = SplunkSteps.getExpectedComponentCounts(license_issues, security_issues).size()
 
         def search_string = /search=search log_source="jfrog.xray.siem.vulnerabilities" earliest=$earliest | stats dc(impacted_artifacts{}) as impacted_artifacts/
         Response response = splunk.splunkSearchResults(splunk_username, splunk_password, splunkBaseURL, search_string)
