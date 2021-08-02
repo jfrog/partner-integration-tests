@@ -112,7 +112,7 @@ class SplunkSteps {
         return expected
     }
 
-    static Map<String, Integer> getExpectedCounts(license_issues, security_issues) {
+    static Map<String, Integer> getExpectedViolationCounts(license_issues, security_issues) {
         def expected = license_issues.stream().collect(
                 Collectors.toMap(
                         {Object[] it -> it[0].toString()},
@@ -163,6 +163,37 @@ class SplunkSteps {
             }
         }
         return severities
+    }
+
+    static Map<String, Integer> getInfectedComponentCounts(Response response, String selector) {
+        return response.jsonPath().getList("results").stream().collect(
+                Collectors.toMap(
+                        it -> {
+                            def artifact = it[selector].toString()
+                            artifact.substring(artifact.lastIndexOf("/") + 1)
+                        },
+                        it -> Integer.parseInt(it["count"].toString()),
+                        Integer::sum
+                )
+        )
+    }
+
+    static Map<String, Integer> getExpectedComponentCounts(license_issues, security_issues) {
+        def componentCounts = new HashMap<String, Integer>()
+        license_issues.forEach { it ->
+            it[3].forEach { artifactId ->
+                def artifactName = XraySteps.artifactFormat(artifactId)
+                componentCounts.put(artifactName, componentCounts.getOrDefault(artifactName, 0) + 1)
+            }
+        }
+
+        security_issues.forEach { it ->
+            it[6].forEach { artifactId ->
+                def artifactName = XraySteps.artifactFormat(artifactId)
+                componentCounts.put(artifactName, componentCounts.getOrDefault(artifactName, 0) + 1)
+            }
+        }
+        return componentCounts
     }
 
 }

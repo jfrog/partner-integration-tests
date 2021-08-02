@@ -29,7 +29,6 @@ class GenerateXrayDataTest extends XraySteps{
     def artifactoryURL = "${artifactoryBaseURL}/artifactory"
     def artifactCount = 10
     def artifactsPath = "./src/test/resources/repositories/"
-    def artifactFormat = {int i -> "artifact_${i}.zip"}
 
 
     @BeforeSuite(groups = ["xray_generate_data"])
