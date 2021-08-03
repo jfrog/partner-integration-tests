@@ -13,6 +13,7 @@ import steps.RepositorySteps
 import utils.Utils
 import steps.SecuritytSteps
 import steps.SplunkSteps
+import steps.XraySteps
 
 import static org.hamcrest.Matchers.equalTo
 import static org.hamcrest.Matchers.hasItems
@@ -29,9 +30,12 @@ class SplunkTest extends DataAnalyticsSteps{
     def repoSteps = new RepositorySteps()
     def securitySteps = new SecuritytSteps()
     def splunk = new SplunkSteps()
-    def utils = new Utils()
+    def xraySteps = new XraySteps()
+    def earliest = "-10m"
+    List<Object[]> license_issues = xraySteps.multipleLicenseIssueEvents()
+    List<Object[]> security_issues = xraySteps.multipleIssueEvents()
 
-    @BeforeSuite(groups=["splunk", "splunk_xray"])
+    @BeforeSuite(groups=["splunk", "splunk_xray", "splunk_siem"])
     def setUp() {
         RestAssured.baseURI = "${artifactoryBaseURL}/artifactory"
         RestAssured.authentication = RestAssured.basic(username, password)
@@ -64,7 +68,7 @@ class SplunkTest extends DataAnalyticsSteps{
         // Verify the last record in the response has current date
         int size = response.then().extract().body().path("results.size()")
         String date = response.then().extract().body().path("results[${size-1}]._time")
-        utils.verifySplunkDate(date)
+        Utils.verifySplunkDate(date)
 
         Reporter.log("- Splunk. Splunk successfully detects the number of errors in the past " +
                 "24 hours in the Artifactory log. Number of errors: ${errorCounts.sum()} date: ${date.substring(0,10)}", true)
@@ -102,7 +106,7 @@ class SplunkTest extends DataAnalyticsSteps{
         // Verify the last record in the response has current date
         int size = response.then().extract().body().path("results.size()")
         String date = response.then().extract().body().path("results[${size-1}]._time")
-        Assert.assertTrue((date.substring(0,10)) == utils.getUTCdate())
+        Assert.assertTrue((date.substring(0,10)) == Utils.getUTCdate())
 
         Reporter.log("- Splunk. Splunk successfully detects the number of HTTP responses in the Artifactory log", true)
     }
@@ -165,9 +169,9 @@ class SplunkTest extends DataAnalyticsSteps{
     @Test(priority=5, groups=["splunk", "splunk_rt_docker"], testName = "Artifactory - Docker. Dockerhub Pull Requests Trends Per 6 Hours")
     void dockerhubPRTrendsTest() throws Exception {
         def images = ["traefik", "alpine", "hello-world", "busybox"]
-        utils.dockerLogin(username, password, dockerURL)
+        Utils.dockerLogin(username, password, dockerURL)
         for(imageName in images) {
-            utils.dockerPullImage("${dockerURL}" + "/docker-remote/" + imageName)
+            Utils.dockerPullImage("${dockerURL}" + "/docker-remote/" + imageName)
         }
         // Clean up docker remote repository cache, to prevent Artifactory using it on the next run
         splunk.dockerCleanupCache(artifactoryBaseURL, username, password,
@@ -181,7 +185,7 @@ class SplunkTest extends DataAnalyticsSteps{
             Assert.fail("Empty response from Splunk")
         } else {
             String date = response.then().extract().body().path("results[${size - 1}]._time")
-            utils.verifySplunkDate(date)
+            Utils.verifySplunkDate(date)
             def requests = response.then().extract().body().path("results[${size - 1}].DockerPullRequests") as Integer
             Assert.assertTrue(requests >= images.size())
             Reporter.log("The number of image pulls - " + requests, true)
@@ -194,11 +198,11 @@ class SplunkTest extends DataAnalyticsSteps{
     @Test(priority=6, groups=["splunk", "splunk_rt_docker"], testName = "Artifactory - Docker. Docker Repositories Cache Hit Ratio")
     void dockerhubCacheHitRatioTest() throws Exception {
         def images = ["traefik", "alpine", "hello-world", "busybox"]
-        utils.dockerLogin(username, password, dockerURL)
+        Utils.dockerLogin(username, password, dockerURL)
         // Run docker pull from the remote repository twice. First loop will use dockerhub, second - Artifactory cache
         2.times {
             for(imageName in images) {
-                utils.dockerPullImage("${dockerURL}" + "/docker-remote/" + imageName)
+                Utils.dockerPullImage("${dockerURL}" + "/docker-remote/" + imageName)
             }
         }
         splunk.dockerCleanupCache(artifactoryBaseURL, username, password,
@@ -226,9 +230,9 @@ class SplunkTest extends DataAnalyticsSteps{
     @Test(priority=7, groups=["splunk", "splunk_rt_docker"], testName = "Artifactory - Docker. Dockerhub Pull Requests in rolling 6 Hr window")
     void dockerhubPRsIn6hrWindowTest() throws Exception {
         def images = ["traefik", "alpine", "hello-world", "busybox"]
-        utils.dockerLogin(username, password, dockerURL)
+        Utils.dockerLogin(username, password, dockerURL)
         for(imageName in images) {
-            utils.dockerPullImage("${dockerURL}" + "/docker-remote/" + imageName)
+            Utils.dockerPullImage("${dockerURL}" + "/docker-remote/" + imageName)
         }
         splunk.dockerCleanupCache(artifactoryBaseURL, username, password,
                 "artifactory/docker-remote-cache/library/", images)
@@ -253,9 +257,9 @@ class SplunkTest extends DataAnalyticsSteps{
     @Test(priority=8, groups=["splunk", "splunk_rt_docker"], testName = "Artifactory - Docker. Dockerhub Pull Requests Total")
     void dockerhubPRsTotalTest() throws Exception {
         def images = ["traefik", "alpine", "hello-world", "busybox"]
-        utils.dockerLogin(username, password, dockerURL)
+        Utils.dockerLogin(username, password, dockerURL)
         for(imageName in images) {
-            utils.dockerPullImage("${dockerURL}" + "/docker-remote/" + imageName)
+            Utils.dockerPullImage("${dockerURL}" + "/docker-remote/" + imageName)
         }
         splunk.dockerCleanupCache(artifactoryBaseURL, username, password,
                 "artifactory/docker-remote-cache/library/", images)
@@ -279,9 +283,9 @@ class SplunkTest extends DataAnalyticsSteps{
     @Test(priority=9, groups=["splunk", "splunk_rt_docker"], testName = "Artifactory - Docker. Top 10 Users By Docker Pulls")
     void dockerhubTop10UsersTest() throws Exception {
         def images = ["traefik", "alpine", "hello-world", "busybox"]
-        utils.dockerLogin(username, password, dockerURL)
+        Utils.dockerLogin(username, password, dockerURL)
         for(imageName in images) {
-            utils.dockerPullImage("${dockerURL}" + "/docker-remote/" + imageName)
+            Utils.dockerPullImage("${dockerURL}" + "/docker-remote/" + imageName)
         }
         splunk.dockerCleanupCache(artifactoryBaseURL, username, password,
                 "artifactory/docker-remote-cache/library/", images)
@@ -304,9 +308,9 @@ class SplunkTest extends DataAnalyticsSteps{
     @Test(priority=10, groups=["splunk", "splunk_rt_docker"], testName = "Artifactory - Docker. Top 10 IPs By Docker Pulls")
     void dockerhubTop10IPsTest() throws Exception {
         def images = ["traefik", "alpine", "hello-world", "busybox"]
-        utils.dockerLogin(username, password, dockerURL)
+        Utils.dockerLogin(username, password, dockerURL)
         for(imageName in images) {
-            utils.dockerPullImage("${dockerURL}" + "/docker-remote/" + imageName)
+            Utils.dockerPullImage("${dockerURL}" + "/docker-remote/" + imageName)
         }
         splunk.dockerCleanupCache(artifactoryBaseURL, username, password,
                 "artifactory/docker-remote-cache/library/", images)
@@ -335,9 +339,9 @@ class SplunkTest extends DataAnalyticsSteps{
         def numberOfImages = 3
         def repos = ["docker-dev-local", "docker-local"]
         // Docker login, pull busybox, generate and push multiple dummy images
-        utils.dockerLogin(username, password, dockerURL)
-        utils.dockerPullImage(image)
-        utils.dockerGenerateImages(repos, numberOfImages, image, dockerURL)
+        Utils.dockerLogin(username, password, dockerURL)
+        Utils.dockerPullImage(image)
+        Utils.dockerGenerateImages(repos, numberOfImages, image, dockerURL)
         Thread.sleep(60000)
         // Create a search job in Splunk with given parameters, return Search ID
         def search_string = 'search=search (sourcetype="jfrog.rt.artifactory.request" OR ' +
@@ -355,7 +359,7 @@ class SplunkTest extends DataAnalyticsSteps{
         }
         int size = response.then().extract().body().path("results.size()")
         String date = response.then().extract().body().path("results[${size-1}]._time")
-        utils.verifySplunkDate(date)
+        Utils.verifySplunkDate(date)
 
         Reporter.log("- Splunk. Accessed Docker Images information is verified", true)
     }
@@ -363,9 +367,9 @@ class SplunkTest extends DataAnalyticsSteps{
     @Test(priority=12, groups=["splunk", "splunk_rt_docker"], testName = "Artifactory - Docker. Accessed Docker Repos")
     void accessedReposTest() throws Exception {
         def repos = ["${dockerURL}/docker-dev-local/busybox1:1.1", "${dockerURL}/docker-local/busybox1:1.1"]
-        utils.dockerLogin(username, password, dockerURL)
+        Utils.dockerLogin(username, password, dockerURL)
         for(i in repos) {
-            utils.dockerPullImage(i)
+            Utils.dockerPullImage(i)
         }
         Thread.sleep(30000)
         def search_string = 'search=search (sourcetype="jfrog.rt.artifactory.request" OR ' +
@@ -384,7 +388,7 @@ class SplunkTest extends DataAnalyticsSteps{
         }
         int size = response.then().extract().body().path("results.size()")
         String date = response.then().extract().body().path("results[${size-1}]._time")
-        utils.verifySplunkDate(date)
+        Utils.verifySplunkDate(date)
 
         Reporter.log("- Splunk. Accessed Docker Repos information is verified", true)
     }
@@ -441,7 +445,7 @@ class SplunkTest extends DataAnalyticsSteps{
         http404(count, calls)
         http500(count, calls)
         // Create a search job in Splunk with given parameters, return Search ID
-        def search_string = 'search=search log_source!="NULL" | timechart count by log_source'
+        def search_string = 'search=search log_source!="NULL" log_source!="jfrog.xray.*" | timechart count by log_source'
         Response createSearch = splunk.createSearch(splunk_username, splunk_password, splunkBaseURL, search_string)
         createSearch.then().statusCode(201)
         def searchID = splunk.getSplunkSearchID(splunk_username, splunk_password, splunkBaseURL, search_string)
@@ -451,7 +455,7 @@ class SplunkTest extends DataAnalyticsSteps{
 
         int size = response.then().extract().body().path("results.size()")
         String date = response.then().extract().body().path("results[${size-1}]._time")
-        Assert.assertTrue((date.substring(0,10)) == utils.getUTCdate())
+        Assert.assertTrue((date.substring(0,10)) == Utils.getUTCdate())
 
         JsonPath jsonPathEvaluator = response.jsonPath()
         List<Integer> accessCounts = jsonPathEvaluator.getList("results.'jfrog.rt.access.request'", Integer.class)
@@ -488,7 +492,7 @@ class SplunkTest extends DataAnalyticsSteps{
         Assert.assertTrue((errorCount.sum()) >= calls)
         int size = response.then().extract().body().path("results.size()")
         String date = response.then().extract().body().path("results[${size-1}]._time")
-        Assert.assertTrue((date.substring(0,10)) == utils.getUTCdate())
+        Assert.assertTrue((date.substring(0,10)) == Utils.getUTCdate())
 
         Reporter.log("- Splunk. Artifactory, Log Errors verification. Splunk shows errors generated by Artifactory" +
                 " during the test", true)
@@ -655,7 +659,7 @@ class SplunkTest extends DataAnalyticsSteps{
         xray200(count, calls)
         xray201(count, calls)
         // Create a search job in Splunk with given parameters, return Search ID
-        def search_string = 'search=search sourcetype!="NULL" | timechart count by log_source'
+        def search_string = 'search=search sourcetype!="NULL" log_source="jfrog.xray.*" | timechart count by log_source'
         Response createSearch = splunk.createSearch(splunk_username, splunk_password, splunkBaseURL, search_string)
         createSearch.then().statusCode(201)
         def searchID = splunk.getSplunkSearchID(splunk_username, splunk_password, splunkBaseURL, search_string)
@@ -676,7 +680,7 @@ class SplunkTest extends DataAnalyticsSteps{
                 body("results.OTHER", Matchers.notNullValue())
         int size = response.then().extract().body().path("results.size()")
         String date = response.then().extract().body().path("results[${size-1}]._time")
-        Assert.assertTrue((date.substring(0,10)) == utils.getUTCdate())
+        Assert.assertTrue((date.substring(0,10)) == Utils.getUTCdate())
 
         Reporter.log("- Splunk. Xray, Log volume verification. Each log record has values", true)
     }
@@ -705,7 +709,7 @@ class SplunkTest extends DataAnalyticsSteps{
         Assert.assertTrue((errorCount.sum()) >= calls)
         int size = response.then().extract().body().path("results.size()")
         String date = response.then().extract().body().path("results[${size-1}]._time")
-        Assert.assertTrue((date.substring(0,10)) == utils.getUTCdate())
+        Assert.assertTrue((date.substring(0,10)) == Utils.getUTCdate())
 
         Reporter.log("- Splunk. Xray, Log Errors verification. Splunk shows errors generated by Xray" +
                 " during the test", true)
@@ -731,7 +735,7 @@ class SplunkTest extends DataAnalyticsSteps{
         Response response = splunk.getSearchResults(splunk_username, splunk_password, splunkBaseURL, searchID)
         int size = response.then().extract().body().path("results.size()")
         String date = response.then().extract().body().path("results[${size-1}]._time")
-        Assert.assertTrue((date.substring(0,10)) == utils.getUTCdate())
+        Assert.assertTrue((date.substring(0,10)) == Utils.getUTCdate())
         JsonPath jsonPathEvaluator = response.jsonPath()
         List<Integer> errorCount = jsonPathEvaluator.getList("results.500", Integer.class)
         Assert.assertTrue((errorCount.sum()) >= calls)
@@ -762,7 +766,7 @@ class SplunkTest extends DataAnalyticsSteps{
         Response response = splunk.getSearchResults(splunk_username, splunk_password, splunkBaseURL, searchID)
         int size = response.then().extract().body().path("results.size()")
         String date = response.then().extract().body().path("results[${size-1}]._time")
-        Assert.assertTrue((date.substring(0,10)) == utils.getUTCdate())
+        Assert.assertTrue((date.substring(0,10)) == Utils.getUTCdate())
 
         JsonPath jsonPathEvaluator = response.jsonPath()
         def responseCodes = ["200","201","409","500"]
@@ -773,6 +777,288 @@ class SplunkTest extends DataAnalyticsSteps{
 
         Reporter.log("- Splunk. Xray, HTTP Response Codes verification. Splunk shows responses generated by Xray" +
                 " during the test.", true)
+    }
+
+    @Test(priority = 28, groups = ["splunk_siem"], testName = "Xray, Violations. Watches")
+    void watchesCountTest() throws Exception {
+        def search_string = /search=search log_source="jfrog.xray.siem.vulnerabilities" earliest=$earliest | stats dc(signature) as watches/
+        Response response = splunk.splunkSearchResults(splunk_username, splunk_password, splunkBaseURL, search_string)
+
+        int size = response.then().extract().body().path("results.size()")
+
+        if (size == 0){
+            Assert.fail("Empty response from Splunk")
+        } else {
+            def requests = response.then().extract().body().path("results[${size - 1}].watches") as Integer
+            println(requests)
+            // One watch per license in multipleLicenseIssueEvents and one watch for all security violations
+            Assert.assertEquals(requests, license_issues.size() + 1)
+            Reporter.log("- Splunk. Xray, Violations, Watches verification. Splunk shows responses generated by Xray " +
+                    "The number of watches returned by splunk are " + requests, true)
+        }
+    }
+
+    @Test(priority = 29, groups = ["splunk_siem"], testName = "Xray, Violations. Vulnerabilities")
+    void vulnerabilitiesCountTest() throws Exception {
+        def vulnerability_count = SplunkSteps.getExpectedViolationCounts(license_issues, security_issues).getOrDefault("security", 0)
+
+        def search_string = /search=search log_source="jfrog.xray.siem.vulnerabilities" category="Security" earliest=$earliest |/ +
+                /stats count as Vulnerabilities/
+        Response response = splunk.splunkSearchResults(splunk_username, splunk_password, splunkBaseURL, search_string)
+
+        int size = response.then().extract().body().path("results.size()")
+
+        if (size == 0){
+            Assert.fail("Empty response from Splunk")
+        } else {
+            def requests = response.then().extract().body().path("results[${size - 1}].Vulnerabilities") as Integer
+            println(requests)
+            Assert.assertEquals(requests, vulnerability_count)
+            Reporter.log("- Splunk. Xray, Violations, Vulnerabilities verification. Splunk shows responses generated by Xray " +
+                    "\" +The number of Vulnerabilities returned by splunk are " + requests, true)
+        }
+    }
+
+    @Test(priority = 30, groups = ["splunk_siem"], testName = "Xray, Violations. License Issues")
+    void licenseIssuesCountTest() throws Exception {
+        def expected = SplunkSteps.getExpectedViolationCounts(license_issues, security_issues)
+        expected.remove("security")
+
+        def search_string = /search=search log_source="jfrog.xray.siem.vulnerabilities" category="License" earliest=$earliest | stats count as licenses/
+        Response response = splunk.splunkSearchResults(splunk_username, splunk_password, splunkBaseURL, search_string)
+
+        int size = response.then().extract().body().path("results.size()")
+
+        if (size == 0){
+            Assert.fail("Empty response from Splunk")
+        } else {
+            def requests = response.then().extract().body().path("results[${size - 1}].licenses") as Integer
+            println(requests)
+            // One watch per license in multipleLicenseIssueEvents and one watch for all security violations
+            Assert.assertEquals(requests, expected.values().sum())
+            Reporter.log("- Splunk. Xray, Violations, License Issues verification. Splunk shows responses generated by Xray " +
+                    "\" +The number of license issues returned by splunk are " + requests, true)
+        }
+    }
+
+    @Test(priority = 31, groups = ["splunk_siem"], testName = "Xray, Violations. Violations")
+    void violationsCountTest() throws Exception {
+
+        def search_string = /search=search log_source="jfrog.xray.siem.vulnerabilities" earliest=$earliest | stats count as violations/
+        Response response = splunk.splunkSearchResults(splunk_username, splunk_password, splunkBaseURL, search_string)
+        int size = response.then().extract().body().path("results.size()")
+
+        // sum of all security and license issues
+        def expected = SplunkSteps.getExpectedViolationCounts(license_issues, security_issues).values().sum()
+
+        if (size == 0){
+            Assert.fail("Empty response from Splunk")
+        } else {
+            def requests = response.then().extract().body().path("results[${size - 1}].violations") as Integer
+            println(requests)
+            Assert.assertEquals(requests, expected)
+            Reporter.log("- Splunk. Xray, Violations, Violations verification. Splunk shows responses generated by Xray " +
+                    "\" +The number of violations returned by splunk are " + requests, true)
+        }
+    }
+
+    @Test(priority = 33, groups = ["splunk_siem"], testName = "Xray, Violations. Infected Components")
+    void infectedComponentsCountTest() throws Exception {
+        def infected_components_count = SplunkSteps.getExpectedComponentCounts(license_issues, security_issues).size()
+
+        def search_string = /search=search log_source="jfrog.xray.siem.vulnerabilities" earliest=$earliest | stats dc(infected_components{}) as infected_components/
+        Response response = splunk.splunkSearchResults(splunk_username, splunk_password, splunkBaseURL, search_string)
+
+        int size = response.then().extract().body().path("results.size()")
+
+        if (size == 0){
+            Assert.fail("Empty response from Splunk")
+        } else {
+            def requests = response.then().extract().body().path("results[${size - 1}].infected_components") as Integer
+            println(requests)
+            // One watch per license in multipleLicenseIssueEvents and one watch for all security violations
+            Assert.assertEquals(requests, infected_components_count)
+            Reporter.log("- Splunk. Xray, Violations, Infected Components verification. Splunk shows responses generated by Xray " +
+                    "\" +The number of infected components returned by splunk are " + requests, true)
+        }
+    }
+
+    @Test(priority = 34, groups = ["splunk_siem"], testName = "Xray, Violations. Impacted Artifacts")
+    void impactedArtifactsCountTest() throws Exception {
+        def impacted_artifacts_count = SplunkSteps.getExpectedComponentCounts(license_issues, security_issues).size()
+
+        def search_string = /search=search log_source="jfrog.xray.siem.vulnerabilities" earliest=$earliest | stats dc(impacted_artifacts{}) as impacted_artifacts/
+        Response response = splunk.splunkSearchResults(splunk_username, splunk_password, splunkBaseURL, search_string)
+        int size = response.then().extract().body().path("results.size()")
+
+        if (size == 0){
+            Assert.fail("Empty response from Splunk")
+        } else {
+            def requests = response.then().extract().body().path("results[${size - 1}].impacted_artifacts") as Integer
+            println(requests)
+            // One watch per license in multipleLicenseIssueEvents and one watch for all security violations
+            Assert.assertEquals(requests, impacted_artifacts_count)
+            Reporter.log("- Splunk. Xray, Violations, Impacted Artifacts verification. Splunk shows responses generated by Xray " +
+                    "\" +The number of impacted artifacts returned by splunk are " + requests, true)
+        }
+    }
+
+    @Test(priority = 35, groups = ["splunk_siem"], testName = "Xray, Violations. Violations per Watch")
+    void violationsPerWatchTest() throws Exception {
+        def search_string = /search=search log_source="jfrog.xray.siem.vulnerabilities" earliest=$earliest | stats count by signature/
+        Response response = splunk.splunkSearchResults(splunk_username, splunk_password, splunkBaseURL, search_string)
+        def actual = SplunkSteps.getMatchedPolicyWatchCounts(response, "signature")
+
+        def expected = SplunkSteps.getExpectedViolationCounts(license_issues, security_issues)
+        Assert.assertEquals(actual, expected)
+
+        Reporter.log("- Splunk. Xray, Violations, Violations per Watch verification. " +
+                "Splunk shows responses generated by Xray ", true)
+
+    }
+
+    @Test(priority = 36, groups = ["splunk_siem"], testName = "Xray, Violations. Violations Severity")
+    void violationsSeverityTest() throws Exception {
+        def search_string = /search=search log_source="jfrog.xray.siem.vulnerabilities" severity!=Unknown earliest=$earliest | stats count by severity/
+        Response response = splunk.splunkSearchResults(splunk_username, splunk_password, splunkBaseURL, search_string)
+        def severities = SplunkSteps.getSeverities(response)
+        def expected = SplunkSteps.getExpectedSeverities(license_issues, security_issues)
+
+        Assert.assertEquals(severities, expected)
+
+        Reporter.log("- Splunk. Xray, Violations, Violations Severity verification. " +
+                "Splunk shows responses generated by Xray ", true)
+    }
+
+    @Test(priority = 37, groups = ["splunk_siem"], testName = "Xray, Violations. Violations by Policy")
+    void violationsByPolicyTest() {
+        def search_string = /search=search log_source="jfrog.xray.siem.vulnerabilities" earliest=$earliest | stats count by matched_policies{}.policy/
+        Response response = splunk.splunkSearchResults(splunk_username, splunk_password, splunkBaseURL, search_string)
+        def actual = SplunkSteps.getMatchedPolicyWatchCounts(response, "matched_policies{}.policy")
+
+        def expected = SplunkSteps.getExpectedViolationCounts(license_issues, security_issues)
+        Assert.assertEquals(actual, expected)
+        Reporter.log("- Splunk. Xray, Violations, Violations by Rule. " +
+                "Splunk shows responses generated by Xray ", true)
+    }
+
+    @Test(priority = 38, groups = ["splunk_siem"], testName = "Xray, Violations. Violations by Rule")
+    void violationsByRuleTest() {
+        def search_string = /search=search log_source="jfrog.xray.siem.vulnerabilities" earliest=$earliest | stats count by matched_policies{}.rule/
+        Response response = splunk.splunkSearchResults(splunk_username, splunk_password, splunkBaseURL, search_string)
+        def actual = SplunkSteps.getMatchedRuleCounts(response)
+
+        def expected = SplunkSteps.getExpectedViolationCounts(license_issues, security_issues)
+        Assert.assertEquals(actual, expected)
+        Reporter.log("- Splunk. Xray, Violations, Violations by Rule. " +
+                "Splunk shows responses generated by Xray ", true)
+    }
+
+    @Test(priority = 39, groups = ["splunk_siem"], testName = "Xray, Violations. Violation Types over Time (Stats)")
+    void violationTypesOverTimeStats() {
+        def search_string = /search=search log_source="jfrog.xray.siem.vulnerabilities" category!=NULL earliest=$earliest  | timechart count by category/
+        Response response = splunk.splunkSearchResults(splunk_username, splunk_password, splunkBaseURL, search_string)
+        def licenseViolationCount = 0
+        def securityViolationCount = 0
+        def results = response.jsonPath().getList("results")
+        println results
+
+        if (results.size() == 0) {
+            Reporter.log("- Splunk. Xray, Violations, Violation Types over Time (Stats). SPLUNK RETURNS NO RESULTS", true)
+        } else {
+            if ("License" in results.first()) {
+                licenseViolationCount = results.stream().reduce(0, { (int count, data) -> count + Integer.parseInt(data["License"].toString()) })
+            }
+            if ("Security" in results.first()) {
+                securityViolationCount = results.stream().reduce(0, { (int count, data) -> count + Integer.parseInt(data["Security"].toString()) } )
+            }
+        }
+        def expected = SplunkSteps.getExpectedViolationCounts(license_issues, security_issues)
+        def expectedSecurityViolations = expected.remove("security") ?: 0
+        def expectedLicenseViolations = expected.values().sum()
+
+        Assert.assertEquals(licenseViolationCount, expectedLicenseViolations, "License violations")
+        Assert.assertEquals(securityViolationCount, expectedSecurityViolations, "Security violations")
+        Reporter.log("- Splunk. Xray, Violations, Violation Types over Time (Stats). " +
+                "Splunk shows responses generated by Xray ", true)
+    }
+
+    @Test(priority = 40, groups = ["splunk_siem"], testName = "Xray, Violations. Violation Types over Time (Severity)")
+    void violationTypesOverTimeSeverity() {
+        def search_string = /search=search log_source="jfrog.xray.siem.vulnerabilities"  severity!="unknown" earliest=$earliest | timechart  count by severity/
+        Response response = splunk.splunkSearchResults(splunk_username, splunk_password, splunkBaseURL, search_string)
+        def severities = SplunkSteps.squashSeveritiesOverTime(response)
+        def expectedSeverities = SplunkSteps.getExpectedSeverities(license_issues, security_issues)
+
+        Assert.assertEquals(severities, expectedSeverities)
+        Reporter.log("- Splunk. Xray, Violations, Violation Types over Time (Severities). " +
+                "Splunk shows responses generated by Xray ", true)
+    }
+
+    @Test(priority = 41, groups = ["splunk_siem"], testName = "Xray, Violations. Top Infected Components")
+    void topInfectedComponents() {
+        def search_string = /search=search log_source="jfrog.xray.siem.vulnerabilities" earliest=$earliest | stats count by infected_components{}/
+        Response response = splunk.splunkSearchResults(splunk_username, splunk_password, splunkBaseURL, search_string)
+        def infected = SplunkSteps.getInfectedComponentCounts(response, "infected_components{}")
+        def expected = SplunkSteps.getExpectedComponentCounts(license_issues, security_issues)
+
+        Assert.assertEquals(infected, expected)
+        Reporter.log("- Splunk. Xray, Violations, Top Infected Components. " +
+                "Spunk shows all infected components", true)
+    }
+
+    @Test(priority = 42, groups = ["splunk_siem"], testName = "Xray, Violations. Top Impacted Artifacts")
+    void topImpactedArtifacts() {
+        def search_string = /search=search log_source="jfrog.xray.siem.vulnerabilities" earliest=$earliest | stats count by impacted_artifacts{}/
+        Response response = splunk.splunkSearchResults(splunk_username, splunk_password, splunkBaseURL, search_string)
+        def infected = SplunkSteps.getInfectedComponentCounts(response, "impacted_artifacts{}")
+        def expected = SplunkSteps.getExpectedComponentCounts(license_issues, security_issues)
+
+        Assert.assertEquals(infected, expected)
+        Reporter.log("- Splunk. Xray, Violations, Top Impacted Artifacts. " +
+                "Spunk shows all impacted artifacts", true)
+    }
+
+    @Test(priority = 43, groups = ["splunk_siem"], testName = "Xray, Violations. Top Impacted Artifact by Count of User Downloads")
+    void topImpactedArtifactByUserDownloads() {
+        def search_string = /search=search  log_source = "jfrog.rt.artifactory.access" username="$username " /+
+                            /earliest=$earliest action_response = "ACCEPTED DOWNLOAD" [search log_source="jfrog.xray.siem.vulnerabilities" /+
+                            /impacted_artifacts{}=* | stats count by impacted_artifacts{} | / +
+                            /rex field=impacted_artifacts{} "(?<impacted_artifacts>.*)" | return 500000 / +
+                            '$impacted_artifacts ] | stats count(username) by repo_path | rename repo_path as impacted_artifact'
+
+        def expectedArtifactCount = SplunkSteps.getExpectedComponentCounts(license_issues, security_issues).size()
+        Response response = splunk.splunkSearchResults(splunk_username, splunk_password, splunkBaseURL, search_string)
+        Assert.assertEquals(response.jsonPath().getList("results").size(), expectedArtifactCount)
+        Reporter.log("- Splunk. Xray, Violations, Top Impacted Artifact by Count of User Downloads. " +
+                "Spunk shows 1 download for each impacted artifact by user '$username'", true)
+    }
+
+    @Test(priority = 44, groups = ["splunk_siem"], testName = "Xray, Violations. Top Impacted Artifact by Count of IP Download")
+    void topImpactedArtifactByIPDownloads() {
+        def search_string = /search=search log_source = "jfrog.rt.artifactory.access" action_response = "ACCEPTED DOWNLOAD" / +
+                            /earliest=$earliest ip!=" 127.0.0.1" [search log_source="jfrog.xray.siem.vulnerabilities" / +
+                            /impacted_artifacts{}=* | stats count by impacted_artifacts{} | rex field=impacted_artifacts{} / +
+                            '"(?<impacted_artifacts>.*)" | return 500000 $impacted_artifacts ] | ' +
+                            /stats count(ip) by repo_path | rename repo_path as impacted_artifact/
+
+        def expectedArtifactCount = SplunkSteps.getExpectedComponentCounts(license_issues, security_issues).size()
+        Response response = splunk.splunkSearchResults(splunk_username, splunk_password, splunkBaseURL, search_string)
+        Assert.assertEquals(response.jsonPath().getList("results").size(), expectedArtifactCount)
+        Reporter.log("- Splunk. Xray, Violations, Top Impacted Artifact by Count of IP Download. " +
+                "Spunk shows 1 download for each impacted artifact by non-localhost IPs", true)
+    }
+
+    @Test(priority = 45, groups = ["splunk_siem"], testName = "Xray, Violations. Top Vulnerabilities")
+    void topVulnerabilities() {
+        def search_string = /search=search log_source="jfrog.xray.siem.vulnerabilities" cve!="null" earliest=$earliest | stats  count by cve/
+        Response response = splunk.splunkSearchResults(splunk_username, splunk_password, splunkBaseURL, search_string)
+        def cveCounts = SplunkSteps.getCVECounts(response)
+        def expectedCVECounts = SplunkSteps.getExpectedCVECounts(security_issues)
+
+        Assert.assertEquals(cveCounts, expectedCVECounts)
+        Reporter.log("- Splunk. Xray, Violations, Top Vulnerabilities. " +
+                "Spunk shows vulnerability counts by CVE", true)
     }
 
 }

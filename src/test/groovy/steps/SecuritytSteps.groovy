@@ -1,11 +1,12 @@
 package steps
 
 import org.testng.annotations.DataProvider
+import tests.TestSetup
 
 import static io.restassured.RestAssured.given
 
 
-class SecuritytSteps {
+class SecuritytSteps extends TestSetup{
 
     def createUser(artifactoryURL, username, password, usernameRt, emailRt, passwordRt) {
         return given().log().uri()

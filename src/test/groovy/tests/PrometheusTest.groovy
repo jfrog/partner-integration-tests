@@ -12,7 +12,6 @@ import steps.DataAnalyticsSteps
 import steps.RepositorySteps
 import steps.SecuritytSteps
 import steps.PrometheusSteps
-import utils.Utils
 
 import static org.hamcrest.Matchers.equalTo
 import static org.hamcrest.Matchers.hasItems
@@ -23,7 +22,6 @@ class PrometheusTest extends DataAnalyticsSteps{
     def repoSteps = new RepositorySteps()
     def securitySteps = new SecuritytSteps()
     def prometheus = new PrometheusSteps()
-    def utils = new Utils()
 
     @BeforeSuite(groups=["prometheus", "prometheus_xray"])
     def setUp() {
@@ -39,7 +37,7 @@ class PrometheusTest extends DataAnalyticsSteps{
         int calls = 5
         uploadIntoRepo(count, calls)
         Thread.sleep(10000)
-        def query = "sum(rate(jfrog_rt_data_upload[5m]))"
+        def query = "sum(rate(jfrog_rt_data_upload_total[5m]))"
         Response response = prometheus.postQuery(prometheusBaseURL, query)
         response.then().log().everything()
 
@@ -59,7 +57,7 @@ class PrometheusTest extends DataAnalyticsSteps{
         int calls = 5
         downloadArtifact(count, calls)
         Thread.sleep(10000)
-        def query = "sum(rate(jfrog_rt_data_download[5m]))"
+        def query = "sum(rate(jfrog_rt_data_download_total[5m]))"
         Response response = prometheus.postQuery(prometheusBaseURL, query)
         response.then().log().everything()
 
@@ -72,15 +70,15 @@ class PrometheusTest extends DataAnalyticsSteps{
 
     }
 
-    @Test(priority=1, groups=["prometheus"], testName = "Artifactory. HTTP 500 Errors")
+    @Test(priority=3, groups=["prometheus"], testName = "Artifactory. HTTP 500 Errors")
     void http500ErrorsTest() throws Exception {
         // Generate error 500 - post callhome data
         int count = 1
         int calls = 20
         http500(count, calls)
-        Thread.sleep(10000)
-        def query = "sum(increase(jfrog_rt_req{return_status=~\"5.*\"}[1m]))"
-
+        Thread.sleep(20000)
+        //def query = "sum(increase(jfrog_rt_req{return_status=~\"5.*\"}[1m]))" // old
+        def query = "increase(jfrog_rt_req_total{return_status=~\"5.*\"}[1m])" // new
         Response response = prometheus.postQuery(prometheusBaseURL, query)
         response.then().log().everything()
 
@@ -100,9 +98,9 @@ class PrometheusTest extends DataAnalyticsSteps{
         http201(count, calls)
         http204(count, calls)
         http404(count, calls)
-        Thread.sleep(10000)
-        def query = "sum by (return_status) (increase(jfrog_rt_req[2m]))"
-
+        Thread.sleep(20000)
+        //def query = "sum by (return_status) (increase(jfrog_rt_req[2m]))" // old
+        def query = "sum by (return_status) (increase(jfrog_rt_req_total[5m]))" // new
         Response response = prometheus.postQuery(prometheusBaseURL, query)
         response.then().log().everything()
 

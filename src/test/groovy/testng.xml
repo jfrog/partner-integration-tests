@@ -22,6 +22,11 @@
             <class name="tests.XrayTest"/>
         </classes>
     </test>
+    <test name="tests.GenerateXrayDataTest">
+        <classes>
+            <class name="tests.GenerateXrayDataTest"/>
+        </classes>
+    </test>
     <test name="tests.TerraformTest">
         <classes>
             <class name="tests.TerraformTest"/>
