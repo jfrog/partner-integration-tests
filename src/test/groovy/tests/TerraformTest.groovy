@@ -19,30 +19,19 @@ import steps.SecuritytSteps
  Terraform must be installed first to run the providers.
   */
 
-class TerraformTest {
+class TerraformTest extends TestSetup{
     Yaml yaml = new Yaml()
     def securitySteps = new SecuritytSteps()
     def repositorySteps = new RepositorySteps()
-    def configFile = new File("./src/test/resources/testenv.yaml")
-    def config = yaml.load(configFile.text)
     def tfConfigFile = new File("./src/test/resources/terraform/terraform_config.yaml")
     def tfConfig = yaml.load(tfConfigFile.text)
-    def distribution
-    def username
-    def password
-    def protocol
     def xrayBaseUrl
-    def artifactoryBaseURL
+    def artifactoryURL
 
     @BeforeSuite(groups=["terraform"])
     def setUp() {
-        distribution = config.artifactory.distribution
-        username = config.artifactory.rt_username
-        password = config.artifactory.rt_password
-        protocol = config.artifactory.protocol
-        xrayBaseUrl = "${protocol}${config.artifactory.external_ip}/xray/api"
-        artifactoryBaseURL = "${protocol}${config.artifactory.external_ip}/artifactory"
-        //RestAssured.baseURI = "http://${artifactoryURL}/artifactory"
+        artifactoryURL = "${artifactoryBaseURL}/artifactory"
+        xrayBaseUrl = "${artifactoryBaseURL}/xray/api"
         RestAssured.authentication = RestAssured.basic(username, password)
         RestAssured.useRelaxedHTTPSValidation()
     }
@@ -52,8 +41,8 @@ class TerraformTest {
     void createGroupTest(){
         def groupName = tfConfig.groups.groupName
         def groupDescription = tfConfig.groups.groupDescription
-        Response get = securitySteps.getGroup(artifactoryBaseURL, groupName)
-        get.then().statusCode(200)
+        Response get = securitySteps.getGroup(artifactoryURL, groupName)
+        get.then().log().ifValidationFails().statusCode(200)
         def name = get.then().extract().path("name")
         def description = get.then().extract().path("description")
         def adminPrivileges = get.then().extract().path("adminPrivileges")
@@ -71,8 +60,8 @@ class TerraformTest {
         def username = tfConfig.users.userName
         def email = tfConfig.users.email
         def groupName = tfConfig.groups.groupName
-        Response response = securitySteps.getUserDetails(artifactoryBaseURL, username)
-        response.then().statusCode(200).
+        Response response = securitySteps.getUserDetails(artifactoryURL, username)
+        response.then().log().ifValidationFails().statusCode(200).
                 body("name", Matchers.equalTo(username)).
                 body("email", Matchers.equalTo(email)).
                 body("admin", Matchers.equalTo(false)).
@@ -87,8 +76,8 @@ class TerraformTest {
     void verifyLocalTest(){
         def repoName = tfConfig.local_repo.repoName
         def packageType = tfConfig.local_repo.package_type
-        Response response = repositorySteps.getRepoConfig(repoName)
-        response.then().statusCode(200).
+        Response response = repositorySteps.getRepoConfig(artifactoryURL, repoName)
+        response.then().log().ifValidationFails().statusCode(200).
                 body("key",  Matchers.equalTo(repoName)).
                 body("packageType",  Matchers.equalTo(packageType))
 
@@ -103,8 +92,8 @@ class TerraformTest {
         def parmTergetName = tfConfig.permission_target.name
         def includesPattern = tfConfig.permission_target.includesPattern
         def excludesPattern = tfConfig.permission_target.excludesPattern
-        Response response = securitySteps.getPermissionTargetDetails(artifactoryBaseURL, parmTergetName)
-        response.then().statusCode(200).
+        Response response = securitySteps.getPermissionTargetDetails(artifactoryURL, parmTergetName)
+        response.then().log().ifValidationFails().statusCode(200).
                 body("name", Matchers.equalTo(parmTergetName)).
                 body("includesPattern", Matchers.equalTo(includesPattern)).
                 body("excludesPattern", Matchers.equalTo(excludesPattern)).
@@ -121,8 +110,8 @@ class TerraformTest {
         def packageType = tfConfig.remote_repo.package_type
         def url = tfConfig.remote_repo.xrayBaseUrl
         def repo_layout = tfConfig.remote_repo.repo_layout
-        Response response = repositorySteps.getRepoConfig(repoName)
-        response.then().statusCode(200).
+        Response response = repositorySteps.getRepoConfig(artifactoryURL, repoName)
+        response.then().log().ifValidationFails().statusCode(200).
                 body("key",  Matchers.equalTo(repoName)).
                 body("packageType",  Matchers.equalTo(packageType)).
                 body("url",  Matchers.equalTo(url)).
@@ -138,13 +127,13 @@ class TerraformTest {
         def sourceRepoName = tfConfig.replication.sourceRepoName
         def destRepoName = tfConfig.replication.destRepoName
         def cronExp = tfConfig.replication.cronExp
-        Response sourceResponse = repositorySteps.getReplicationConfig(sourceRepoName)
-        sourceResponse.then().statusCode(200).
+        Response sourceResponse = repositorySteps.getReplicationConfig(artifactoryURL, sourceRepoName)
+        sourceResponse.then().log().ifValidationFails().statusCode(200).
                 body("[0].cronExp",  Matchers.equalTo(cronExp)).
                 body("[0].repoKey",  Matchers.equalTo(sourceRepoName)).
                 body("[0].username",  Matchers.equalTo(username))
-        Response destResponse = repositorySteps.getReplicationConfig(destRepoName)
-        destResponse.then().statusCode(404).
+        Response destResponse = repositorySteps.getReplicationConfig(artifactoryURL, destRepoName)
+        destResponse.then().log().ifValidationFails().statusCode(404).
                 body("errors[0].status",  Matchers.equalTo(404))
 
         Reporter.log("- Terraform. Verify replication between two local repos. " +
@@ -157,13 +146,13 @@ class TerraformTest {
         def sourceRepoName = tfConfig.single_replication.sourceRepoName
         def destRepoName = tfConfig.single_replication.destRepoName
         def cronExp = tfConfig.single_replication.cronExp
-        Response sourceResponse = repositorySteps.getReplicationConfig(sourceRepoName)
-        sourceResponse.then().statusCode(200).
+        Response sourceResponse = repositorySteps.getReplicationConfig(artifactoryURL, sourceRepoName)
+        sourceResponse.then().log().ifValidationFails().statusCode(200).
                 body("[0].cronExp",  Matchers.equalTo(cronExp)).
                 body("[0].repoKey",  Matchers.equalTo(sourceRepoName)).
                 body("[0].username",  Matchers.equalTo(username))
-        Response destResponse = repositorySteps.getReplicationConfig(destRepoName)
-        destResponse.then().statusCode(404).
+        Response destResponse = repositorySteps.getReplicationConfig(artifactoryURL, destRepoName)
+        destResponse.then().log().ifValidationFails().statusCode(404).
                 body("errors[0].status",  Matchers.equalTo(404))
 
         Reporter.log("- Terraform. Verify single replication between two local repos. " +
@@ -177,8 +166,8 @@ class TerraformTest {
         def packageType = tfConfig.virtual_repo.package_type
         def rclass = tfConfig.virtual_repo.rclass
         String[] repositories = tfConfig.virtual_repo.repos
-        Response response = repositorySteps.getRepoConfig(repoName)
-        response.then().statusCode(200).
+        Response response = repositorySteps.getRepoConfig(artifactoryURL, repoName)
+        response.then().log().ifValidationFails().statusCode(200).
                 body("key",  Matchers.equalTo(repoName)).
                 body("packageType",  Matchers.equalTo(packageType)).
                 body("rclass",  Matchers.equalTo(rclass)).
@@ -193,11 +182,11 @@ class TerraformTest {
     void verifyCertificateTest(){
         def repoName = tfConfig.certificate.repoName
         def certAlias = tfConfig.certificate.alias
-        Response response = securitySteps.getInstalledCerts()
-        response.then().statusCode(200).
+        Response response = securitySteps.getInstalledCerts(artifactoryURL)
+        response.then().log().ifValidationFails().statusCode(200).
                 body("[0].certificateAlias", Matchers.equalTo(certAlias))
-        Response repoResponse = repositorySteps.getRepoConfig(repoName)
-        repoResponse.then().statusCode(200).
+        Response repoResponse = repositorySteps.getRepoConfig(artifactoryURL, repoName)
+        repoResponse.then().log().ifValidationFails().statusCode(200).
                 body("clientTlsCertificate", Matchers.equalTo(certAlias))
 
         Reporter.log("- Terraform. Verify certificate. Certificate '${certAlias}' was successfully added " +
