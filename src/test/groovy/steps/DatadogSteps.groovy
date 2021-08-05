@@ -29,5 +29,19 @@ class DatadogSteps {
                 .extract().response()
     }
 
+    static def aggregateLogs(dd_url, api_key, application_key, query) {
+        return given()
+                .relaxedHTTPSValidation()
+                .header("Cache-Control", "no-cache")
+                .header("Content-Type", "application/json")
+                .header("DD-API-KEY", api_key)
+                .header("DD-APPLICATION-KEY", application_key)
+                .body(query)
+                .when()
+                .post(dd_url + "/api/v2/logs/analytics/aggregate")
+                .then()
+                .extract().response()
+    }
+
 
 }

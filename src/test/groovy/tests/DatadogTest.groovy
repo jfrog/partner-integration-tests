@@ -30,10 +30,17 @@ class DatadogTest extends DataAnalyticsSteps {
     def securitySteps = new SecuritytSteps()
     def datadog = new DatadogSteps()
     def testUsers = ["testuser1", "testuser2", "testuser3", "testuser4"]
+    def from_timestamp
+    def to_timestamp
+    def from_v2 = "now-2d" // Supported in api v2. Use this when possible
+    def to_v2 = "now"
 
-    @BeforeSuite(groups=["testing", "datadog", "datadog_xray"])
+    @BeforeSuite(groups=["testing", "datadog", "datadog_xray", "datadog_siem"])
     def setUp() {
         RestAssured.useRelaxedHTTPSValidation()
+        def now = new Date()
+        from_timestamp = (now.getTime()-1800000).toString().substring(0,10)
+        to_timestamp = (now.getTime()).toString().substring(0,10)
     }
 
     @Test(priority=0, groups=["datadog", "datadog_xray"], testName = "Data generation for Datadog testing")
@@ -409,5 +416,32 @@ class DatadogTest extends DataAnalyticsSteps {
     // Artifactory Log Errors
 
 
+    @Test(priority = 14, groups = ["datadog_siem"], testName = "Datadog. Xray Violations, Watches")
+    void watchesCountTest() {
+        def query = "{\n" +
+                "    \"compute\": [\n" +
+                "        {\n" +
+                "            \"aggregation\": \"count\"\n" +
+                "        }\n" +
+                "    ],\n" +
+                "    \"filter\": {\n" +
+                "        \"from\": \"${from_v2}\",\n" +
+                "        \"indexes\": [\n" +
+                "            \"*\"\n" +
+                "        ],\n" +
+                "        \"query\": \"@log_source:jfrog.xray.siem.vulnerabilities\",\n" +
+                "        \"to\": \"${to_v2}\"\n" +
+                "    },\n" +
+                "    \"group_by\": [\n" +
+                "        {\n" +
+                "            \"facet\": \"@watch_name\"\n" +
+                "        }\n" +
+                "    ]\n" +
+                "}"
+        Response response = DatadogSteps.aggregateLogs(datadogBaseURL, datadogApiKey, datadogApplicationKey, query)
+        response.then().log().everything().statusCode(200).body("meta.status",Matchers.equalTo("done"))
+        def expected = 3 // TODO: get expected count
+        Assert.assertEquals(response.jsonPath().getList("data.buckets").size(), expected)
+    }
 
 }
