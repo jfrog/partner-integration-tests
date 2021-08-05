@@ -123,7 +123,7 @@ class RepositoryTest extends RepositorySteps{
         response.then().assertThat().log().ifValidationFails().statusCode(201)
                 .body("repo", equalTo(repoName))
                 .body("path", equalTo("/" + directoryName))
-                .body("slf", containsString("/artifactory/" + repoName + "/" + directoryName))
+                .body("uri", containsString("/artifactory/" + repoName + "/" + directoryName))
 
         Reporter.log("- Create folder. Folder successfully created", true)
     }
@@ -291,7 +291,7 @@ class RepositoryTest extends RepositorySteps{
         response.then().assertThat().log().ifValidationFails().statusCode(201)
                 .body("repo", equalTo(repoName))
                 .body("path", equalTo("/" + directoryName))
-                .body("slf", containsString("/artifactory/" + repoName + "/" + directoryName))
+                .body("uri", containsString("/artifactory/" + repoName + "/" + directoryName))
 
         Reporter.log("- Create folder. Folder successfully created", true)
     }
