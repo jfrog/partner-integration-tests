@@ -800,7 +800,7 @@ class SplunkTest extends DataAnalyticsSteps{
 
     @Test(priority = 29, groups = ["splunk_siem"], testName = "Xray, Violations. Vulnerabilities")
     void vulnerabilitiesCountTest() throws Exception {
-        def vulnerability_count = SplunkSteps.getExpectedViolationCounts(license_issues, security_issues).getOrDefault("security", 0)
+        def vulnerability_count = XraySteps.getExpectedViolationCounts(license_issues, security_issues).getOrDefault("security", 0)
 
         def search_string = /search=search log_source="jfrog.xray.siem.vulnerabilities" category="Security" earliest=$earliest |/ +
                 /stats count as Vulnerabilities/
@@ -821,7 +821,7 @@ class SplunkTest extends DataAnalyticsSteps{
 
     @Test(priority = 30, groups = ["splunk_siem"], testName = "Xray, Violations. License Issues")
     void licenseIssuesCountTest() throws Exception {
-        def expected = SplunkSteps.getExpectedViolationCounts(license_issues, security_issues)
+        def expected = XraySteps.getExpectedViolationCounts(license_issues, security_issues)
         expected.remove("security")
 
         def search_string = /search=search log_source="jfrog.xray.siem.vulnerabilities" category="License" earliest=$earliest | stats count as licenses/
@@ -849,7 +849,7 @@ class SplunkTest extends DataAnalyticsSteps{
         int size = response.then().extract().body().path("results.size()")
 
         // sum of all security and license issues
-        def expected = SplunkSteps.getExpectedViolationCounts(license_issues, security_issues).values().sum()
+        def expected = XraySteps.getExpectedViolationCounts(license_issues, security_issues).values().sum()
 
         if (size == 0){
             Assert.fail("Empty response from Splunk")
@@ -864,7 +864,7 @@ class SplunkTest extends DataAnalyticsSteps{
 
     @Test(priority = 33, groups = ["splunk_siem"], testName = "Xray, Violations. Infected Components")
     void infectedComponentsCountTest() throws Exception {
-        def infected_components_count = SplunkSteps.getExpectedComponentCounts(license_issues, security_issues).size()
+        def infected_components_count = XraySteps.getExpectedComponentCounts(license_issues, security_issues).size()
 
         def search_string = /search=search log_source="jfrog.xray.siem.vulnerabilities" earliest=$earliest | stats dc(infected_components{}) as infected_components/
         Response response = splunk.splunkSearchResults(splunk_username, splunk_password, splunkBaseURL, search_string)
@@ -885,7 +885,7 @@ class SplunkTest extends DataAnalyticsSteps{
 
     @Test(priority = 34, groups = ["splunk_siem"], testName = "Xray, Violations. Impacted Artifacts")
     void impactedArtifactsCountTest() throws Exception {
-        def impacted_artifacts_count = SplunkSteps.getExpectedComponentCounts(license_issues, security_issues).size()
+        def impacted_artifacts_count = XraySteps.getExpectedComponentCounts(license_issues, security_issues).size()
 
         def search_string = /search=search log_source="jfrog.xray.siem.vulnerabilities" earliest=$earliest | stats dc(impacted_artifacts{}) as impacted_artifacts/
         Response response = splunk.splunkSearchResults(splunk_username, splunk_password, splunkBaseURL, search_string)
@@ -909,7 +909,7 @@ class SplunkTest extends DataAnalyticsSteps{
         Response response = splunk.splunkSearchResults(splunk_username, splunk_password, splunkBaseURL, search_string)
         def actual = SplunkSteps.getMatchedPolicyWatchCounts(response, "signature")
 
-        def expected = SplunkSteps.getExpectedViolationCounts(license_issues, security_issues)
+        def expected = XraySteps.getExpectedViolationCounts(license_issues, security_issues)
         Assert.assertEquals(actual, expected)
 
         Reporter.log("- Splunk. Xray, Violations, Violations per Watch verification. " +
@@ -922,7 +922,7 @@ class SplunkTest extends DataAnalyticsSteps{
         def search_string = /search=search log_source="jfrog.xray.siem.vulnerabilities" severity!=Unknown earliest=$earliest | stats count by severity/
         Response response = splunk.splunkSearchResults(splunk_username, splunk_password, splunkBaseURL, search_string)
         def severities = SplunkSteps.getSeverities(response)
-        def expected = SplunkSteps.getExpectedSeverities(license_issues, security_issues)
+        def expected = XraySteps.getExpectedSeverities(license_issues, security_issues)
 
         Assert.assertEquals(severities, expected)
 
@@ -936,7 +936,7 @@ class SplunkTest extends DataAnalyticsSteps{
         Response response = splunk.splunkSearchResults(splunk_username, splunk_password, splunkBaseURL, search_string)
         def actual = SplunkSteps.getMatchedPolicyWatchCounts(response, "matched_policies{}.policy")
 
-        def expected = SplunkSteps.getExpectedViolationCounts(license_issues, security_issues)
+        def expected = XraySteps.getExpectedViolationCounts(license_issues, security_issues)
         Assert.assertEquals(actual, expected)
         Reporter.log("- Splunk. Xray, Violations, Violations by Rule. " +
                 "Splunk shows responses generated by Xray ", true)
@@ -948,7 +948,7 @@ class SplunkTest extends DataAnalyticsSteps{
         Response response = splunk.splunkSearchResults(splunk_username, splunk_password, splunkBaseURL, search_string)
         def actual = SplunkSteps.getMatchedRuleCounts(response)
 
-        def expected = SplunkSteps.getExpectedViolationCounts(license_issues, security_issues)
+        def expected = XraySteps.getExpectedViolationCounts(license_issues, security_issues)
         Assert.assertEquals(actual, expected)
         Reporter.log("- Splunk. Xray, Violations, Violations by Rule. " +
                 "Splunk shows responses generated by Xray ", true)
@@ -973,7 +973,7 @@ class SplunkTest extends DataAnalyticsSteps{
                 securityViolationCount = results.stream().reduce(0, { (int count, data) -> count + Integer.parseInt(data["Security"].toString()) } )
             }
         }
-        def expected = SplunkSteps.getExpectedViolationCounts(license_issues, security_issues)
+        def expected = XraySteps.getExpectedViolationCounts(license_issues, security_issues)
         def expectedSecurityViolations = expected.remove("security") ?: 0
         def expectedLicenseViolations = expected.values().sum()
 
@@ -988,7 +988,7 @@ class SplunkTest extends DataAnalyticsSteps{
         def search_string = /search=search log_source="jfrog.xray.siem.vulnerabilities"  severity!="unknown" earliest=$earliest | timechart  count by severity/
         Response response = splunk.splunkSearchResults(splunk_username, splunk_password, splunkBaseURL, search_string)
         def severities = SplunkSteps.squashSeveritiesOverTime(response)
-        def expectedSeverities = SplunkSteps.getExpectedSeverities(license_issues, security_issues)
+        def expectedSeverities = XraySteps.getExpectedSeverities(license_issues, security_issues)
 
         Assert.assertEquals(severities, expectedSeverities)
         Reporter.log("- Splunk. Xray, Violations, Violation Types over Time (Severities). " +
@@ -1000,7 +1000,7 @@ class SplunkTest extends DataAnalyticsSteps{
         def search_string = /search=search log_source="jfrog.xray.siem.vulnerabilities" earliest=$earliest | stats count by infected_components{}/
         Response response = splunk.splunkSearchResults(splunk_username, splunk_password, splunkBaseURL, search_string)
         def infected = SplunkSteps.getInfectedComponentCounts(response, "infected_components{}")
-        def expected = SplunkSteps.getExpectedComponentCounts(license_issues, security_issues)
+        def expected = XraySteps.getExpectedComponentCounts(license_issues, security_issues)
 
         Assert.assertEquals(infected, expected)
         Reporter.log("- Splunk. Xray, Violations, Top Infected Components. " +
@@ -1012,7 +1012,7 @@ class SplunkTest extends DataAnalyticsSteps{
         def search_string = /search=search log_source="jfrog.xray.siem.vulnerabilities" earliest=$earliest | stats count by impacted_artifacts{}/
         Response response = splunk.splunkSearchResults(splunk_username, splunk_password, splunkBaseURL, search_string)
         def infected = SplunkSteps.getInfectedComponentCounts(response, "impacted_artifacts{}")
-        def expected = SplunkSteps.getExpectedComponentCounts(license_issues, security_issues)
+        def expected = XraySteps.getExpectedComponentCounts(license_issues, security_issues)
 
         Assert.assertEquals(infected, expected)
         Reporter.log("- Splunk. Xray, Violations, Top Impacted Artifacts. " +
@@ -1027,7 +1027,7 @@ class SplunkTest extends DataAnalyticsSteps{
                             /rex field=impacted_artifacts{} "(?<impacted_artifacts>.*)" | return 500000 / +
                             '$impacted_artifacts ] | stats count(username) by repo_path | rename repo_path as impacted_artifact'
 
-        def expectedArtifactCount = SplunkSteps.getExpectedComponentCounts(license_issues, security_issues).size()
+        def expectedArtifactCount = XraySteps.getExpectedComponentCounts(license_issues, security_issues).size()
         Response response = splunk.splunkSearchResults(splunk_username, splunk_password, splunkBaseURL, search_string)
         Assert.assertEquals(response.jsonPath().getList("results").size(), expectedArtifactCount)
         Reporter.log("- Splunk. Xray, Violations, Top Impacted Artifact by Count of User Downloads. " +
@@ -1042,7 +1042,7 @@ class SplunkTest extends DataAnalyticsSteps{
                             '"(?<impacted_artifacts>.*)" | return 500000 $impacted_artifacts ] | ' +
                             /stats count(ip) by repo_path | rename repo_path as impacted_artifact/
 
-        def expectedArtifactCount = SplunkSteps.getExpectedComponentCounts(license_issues, security_issues).size()
+        def expectedArtifactCount = XraySteps.getExpectedComponentCounts(license_issues, security_issues).size()
         Response response = splunk.splunkSearchResults(splunk_username, splunk_password, splunkBaseURL, search_string)
         Assert.assertEquals(response.jsonPath().getList("results").size(), expectedArtifactCount)
         Reporter.log("- Splunk. Xray, Violations, Top Impacted Artifact by Count of IP Download. " +
@@ -1054,7 +1054,7 @@ class SplunkTest extends DataAnalyticsSteps{
         def search_string = /search=search log_source="jfrog.xray.siem.vulnerabilities" cve!="null" earliest=$earliest | stats  count by cve/
         Response response = splunk.splunkSearchResults(splunk_username, splunk_password, splunkBaseURL, search_string)
         def cveCounts = SplunkSteps.getCVECounts(response)
-        def expectedCVECounts = SplunkSteps.getExpectedCVECounts(security_issues)
+        def expectedCVECounts = XraySteps.getExpectedCVECounts(security_issues)
 
         Assert.assertEquals(cveCounts, expectedCVECounts)
         Reporter.log("- Splunk. Xray, Violations, Top Vulnerabilities. " +

@@ -98,32 +98,6 @@ class SplunkSteps {
         )
     }
 
-    static Map<String, Integer> getExpectedSeverities(license_issues, security_issues) {
-        Map<String, Integer> expected = security_issues.stream().collect(
-                Collectors.toMap(
-                        {Object[] it -> it[5].toString()},
-                        {Object[] it -> it[6].size()},
-                        Integer::sum
-                )
-        )
-        int licenseCount = license_issues.stream().reduce((int) 0, (int count, list) -> count + list[3].size())
-
-        expected.put("High", expected.getOrDefault("High", 0) + licenseCount)
-        return expected
-    }
-
-    static Map<String, Integer> getExpectedViolationCounts(license_issues, security_issues) {
-        def expected = license_issues.stream().collect(
-                Collectors.toMap(
-                        {Object[] it -> it[0].toString()},
-                        {Object[] it -> it[3].size()},
-                        Integer::sum
-                )
-        )
-
-        expected.put("security", security_issues.stream().reduce((int) 0, (int count, list) -> count + list[6].size()))
-        return expected
-    }
 
     static Map<String, Integer> getMatchedPolicyWatchCounts(Response response, String selector) {
         return response.jsonPath().getList("results").stream().collect(
@@ -178,23 +152,6 @@ class SplunkSteps {
         )
     }
 
-    static Map<String, Integer> getExpectedComponentCounts(license_issues, security_issues) {
-        def componentCounts = new HashMap<String, Integer>()
-        license_issues.forEach { it ->
-            it[3].forEach { artifactId ->
-                def artifactName = XraySteps.artifactFormat(artifactId)
-                componentCounts.put(artifactName, componentCounts.getOrDefault(artifactName, 0) + 1)
-            }
-        }
-
-        security_issues.forEach { it ->
-            it[6].forEach { artifactId ->
-                def artifactName = XraySteps.artifactFormat(artifactId)
-                componentCounts.put(artifactName, componentCounts.getOrDefault(artifactName, 0) + 1)
-            }
-        }
-        return componentCounts
-    }
 
     static Map<String, Integer> getCVECounts(Response response) {
         return response.jsonPath().getList("results").stream().collect(
@@ -206,14 +163,5 @@ class SplunkSteps {
         )
     }
 
-    static Map<String, Integer> getExpectedCVECounts(security_issues) {
-        return security_issues.stream().collect(
-                Collectors.toMap(
-                        it -> it[1].toString(),
-                        it -> it[6].size(),
-                        Integer::sum
-                )
-        )
-    }
 
 }
