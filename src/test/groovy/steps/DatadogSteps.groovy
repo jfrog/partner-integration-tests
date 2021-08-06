@@ -57,12 +57,28 @@ class DatadogSteps {
         def cursor = ""
         Map<String, Integer> counts = new HashMap<>()
         do {
-            def json_query = getCountQuery(query, groupby_facet, cursor)
+            def json_query = getCountQuery(query, [groupby_facet], cursor)
             Response response = aggregateLogs(dd_url, api_key, application_key, json_query)
             response.then().log().ifValidationFails().statusCode(200).body("meta.status", Matchers.equalTo("done"))
 
             response.jsonPath().getList("data.buckets").forEach({ it ->
                 counts.put(it["by"][groupby_facet.toString()].toString(), it["computes"]["c0"] as Integer)
+            })
+            cursor = response.jsonPath().get("meta.page.after")
+        } while (cursor)
+        return counts
+    }
+
+    def topVulnerableArtifacts(dd_url, api_key, application_key, by) {
+        def cursor = ""
+        Map<String, Integer> counts = new HashMap<>()
+        do {
+            def json_query = getCountQuery("@log_source:jfrog.rt.artifactory.access @action_response:\\\"ACCEPTED DOWNLOAD\\\"", ["@impacted_artifacts", by], cursor)
+            Response response = aggregateLogs(dd_url, api_key, application_key, json_query)
+            response.then().log().ifValidationFails().statusCode(200).body("meta.status", Matchers.equalTo("done"))
+
+            response.jsonPath().getList("data.buckets").forEach({ it ->
+                counts.put(it["by"]["@impacted_artifacts"].toString(), counts.getOrDefault(it["by"]["@impacted_artifacts"].toString(), 0) + 1)
             })
             cursor = response.jsonPath().get("meta.page.after")
         } while (cursor)
@@ -95,6 +111,19 @@ class DatadogSteps {
         )
     }
 
+    static Map<String, Integer> extractArtifactNamesToMap(Map<String, Integer> map) {
+        return map.collect().stream().collect(
+                Collectors.toMap(
+                        {Map.Entry<String, Integer> it ->
+                                it.key.substring(it.key.lastIndexOf("/") + 1)
+                        },
+                        {Map.Entry<String, Integer> it -> it.value},
+                        Integer::sum
+                )
+        )
+    }
+
+
 
     /**
      * ===========
@@ -103,7 +132,15 @@ class DatadogSteps {
      * These are named query_<test name> and used in DatadogTest.groovy
      * */
 
-    def getCountQuery(query, groupby_facet = "", cursor = "") {
+    def getCountQuery(query, groupby_facets = [], cursor = "") {
+        def groupby = ""
+        for (facet in groupby_facets) {
+            groupby += "{ \"facet\":\"${facet}\" },"
+        }
+        if (groupby) {
+            groupby = groupby.substring(0, groupby.length() - 1)
+        }
+
         return "{\n" +
                 "    \"compute\": [\n" +
                 "        {\n" +
@@ -119,11 +156,7 @@ class DatadogSteps {
                 "        \"to\": \"${to}\"\n" +
                 "    },\n" +
                 "    \"group_by\": [\n" +
-                (groupby_facet ?
-                "        {\n" +
-                "            \"facet\": \"${groupby_facet}\"\n" +
-                "        }\n"
-                : "" ) +
+                (groupby ?: "") +
                 "    ],\n" +
                 "    \"page\": {\n" +
                 (cursor ? "  \"cursor\": \"${cursor}\"\n" : "") +
