@@ -14,7 +14,9 @@ import static io.restassured.RestAssured.given
 import static org.hamcrest.Matchers.equalTo
 
 class XraySteps extends TestSetup{
-    public static artifactFormat = {int i -> "artifact_${i}.zip".toString()}
+    static String artifactFormat(int i) {
+        return "artifact_${i}.zip".toString()
+    }
 
     static void deleteExistingWatches(namePrefix, artifactoryBaseURL, username, password) {
         def watches = given()

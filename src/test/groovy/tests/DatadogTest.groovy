@@ -13,6 +13,7 @@ import steps.DataAnalyticsSteps
 import steps.DatadogSteps
 import steps.RepositorySteps
 import steps.SecuritytSteps
+import steps.XraySteps
 import utils.Utils
 
 import java.util.concurrent.TimeUnit
@@ -28,12 +29,13 @@ class DatadogTest extends DataAnalyticsSteps {
     def artifact = new File("./src/test/resources/repositories/artifact.zip")
     def repoSteps = new RepositorySteps()
     def securitySteps = new SecuritytSteps()
-    def datadog = new DatadogSteps()
+    def datadog = new DatadogSteps("now-5d", "now")
     def testUsers = ["testuser1", "testuser2", "testuser3", "testuser4"]
     def from_timestamp
     def to_timestamp
-    def from_v2 = "now-2d" // Supported in api v2. Use this when possible
-    def to_v2 = "now"
+
+    List<Object[]> license_issues = xraySteps.multipleLicenseIssueEvents()
+    List<Object[]> security_issues = xraySteps.multipleIssueEvents()
 
     @BeforeSuite(groups=["testing", "datadog", "datadog_xray", "datadog_siem"])
     def setUp() {
@@ -418,30 +420,66 @@ class DatadogTest extends DataAnalyticsSteps {
 
     @Test(priority = 14, groups = ["datadog_siem"], testName = "Datadog. Xray Violations, Watches")
     void watchesCountTest() {
-        def query = "{\n" +
-                "    \"compute\": [\n" +
-                "        {\n" +
-                "            \"aggregation\": \"count\"\n" +
-                "        }\n" +
-                "    ],\n" +
-                "    \"filter\": {\n" +
-                "        \"from\": \"${from_v2}\",\n" +
-                "        \"indexes\": [\n" +
-                "            \"*\"\n" +
-                "        ],\n" +
-                "        \"query\": \"@log_source:jfrog.xray.siem.vulnerabilities\",\n" +
-                "        \"to\": \"${to_v2}\"\n" +
-                "    },\n" +
-                "    \"group_by\": [\n" +
-                "        {\n" +
-                "            \"facet\": \"@watch_name\"\n" +
-                "        }\n" +
-                "    ]\n" +
-                "}"
+        def query = datadog.getCountQuery("@log_source:jfrog.xray.siem.vulnerabilities", "@watch_name")
         Response response = DatadogSteps.aggregateLogs(datadogBaseURL, datadogApiKey, datadogApplicationKey, query)
-        response.then().log().everything().statusCode(200).body("meta.status",Matchers.equalTo("done"))
-        def expected = 3 // TODO: get expected count
-        Assert.assertEquals(response.jsonPath().getList("data.buckets").size(), expected)
+        response.then().log().ifValidationFails().statusCode(200).body("meta.status",Matchers.equalTo("done"))
+        Assert.assertEquals(response.jsonPath().getList("data.buckets").size(), license_issues.size() + 1)
+    }
+
+    @Test(priority = 15, groups = ["datadog_siem"], testName = "Datadog. Xray Violations, Vulnerabilities")
+    void vulnerabilitiesCountTest() {
+        def query = datadog.getCountQuery("@log_source:jfrog.xray.siem.vulnerabilities @type:Security")
+        Response response = DatadogSteps.aggregateLogs(datadogBaseURL, datadogApiKey, datadogApplicationKey, query)
+        response.then().log().ifValidationFails().statusCode(200).body("meta.status",Matchers.equalTo("done"))
+
+        // sum of all security
+        def expected = XraySteps.getExpectedViolationCounts(license_issues, security_issues).getOrDefault("security", 0)
+        Assert.assertEquals(response.jsonPath().getInt("data.buckets[0].computes.c0"), expected)
+    }
+
+    @Test(priority = 16, groups = ["datadog_siem"], testName = "Datadog. Xray Violations, License Issues")
+    void licenseIssuesCountTest() {
+        def query = datadog.getCountQuery("@log_source:jfrog.xray.siem.vulnerabilities @type:License")
+        Response response = DatadogSteps.aggregateLogs(datadogBaseURL, datadogApiKey, datadogApplicationKey, query)
+        response.then().log().ifValidationFails().statusCode(200).body("meta.status",Matchers.equalTo("done"))
+
+        // sum of all license issues
+        def expected = XraySteps.getExpectedViolationCounts(license_issues, security_issues)
+        expected.remove("security")
+        Assert.assertEquals(response.jsonPath().getInt("data.buckets[0].computes.c0"), expected.values().sum())
+    }
+
+    @Test(priority = 17, groups = ["datadog_siem"], testName = "Datadog. Xray Violations, Violations")
+    void violationsCountTest() {
+        def query = datadog.getCountQuery("@log_source:jfrog.xray.siem.vulnerabilities")
+        Response response = DatadogSteps.aggregateLogs(datadogBaseURL, datadogApiKey, datadogApplicationKey, query)
+        response.then().log().ifValidationFails().statusCode(200).body("meta.status",Matchers.equalTo("done"))
+
+        // sum of all license and security issues
+        def expected = XraySteps.getExpectedViolationCounts(license_issues, security_issues).values().sum()
+        Assert.assertEquals(response.jsonPath().getInt("data.buckets[0].computes.c0"), expected)
+    }
+
+    @Test(priority = 18, groups = ["datadog_siem"], testName = "Datadog. Xray Violations, Infected Components")
+    void infectedComponentsCountTest() {
+        def infectedComponentsCounts = datadog.getMapOfCountLogAggregation(datadogBaseURL, datadogApiKey, datadogApplicationKey,
+            "@log_source:jfrog.xray.siem.vulnerabilities", "@infected_components"
+        )
+
+        println (infectedComponentsCounts.size())
+        def expected = XraySteps.getExpectedComponentCounts(license_issues, security_issues).size()
+        Assert.assertEquals(infectedComponentsCounts.size(), expected)
+    }
+
+    @Test(priority = 18, groups = ["datadog_siem"], testName = "Datadog. Xray Violations, Impacted Artifacts")
+    void impactedArtifactsCountTest() {
+        def impactedArtifactsCounts = datadog.getMapOfCountLogAggregation(datadogBaseURL, datadogApiKey, datadogApplicationKey,
+                "@log_source:jfrog.xray.siem.vulnerabilities", "@impacted_artifacts"
+        )
+
+        println (impactedArtifactsCounts.size())
+        def expected = XraySteps.getExpectedComponentCounts(license_issues, security_issues).size()
+        Assert.assertEquals(impactedArtifactsCounts.size(), expected)
     }
 
 }
