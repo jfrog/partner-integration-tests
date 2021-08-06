@@ -4,6 +4,8 @@ import io.restassured.response.Response
 import org.hamcrest.Matchers
 import org.yaml.snakeyaml.Yaml
 
+import java.util.stream.Collectors
+
 import static io.restassured.RestAssured.given
 
 class DatadogSteps {
@@ -65,6 +67,32 @@ class DatadogSteps {
             cursor = response.jsonPath().get("meta.page.after")
         } while (cursor)
         return counts
+    }
+
+    static Map<String, Integer> renameMapKeysForWatches(Map<String, Integer> map) {
+        return map.collect().stream().collect(
+                Collectors.toMap(
+                        {Map.Entry<String, Integer> it -> it.key.contains("security") ? "security" : it.key.substring(it.key.lastIndexOf("_")+1)},
+                        {Map.Entry<String, Integer> it -> it.value},
+                        Integer::sum
+                )
+        )
+    }
+
+    static Map<String, Integer> renameMapKeysForPolicies(Map<String, Integer> map) {
+        return map.collect().stream().collect(
+                Collectors.toMap(
+                        {Map.Entry<String, Integer> it ->
+                            it.key.contains("security") ? "security" : (
+                                    it.key.contains("License") && it.key.contains("Rule")
+                                    ? it.key.substring("License".length(), it.key.lastIndexOf("Rule"))
+                                    : it.key
+                            )
+                        },
+                        {Map.Entry<String, Integer> it -> it.value},
+                        Integer::sum
+                )
+        )
     }
 
 
