@@ -29,7 +29,7 @@ class DatadogTest extends DataAnalyticsSteps {
     def artifact = new File("./src/test/resources/repositories/artifact.zip")
     def repoSteps = new RepositorySteps()
     def securitySteps = new SecuritytSteps()
-    def datadog = new DatadogSteps("now-5d", "now")
+    def datadog = new DatadogSteps("now-15m", "now")
     def testUsers = ["testuser1", "testuser2", "testuser3", "testuser4"]
     def from_timestamp
     def to_timestamp
@@ -425,6 +425,7 @@ class DatadogTest extends DataAnalyticsSteps {
         )
 
         Assert.assertEquals(watchesCounts.size(), license_issues.size() + 1)
+        Reporter.log("- Datadog, Xray Violations. Count of watches test passed.", true)
     }
 
     @Test(priority = 15, groups = ["datadog_siem"], testName = "Datadog. Xray Violations, Vulnerabilities")
@@ -436,6 +437,7 @@ class DatadogTest extends DataAnalyticsSteps {
         // sum of all security
         def expected = XraySteps.getExpectedViolationCounts(license_issues, security_issues).getOrDefault("security", 0)
         Assert.assertEquals(response.jsonPath().get("data.buckets[0].computes.c0") ?: 0, expected)
+        Reporter.log("- Datadog, Xray Violations. Count of vulnerabilities test passed.", true)
     }
 
     @Test(priority = 16, groups = ["datadog_siem"], testName = "Datadog. Xray Violations, License Issues")
@@ -448,6 +450,7 @@ class DatadogTest extends DataAnalyticsSteps {
         def expected = XraySteps.getExpectedViolationCounts(license_issues, security_issues)
         expected.remove("security")
         Assert.assertEquals(response.jsonPath().get("data.buckets[0].computes.c0") ?: 0, expected.values().sum())
+        Reporter.log("- Datadog, Xray Violations. Count of licensing issues test passed.", true)
     }
 
     @Test(priority = 17, groups = ["datadog_siem"], testName = "Datadog. Xray Violations, Violations")
@@ -459,6 +462,7 @@ class DatadogTest extends DataAnalyticsSteps {
         // sum of all license and security issues
         def expected = XraySteps.getExpectedViolationCounts(license_issues, security_issues).values().sum()
         Assert.assertEquals(response.jsonPath().get("data.buckets[0].computes.c0") ?: 0, expected)
+        Reporter.log("- Datadog, Xray Violations. Count of violations test passed.", true)
     }
 
     @Test(priority = 18, groups = ["datadog_siem"], testName = "Datadog. Xray Violations, Infected Components")
@@ -469,6 +473,7 @@ class DatadogTest extends DataAnalyticsSteps {
 
         def expected = XraySteps.getExpectedComponentCounts(license_issues, security_issues).size()
         Assert.assertEquals(infectedComponentsCounts.size(), expected)
+        Reporter.log("- Datadog, Xray Violations. Count of infected components test passed.", true)
     }
 
     @Test(priority = 19, groups = ["datadog_siem"], testName = "Datadog. Xray Violations, Impacted Artifacts")
@@ -479,6 +484,7 @@ class DatadogTest extends DataAnalyticsSteps {
 
         def expected = XraySteps.getExpectedComponentCounts(license_issues, security_issues).size()
         Assert.assertEquals(impactedArtifactsCounts.size(), expected)
+        Reporter.log("- Datadog, Xray Violations. Count of impacted artifacts test passed.", true)
     }
 
     @Test(priority = 20, groups = ["datadog_siem"], testName = "Datadog. Xray Violations, Violations per Watch")
@@ -489,6 +495,7 @@ class DatadogTest extends DataAnalyticsSteps {
         def expected = XraySteps.getExpectedViolationCounts(license_issues, security_issues)
         def actual = DatadogSteps.renameMapKeysForWatches(watchesCounts)
         Assert.assertEquals(actual, expected)
+        Reporter.log("- Datadog, Xray Violations. Violations per watch test passed.", true)
     }
 
     @Test(priority = 21, groups = ["datadog_siem"], testName = "Datadog. Xray Violations, Violations Severity")
@@ -498,6 +505,7 @@ class DatadogTest extends DataAnalyticsSteps {
         )
         def expected = XraySteps.getExpectedSeverities(license_issues, security_issues)
         Assert.assertEquals(severities, expected)
+        Reporter.log("- Datadog, Xray Violations. Violations severities test passed.", true)
     }
 
     @Test(priority = 22, groups = ["datadog_siem"], testName = "Datadog. Xray Violations, Violations by Policy")
@@ -508,6 +516,7 @@ class DatadogTest extends DataAnalyticsSteps {
         def expected = XraySteps.getExpectedViolationCounts(license_issues, security_issues)
         def actual = DatadogSteps.renameMapKeysForWatches(watchesCounts)
         Assert.assertEquals(actual, expected)
+        Reporter.log("- Datadog, Xray Violations. Violations by Policy test passed.", true)
     }
 
     @Test(priority = 23, groups = ["datadog_siem"], testName = "Datadog. Xray Violations, Violations by Rule")
@@ -518,6 +527,7 @@ class DatadogTest extends DataAnalyticsSteps {
         def expected = XraySteps.getExpectedViolationCounts(license_issues, security_issues)
         def actual = DatadogSteps.renameMapKeysForPolicies(rulesCounts)
         Assert.assertEquals(actual, expected)
+        Reporter.log("- Datadog, Xray Violations. Violations by rule test passed.", true)
     }
 
     @Test(priority = 24, groups = ["datadog_siem"], testName = "Datadog. Xray Violations, Violation Types over Time (stats)")
@@ -531,6 +541,7 @@ class DatadogTest extends DataAnalyticsSteps {
         def expectedLicenseViolations = expected.values().sum()
 
         Assert.assertEquals(typeCounts, ['License':expectedLicenseViolations, 'Security':expectedSecurityViolations])
+        Reporter.log("- Datadog, Xray Violations. Violations by type test passed.", true)
     }
 
     @Test(priority = 25, groups = ["datadog_siem"], testName = "Datadog. Xray Violations, Violation over Time (By Severity)")
@@ -546,6 +557,7 @@ class DatadogTest extends DataAnalyticsSteps {
 
         def expected = XraySteps.getExpectedComponentCounts(license_issues, security_issues)
         Assert.assertEquals(DatadogSteps.extractArtifactNamesToMap(infected), expected)
+        Reporter.log("- Datadog, Xray Violations. Top Infected Components test passed.", true)
     }
 
     @Test(priority = 27, groups = ["datadog_siem"], testName = "Datadog. Xray Violations, Top Impacted Artifacts")
@@ -556,6 +568,7 @@ class DatadogTest extends DataAnalyticsSteps {
 
         def expected = XraySteps.getExpectedComponentCounts(license_issues, security_issues)
         Assert.assertEquals(DatadogSteps.extractArtifactNamesToMap(infected), expected)
+        Reporter.log("- Datadog, Xray Violations. Top Impacted Artifacts test passed.", true)
     }
 
     @Test(priority = 28, groups = ["datadog_siem"], testName = "Datadog. Xray Violations, Top Vulnerabilities")
@@ -566,6 +579,7 @@ class DatadogTest extends DataAnalyticsSteps {
         def expectedCVECounts = XraySteps.getExpectedCVECounts(security_issues)
 
         Assert.assertEquals(cveCounts, expectedCVECounts)
+        Reporter.log("- Datadog, Xray Violations. Top vulnerabilities test passed.", true)
     }
 
     @Test(priority = 29, groups = ["datadog_siem"], testName = "Datadog. Xray Violations, Top Vulnerable Artifact by Count of IP Download")
@@ -574,6 +588,7 @@ class DatadogTest extends DataAnalyticsSteps {
         def expectedArtifactCount = XraySteps.getExpectedComponentCounts(license_issues, security_issues).size()
 
         Assert.assertEquals(artifacts.size(), expectedArtifactCount)
+        Reporter.log("- Datadog, Xray Violations. Top Vulnerable Artifact by Count of IP Download test passed.", true)
     }
 
     @Test(priority = 30, groups = ["datadog_siem"], testName = "Datadog. Xray Violations, Top Vulnerable Artifact by Count of User Download")
@@ -582,6 +597,7 @@ class DatadogTest extends DataAnalyticsSteps {
         def expectedArtifactCount = XraySteps.getExpectedComponentCounts(license_issues, security_issues).size()
 
         Assert.assertEquals(artifacts.size(), expectedArtifactCount)
+        Reporter.log("- Datadog, Xray Violations. Top Vulnerable Artifact by Count of User Download test passed.", true)
     }
 
 }
