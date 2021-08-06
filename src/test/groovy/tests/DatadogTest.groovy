@@ -520,4 +520,22 @@ class DatadogTest extends DataAnalyticsSteps {
         Assert.assertEquals(actual, expected)
     }
 
+    @Test(priority = 24, groups = ["datadog_siem"], testName = "Datadog. Xray Violations, Violation Types over Time (stats)")
+    void violationTypesOverTimeStatsTest() {
+        def typeCounts = datadog.getMapOfCountLogAggregation(datadogBaseURL, datadogApiKey, datadogApplicationKey,
+                "@log_source:jfrog.xray.siem.vulnerabilities", "@type"
+        )
+
+        def expected = XraySteps.getExpectedViolationCounts(license_issues, security_issues)
+        def expectedSecurityViolations = expected.remove("security") ?: 0
+        def expectedLicenseViolations = expected.values().sum()
+
+        Assert.assertEquals(typeCounts, ['License':expectedLicenseViolations, 'Security':expectedSecurityViolations])
+    }
+
+    @Test(priority = 25, groups = ["datadog_siem"], testName = "Datadog. Xray Violations, Violation over Time (By Severity)")
+    void violationOverTimeSeverityTest() {
+        violationsSeverityCount() // This widget is the exact same as "Violations Severity"
+    }
+
 }
