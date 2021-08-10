@@ -13,6 +13,7 @@ import steps.DataAnalyticsSteps
 import steps.DatadogSteps
 import steps.RepositorySteps
 import steps.SecuritytSteps
+import steps.XraySteps
 import utils.Utils
 
 import java.util.concurrent.TimeUnit
@@ -28,12 +29,20 @@ class DatadogTest extends DataAnalyticsSteps {
     def artifact = new File("./src/test/resources/repositories/artifact.zip")
     def repoSteps = new RepositorySteps()
     def securitySteps = new SecuritytSteps()
-    def datadog = new DatadogSteps()
+    def datadog = new DatadogSteps("now-15m", "now")
     def testUsers = ["testuser1", "testuser2", "testuser3", "testuser4"]
+    def from_timestamp
+    def to_timestamp
 
-    @BeforeSuite(groups=["testing", "datadog", "datadog_xray"])
+    List<Object[]> license_issues = xraySteps.multipleLicenseIssueEvents()
+    List<Object[]> security_issues = xraySteps.multipleIssueEvents()
+
+    @BeforeSuite(groups=["testing", "datadog", "datadog_xray", "datadog_siem"])
     def setUp() {
         RestAssured.useRelaxedHTTPSValidation()
+        def now = new Date()
+        from_timestamp = (now.getTime()-1800000).toString().substring(0,10)
+        to_timestamp = (now.getTime()).toString().substring(0,10)
     }
 
     @Test(priority=0, groups=["datadog", "datadog_xray"], testName = "Data generation for Datadog testing")
@@ -409,5 +418,186 @@ class DatadogTest extends DataAnalyticsSteps {
     // Artifactory Log Errors
 
 
+    @Test(priority = 14, groups = ["datadog_siem"], testName = "Datadog. Xray Violations, Watches")
+    void watchesCountTest() {
+        def watchesCounts = datadog.getMapOfCountLogAggregation(datadogBaseURL, datadogApiKey, datadogApplicationKey,
+                "@log_source:jfrog.xray.siem.vulnerabilities", "@watch_name"
+        )
+
+        Assert.assertEquals(watchesCounts.size(), license_issues.size() + 1)
+        Reporter.log("- Datadog, Xray Violations. Count of watches test passed.", true)
+    }
+
+    @Test(priority = 15, groups = ["datadog_siem"], testName = "Datadog. Xray Violations, Vulnerabilities")
+    void vulnerabilitiesCountTest() {
+        def query = datadog.getCountQuery("@log_source:jfrog.xray.siem.vulnerabilities @type:Security")
+        Response response = DatadogSteps.aggregateLogs(datadogBaseURL, datadogApiKey, datadogApplicationKey, query)
+        response.then().log().ifValidationFails().statusCode(200).body("meta.status",Matchers.equalTo("done"))
+
+        // sum of all security
+        def expected = XraySteps.getExpectedViolationCounts(license_issues, security_issues).getOrDefault("security", 0)
+        Assert.assertEquals(response.jsonPath().get("data.buckets[0].computes.c0") ?: 0, expected)
+        Reporter.log("- Datadog, Xray Violations. Count of vulnerabilities test passed.", true)
+    }
+
+    @Test(priority = 16, groups = ["datadog_siem"], testName = "Datadog. Xray Violations, License Issues")
+    void licenseIssuesCountTest() {
+        def query = datadog.getCountQuery("@log_source:jfrog.xray.siem.vulnerabilities @type:License")
+        Response response = DatadogSteps.aggregateLogs(datadogBaseURL, datadogApiKey, datadogApplicationKey, query)
+        response.then().log().ifValidationFails().statusCode(200).body("meta.status",Matchers.equalTo("done"))
+
+        // sum of all license issues
+        def expected = XraySteps.getExpectedViolationCounts(license_issues, security_issues)
+        expected.remove("security")
+        Assert.assertEquals(response.jsonPath().get("data.buckets[0].computes.c0") ?: 0, expected.values().sum())
+        Reporter.log("- Datadog, Xray Violations. Count of licensing issues test passed.", true)
+    }
+
+    @Test(priority = 17, groups = ["datadog_siem"], testName = "Datadog. Xray Violations, Violations")
+    void violationsCountTest() {
+        def query = datadog.getCountQuery("@log_source:jfrog.xray.siem.vulnerabilities")
+        Response response = DatadogSteps.aggregateLogs(datadogBaseURL, datadogApiKey, datadogApplicationKey, query)
+        response.then().log().ifValidationFails().statusCode(200).body("meta.status",Matchers.equalTo("done"))
+
+        // sum of all license and security issues
+        def expected = XraySteps.getExpectedViolationCounts(license_issues, security_issues).values().sum()
+        Assert.assertEquals(response.jsonPath().get("data.buckets[0].computes.c0") ?: 0, expected)
+        Reporter.log("- Datadog, Xray Violations. Count of violations test passed.", true)
+    }
+
+    @Test(priority = 18, groups = ["datadog_siem"], testName = "Datadog. Xray Violations, Infected Components")
+    void infectedComponentsCountTest() {
+        def infectedComponentsCounts = datadog.getMapOfCountLogAggregation(datadogBaseURL, datadogApiKey, datadogApplicationKey,
+            "@log_source:jfrog.xray.siem.vulnerabilities", "@infected_components"
+        )
+
+        def expected = XraySteps.getExpectedComponentCounts(license_issues, security_issues).size()
+        Assert.assertEquals(infectedComponentsCounts.size(), expected)
+        Reporter.log("- Datadog, Xray Violations. Count of infected components test passed.", true)
+    }
+
+    @Test(priority = 19, groups = ["datadog_siem"], testName = "Datadog. Xray Violations, Impacted Artifacts")
+    void impactedArtifactsCountTest() {
+        def impactedArtifactsCounts = datadog.getMapOfCountLogAggregation(datadogBaseURL, datadogApiKey, datadogApplicationKey,
+                "@log_source:jfrog.xray.siem.vulnerabilities", "@impacted_artifacts"
+        )
+
+        def expected = XraySteps.getExpectedComponentCounts(license_issues, security_issues).size()
+        Assert.assertEquals(impactedArtifactsCounts.size(), expected)
+        Reporter.log("- Datadog, Xray Violations. Count of impacted artifacts test passed.", true)
+    }
+
+    @Test(priority = 20, groups = ["datadog_siem"], testName = "Datadog. Xray Violations, Violations per Watch")
+    void violationsPerWatchTest() {
+        def watchesCounts = datadog.getMapOfCountLogAggregation(datadogBaseURL, datadogApiKey, datadogApplicationKey,
+                "@log_source:jfrog.xray.siem.vulnerabilities", "@watch_name"
+        )
+        def expected = XraySteps.getExpectedViolationCounts(license_issues, security_issues)
+        def actual = DatadogSteps.renameMapKeysForWatches(watchesCounts)
+        Assert.assertEquals(actual, expected)
+        Reporter.log("- Datadog, Xray Violations. Violations per watch test passed.", true)
+    }
+
+    @Test(priority = 21, groups = ["datadog_siem"], testName = "Datadog. Xray Violations, Violations Severity")
+    void violationsSeverityCount() {
+        def severities = datadog.getMapOfCountLogAggregation(datadogBaseURL, datadogApiKey, datadogApplicationKey,
+                "@log_source:jfrog.xray.siem.vulnerabilities", "@severity"
+        )
+        def expected = XraySteps.getExpectedSeverities(license_issues, security_issues)
+        Assert.assertEquals(severities, expected)
+        Reporter.log("- Datadog, Xray Violations. Violations severities test passed.", true)
+    }
+
+    @Test(priority = 22, groups = ["datadog_siem"], testName = "Datadog. Xray Violations, Violations by Policy")
+    void violationsByPolicyTest() {
+        def watchesCounts = datadog.getMapOfCountLogAggregation(datadogBaseURL, datadogApiKey, datadogApplicationKey,
+                "@log_source:jfrog.xray.siem.vulnerabilities", "@policies"
+        )
+        def expected = XraySteps.getExpectedViolationCounts(license_issues, security_issues)
+        def actual = DatadogSteps.renameMapKeysForWatches(watchesCounts)
+        Assert.assertEquals(actual, expected)
+        Reporter.log("- Datadog, Xray Violations. Violations by Policy test passed.", true)
+    }
+
+    @Test(priority = 23, groups = ["datadog_siem"], testName = "Datadog. Xray Violations, Violations by Rule")
+    void violationsByRuleTest() {
+        def rulesCounts = datadog.getMapOfCountLogAggregation(datadogBaseURL, datadogApiKey, datadogApplicationKey,
+                "@log_source:jfrog.xray.siem.vulnerabilities", "@rules"
+        )
+        def expected = XraySteps.getExpectedViolationCounts(license_issues, security_issues)
+        def actual = DatadogSteps.renameMapKeysForPolicies(rulesCounts)
+        Assert.assertEquals(actual, expected)
+        Reporter.log("- Datadog, Xray Violations. Violations by rule test passed.", true)
+    }
+
+    @Test(priority = 24, groups = ["datadog_siem"], testName = "Datadog. Xray Violations, Violation Types over Time (stats)")
+    void violationTypesOverTimeStatsTest() {
+        def typeCounts = datadog.getMapOfCountLogAggregation(datadogBaseURL, datadogApiKey, datadogApplicationKey,
+                "@log_source:jfrog.xray.siem.vulnerabilities", "@type"
+        )
+
+        def expected = XraySteps.getExpectedViolationCounts(license_issues, security_issues)
+        def expectedSecurityViolations = expected.remove("security") ?: 0
+        def expectedLicenseViolations = expected.values().sum()
+
+        Assert.assertEquals(typeCounts, ['License':expectedLicenseViolations, 'Security':expectedSecurityViolations])
+        Reporter.log("- Datadog, Xray Violations. Violations by type test passed.", true)
+    }
+
+    @Test(priority = 25, groups = ["datadog_siem"], testName = "Datadog. Xray Violations, Violation over Time (By Severity)")
+    void violationOverTimeSeverityTest() {
+        violationsSeverityCount() // This widget is the exact same as "Violations Severity"
+    }
+
+    @Test(priority = 26, groups = ["datadog_siem"], testName = "Datadog. Xray Violations, Top Infected Components")
+    void topInfectedComponentsTest() {
+        def infected = datadog.getMapOfCountLogAggregation(datadogBaseURL, datadogApiKey, datadogApplicationKey,
+                "@log_source:jfrog.xray.siem.vulnerabilities", "@infected_components"
+        )
+
+        def expected = XraySteps.getExpectedComponentCounts(license_issues, security_issues)
+        Assert.assertEquals(DatadogSteps.extractArtifactNamesToMap(infected), expected)
+        Reporter.log("- Datadog, Xray Violations. Top Infected Components test passed.", true)
+    }
+
+    @Test(priority = 27, groups = ["datadog_siem"], testName = "Datadog. Xray Violations, Top Impacted Artifacts")
+    void topImpactedArtifactsTest() {
+        def infected = datadog.getMapOfCountLogAggregation(datadogBaseURL, datadogApiKey, datadogApplicationKey,
+                "@log_source:jfrog.xray.siem.vulnerabilities", "@impacted_artifacts"
+        )
+
+        def expected = XraySteps.getExpectedComponentCounts(license_issues, security_issues)
+        Assert.assertEquals(DatadogSteps.extractArtifactNamesToMap(infected), expected)
+        Reporter.log("- Datadog, Xray Violations. Top Impacted Artifacts test passed.", true)
+    }
+
+    @Test(priority = 28, groups = ["datadog_siem"], testName = "Datadog. Xray Violations, Top Vulnerabilities")
+    void topVulnerabilitiesTest(){
+        def cveCounts = datadog.getMapOfCountLogAggregation(datadogBaseURL, datadogApiKey, datadogApplicationKey,
+                "@log_source:jfrog.xray.siem.vulnerabilities", "@cve"
+        )
+        def expectedCVECounts = XraySteps.getExpectedCVECounts(security_issues)
+
+        Assert.assertEquals(cveCounts, expectedCVECounts)
+        Reporter.log("- Datadog, Xray Violations. Top vulnerabilities test passed.", true)
+    }
+
+    @Test(priority = 29, groups = ["datadog_siem"], testName = "Datadog. Xray Violations, Top Vulnerable Artifact by Count of IP Download")
+    void topVulnerableArtifactsByIPDownloads() {
+        def artifacts = datadog.topVulnerableArtifacts(datadogBaseURL, datadogApiKey, datadogApplicationKey, "@ip")
+        def expectedArtifactCount = XraySteps.getExpectedComponentCounts(license_issues, security_issues).size()
+
+        Assert.assertEquals(artifacts.size(), expectedArtifactCount)
+        Reporter.log("- Datadog, Xray Violations. Top Vulnerable Artifact by Count of IP Download test passed.", true)
+    }
+
+    @Test(priority = 30, groups = ["datadog_siem"], testName = "Datadog. Xray Violations, Top Vulnerable Artifact by Count of User Download")
+    void topVulnerableArtifactsByUserDownloads() {
+        def artifacts = datadog.topVulnerableArtifacts(datadogBaseURL, datadogApiKey, datadogApplicationKey, "@username")
+        def expectedArtifactCount = XraySteps.getExpectedComponentCounts(license_issues, security_issues).size()
+
+        Assert.assertEquals(artifacts.size(), expectedArtifactCount)
+        Reporter.log("- Datadog, Xray Violations. Top Vulnerable Artifact by Count of User Download test passed.", true)
+    }
 
 }

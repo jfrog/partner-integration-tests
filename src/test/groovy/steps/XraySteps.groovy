@@ -8,12 +8,15 @@ import org.testng.annotations.DataProvider
 import tests.TestSetup
 
 import java.util.concurrent.TimeUnit
+import java.util.stream.Collectors
 
 import static io.restassured.RestAssured.given
 import static org.hamcrest.Matchers.equalTo
 
 class XraySteps extends TestSetup{
-    public static artifactFormat = {int i -> "artifact_${i}.zip"}
+    static String artifactFormat(int i) {
+        return "artifact_${i}.zip".toString()
+    }
 
     static void deleteExistingWatches(namePrefix, artifactoryBaseURL, username, password) {
         def watches = given()
@@ -858,6 +861,66 @@ class XraySteps extends TestSetup{
                 .then()
                 .extract().response()
     }
+
+    // Expected Results
+
+    static Map<String, Integer> getExpectedSeverities(license_issues, security_issues) {
+        Map<String, Integer> expected = security_issues.stream().collect(
+                Collectors.toMap(
+                        {Object[] it -> it[5].toString()},
+                        {Object[] it -> it[6].size()},
+                        Integer::sum
+                )
+        )
+        int licenseCount = license_issues.stream().reduce((int) 0, (int count, list) -> count + list[3].size())
+
+        expected.put("High", expected.getOrDefault("High", 0) + licenseCount)
+        return expected
+    }
+
+    static Map<String, Integer> getExpectedComponentCounts(license_issues, security_issues) {
+        def componentCounts = new HashMap<String, Integer>()
+        license_issues.forEach { it ->
+            it[3].forEach { artifactId ->
+                def artifactName = artifactFormat(artifactId)
+                componentCounts.put(artifactName, componentCounts.getOrDefault(artifactName, 0) + 1)
+            }
+        }
+
+        security_issues.forEach { it ->
+            it[6].forEach { artifactId ->
+                def artifactName = artifactFormat(artifactId)
+                componentCounts.put(artifactName, componentCounts.getOrDefault(artifactName, 0) + 1)
+            }
+        }
+        return componentCounts
+    }
+
+
+    static Map<String, Integer> getExpectedViolationCounts(license_issues, security_issues) {
+        def expected = license_issues.stream().collect(
+                Collectors.toMap(
+                        {Object[] it -> it[0].toString()},
+                        {Object[] it -> it[3].size()},
+                        Integer::sum
+                )
+        )
+
+        expected.put("security", security_issues.stream().reduce((int) 0, (int count, list) -> count + list[6].size()))
+        return expected
+    }
+
+
+    static Map<String, Integer> getExpectedCVECounts(security_issues) {
+        return security_issues.stream().collect(
+                Collectors.toMap(
+                        it -> it[1].toString(),
+                        it -> it[6].size(),
+                        Integer::sum
+                )
+        )
+    }
+
 
     // Data providers
 

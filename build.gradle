@@ -162,3 +162,14 @@ task xray_generation_and_splunk_siem_test(type: Test) {
         showStandardStreams = true
     }
 }
+
+task datadog_siem_test_only(type: Test) {
+    useTestNG() {
+        useDefaultListeners = true
+        suites 'src/test/groovy/testng.xml'
+        includeGroups("datadog_siem")
+    }
+    testLogging {
+        showStandardStreams = true
+    }
+}
