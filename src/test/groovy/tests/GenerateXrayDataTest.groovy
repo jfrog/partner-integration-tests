@@ -5,8 +5,8 @@ import io.restassured.response.Response
 import org.hamcrest.Matchers
 import org.testng.Assert
 import org.testng.Reporter
-import org.testng.annotations.AfterSuite
-import org.testng.annotations.BeforeSuite
+import org.testng.annotations.AfterClass
+import org.testng.annotations.BeforeClass
 import org.testng.annotations.Test
 import steps.RepositorySteps
 import steps.XraySteps
@@ -31,7 +31,7 @@ class GenerateXrayDataTest extends XraySteps{
     def artifactsPath = "./src/test/resources/repositories/"
 
 
-    @BeforeSuite(groups = ["xray_generate_data"])
+    @BeforeClass(groups = ["xray_generate_data"])
     def setUp() {
         xrayBaseUrl = "${artifactoryBaseURL}/xray/api"
         Random random = new Random()
@@ -48,7 +48,7 @@ class GenerateXrayDataTest extends XraySteps{
 
     }
 
-    @AfterSuite(groups = ["xray_generate_data"])
+    @AfterClass(groups = ["xray_generate_data"])
     def cleanUp() {
         for (def i in 0..(artifactCount-1)) {
             def artifact = new File("${artifactsPath}${artifactFormat(i)}")

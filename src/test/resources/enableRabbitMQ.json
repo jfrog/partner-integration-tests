@@ -7,5 +7,8 @@
   "jobInterval": 86400,
   "allowSendingAnalytics": true,
   "httpsPort": 443,
-  "enableTlsConnectionToRabbitMQ": true
+  "enableTlsConnectionToRabbitMQ": true,
+  "httpClientMaxConnections": 50,
+  "httpClientMaxIdleConnections": 20,
+  "jsFilesBatch": 20
 }

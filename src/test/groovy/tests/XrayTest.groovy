@@ -37,9 +37,9 @@ class XrayTest extends XraySteps{
     @Test(priority=1, groups=["xray"], dataProvider = "issueEvents", testName = "Create Issue Event")
     void createIssueEventTest(issueID, cve, summary, description){
         Response create = createIssueEvent(issueID+randomIndex, cve, summary, description, username, password, xrayBaseUrl)
-        create.then().statusCode(201)
+        create.then().log().ifValidationFails().statusCode(201)
         Response get = getIssueEvent(issueID+randomIndex, username, password, xrayBaseUrl)
-        get.then().statusCode(200)
+        get.then().log().ifValidationFails().statusCode(200)
         def issueIDverification = get.then().extract().path("id")
         def cveVerification = get.then().extract().path("source_id")
         def summaryVerification = get.then().extract().path("summary")
@@ -59,9 +59,9 @@ class XrayTest extends XraySteps{
         summary = "Updated"
         description = "Updated"
         Response update = updateIssueEvent(issueID+randomIndex, cve, summary, description, username, password, xrayBaseUrl)
-        update.then().statusCode(200)
+        update.then().log().ifValidationFails().statusCode(200)
         Response get = getIssueEvent(issueID+randomIndex, username, password, xrayBaseUrl)
-        get.then().statusCode(200)
+        get.then().log().ifValidationFails().statusCode(200)
         def cveVerification = get.then().extract().path("source_id")
         def summaryVerification = get.then().extract().path("summary")
         def descriptionVerification = get.then().extract().path("description")
@@ -76,10 +76,10 @@ class XrayTest extends XraySteps{
     @Test(priority=3, groups=["xray"], testName = "Create policy")
     void createPolicyTest(){
         Response create = createPolicy(policyName, username, password, xrayBaseUrl)
-        create.then().statusCode(201)
+        create.then().log().ifValidationFails().statusCode(201)
 
         Response get = getPolicy(policyName, username, password, xrayBaseUrl)
-        get.then().statusCode(200)
+        get.then().log().ifValidationFails().statusCode(200)
         def policyNameVerification = get.then().extract().path("name")
         Assert.assertTrue(policyName == policyNameVerification)
 
@@ -90,10 +90,10 @@ class XrayTest extends XraySteps{
     void updatePolicyTest(){
         def description = "Updated description"
         Response update = updatePolicy(policyName, description, username, password, xrayBaseUrl)
-        update.then().statusCode(200)
+        update.then().log().ifValidationFails().statusCode(200)
 
         Response get = getPolicy(policyName, username, password, xrayBaseUrl)
-        get.then().statusCode(200)
+        get.then().log().ifValidationFails().statusCode(200)
         def descriptionVerification = get.then().extract().path("description")
         Assert.assertTrue(description == descriptionVerification)
 
@@ -103,7 +103,7 @@ class XrayTest extends XraySteps{
     @Test(priority=5, groups=["xray"], testName = "Get policies")
     void getPoliciesTest(){
         Response response = getPolicies(username, password, xrayBaseUrl)
-        response.then().statusCode(200)
+        response.then().log().ifValidationFails().statusCode(200)
                 .body("name", notNullValue())
                 .body("type", notNullValue())
                 .body("description", notNullValue())
@@ -119,12 +119,12 @@ class XrayTest extends XraySteps{
     @Test(priority=6, groups=["xray"], testName = "Create watch for the repositories", dependsOnMethods = "createPolicyTest")
     void createWatchTest(){
         Response create = createWatchEvent(watchName, policyName, username, password, xrayBaseUrl)
-        create.then().statusCode(201)
+        create.then().log().ifValidationFails().statusCode(201)
                 .body("info",
                 equalTo("Watch has been successfully created"))
 
         Response get = getWatchEvent(watchName, username, password, xrayBaseUrl)
-        get.then().statusCode(200)
+        get.then().log().ifValidationFails().statusCode(200)
                 .body("general_data.name", equalTo((watchName).toString()))
 
         Reporter.log("- Create watch. Watch with name ${watchName} has been created and verified successfully", true)
@@ -134,12 +134,12 @@ class XrayTest extends XraySteps{
     void updateWatchTest(){
         def description = "Updated watch"
         Response create = updateWatchEvent(watchName, description, policyName, username, password, xrayBaseUrl)
-        create.then().statusCode(200)
+        create.then().log().ifValidationFails().statusCode(200)
                 .body("info",
                         equalTo("Watch was successfully updated"))
 
         Response get = getWatchEvent(watchName, username, password, xrayBaseUrl)
-        get.then().statusCode(200)
+        get.then().log().ifValidationFails().statusCode(200)
                 .body("general_data.description", equalTo(description))
 
         Reporter.log("- Update watch. Watch with name ${watchName} has been updated and verified successfully", true)
@@ -148,7 +148,7 @@ class XrayTest extends XraySteps{
     @Test(priority=8, groups=["xray"], testName = "Assign policy to watches")
     void assignPolicyToWatchTest(){
         Response response = assignPolicy(watchName, policyName, username, password, xrayBaseUrl)
-        response.then().statusCode(200)
+        response.then().log().ifValidationFails().statusCode(200)
                 .body("result.${watchName}",
                         equalTo("Policy assigned successfully to Watch"))
 
@@ -158,7 +158,7 @@ class XrayTest extends XraySteps{
     @Test(priority=9, groups=["xray"], testName = "Delete watch")
     void deleteWatchTest(){
         Response response = deleteWatchEvent(watchName, username, password, xrayBaseUrl)
-        response.then().statusCode(200)
+        response.then().log().ifValidationFails().statusCode(200)
                 .body("info",
                         equalTo("Watch was deleted successfully"))
 
@@ -180,7 +180,7 @@ class XrayTest extends XraySteps{
     void forceReindexTest(){
         // TODO: make test independent of Artifactory tests
         Response response = forceReindex(username, password, xrayBaseUrl )
-        response.then().statusCode(200)
+        response.then().log().ifValidationFails().statusCode(200)
 
         Reporter.log("- Force reindex repo. Artifact was sent to reindex", true)
     }
@@ -209,29 +209,25 @@ class XrayTest extends XraySteps{
 
         Response get = getIntegrationConfiguration(username, password, xrayBaseUrl)
         int bodySize = get.body().jsonPath().getList(".").size()
-        get.then().statusCode(200)
+        get.then().log().ifValidationFails().statusCode(200)
                 .body("[" + (bodySize-1) + "].vendor", equalTo(vendorName.toString()))
 
         Reporter.log("- Integration configuration. " +
                 "Configuration for vendor ${vendorName} has been successfully added and verified", true)
     }
 
-    @Test(priority=14, groups=["xray"], testName = "Enable TLS for RabbitMQ")
-    void enableTLSRabbitMQTest(){
-        File body = new File("./src/test/resources/enableRabbitMQ.json")
-        Response post = postSystemParameters(username, password, body, xrayBaseUrl)
-        post.then().statusCode(200)
-
+    @Test(priority=14, groups=["xray"], testName = "Get system parameters")
+    void getSystemPropertiesTest(){
         Response get = getSystemParameters(username, password, xrayBaseUrl)
-        get.then().statusCode(200).body("enableTlsConnectionToRabbitMQ", equalTo(true))
+        get.then().log().ifValidationFails().statusCode(200)
 
-        Reporter.log("- Enable TLS for RabbitMQ. TLS for RabbitMQ has been successfully enabled and verified", true)
+        Reporter.log("- Get system parameters. Verified", true)
     }
 
     @Test(priority=15, groups=["xray"], testName = "Get binary manager")
     void getBinaryManagerTest(){
         Response response = getBinaryManager(username, password, xrayBaseUrl)
-        response.then().statusCode(200)
+        response.then().log().ifValidationFails().statusCode(200)
                 .body("binMgrId", equalTo("default"))
                 .body("license_valid", equalTo(true))
                 .body("binMgrId", equalTo("default"))
@@ -243,7 +239,7 @@ class XrayTest extends XraySteps{
     @Test(priority=16, groups=["xray"], testName = "Get repo indexing configuration")
     void getIndexingConfigurationTest(){
         Response response = getIndexingConfiguration(username, password, xrayBaseUrl)
-        response.then().statusCode(200)
+        response.then().log().ifValidationFails().statusCode(200)
                 .body("bin_mgr_id", equalTo("default"))
                 .body("indexed_repos.name", hasItem("generic-dev-local"))
 
@@ -253,7 +249,7 @@ class XrayTest extends XraySteps{
     @Test(priority=17, groups=["xray"], testName = "Update repo indexing configuration")
     void updateIndexingConfigurationTest(){
         Response response = updateIndexingConfiguration(username, password, xrayBaseUrl)
-        response.then().statusCode(200)
+        response.then().log().ifValidationFails().statusCode(200)
                 .body("info", equalTo("Repositories list has been successfully sent to Artifactory"))
 
         Reporter.log("- Update repo indexing configuration. Successfully updated", true)
@@ -264,7 +260,7 @@ class XrayTest extends XraySteps{
     void artifactSummaryTest(){
         def artifactPath = "default/generic-dev-local/test-directory/artifact.zip"
         Response post = artifactSummary(username, password, artifactPath, xrayBaseUrl)
-        post.then().statusCode(200)
+        post.then().log().ifValidationFails().statusCode(200)
                 .body("artifacts[0].general.path", equalTo(artifactPath))
 
         Reporter.log("- Get artifact summary. Artifact summary has been returned successfully", true)
@@ -276,26 +272,30 @@ class XrayTest extends XraySteps{
         LocalDate startDate = LocalDate.now().minusDays(5)
         LocalDate endDate = LocalDate.now()
         Response response = createSupportBundle(username, password, name, startDate, endDate, xrayBaseUrl)
+        response.then().log().ifValidationFails().statusCode(200)
         def bundle_url = response.then().extract().path("artifactory.bundle_url")
         if ((bundle_url.toString()).contains(xrayBaseUrl.toString())) {
-            Reporter.log("- Create support bundle. Successfully created using X-ray API", true)
+            Reporter.log("- Create support bundle. Successfully created using Xray API", true)
         } else if (((bundle_url.toString()).contains("localhost"))){
             Reporter.log("- Create support bundle. Created with a bug, localhost instead of the hostname", true)
+        } else {
+            response.then().log().everything()
+            Assert.fail()
         }
     }
 
     @Test(priority=20, groups=["xray"], testName = "Get system monitoring status")
     void getSystemMonitoringTest(){
         Response response = getSystemMonitoringStatus(username, password, xrayBaseUrl)
-        response.then().statusCode(200)
+        response.then().log().ifValidationFails().statusCode(200)
 
         Reporter.log("- Get system monitoring status. Data returned successfully", true)
     }
 
-    @Test(priority=21, groups=["xray"], testName = "X-ray ping request")
+    @Test(priority=21, groups=["xray"], testName = "Xray ping request")
     void xrayPingRequestTest(){
         Response response = xrayPingRequest(username, password, xrayBaseUrl)
-        response.then().statusCode(200)
+        response.then().log().ifValidationFails().statusCode(200)
                 .body("status", equalTo("pong"))
 
         Reporter.log("- Get system monitoring status. Data returned successfully", true)
@@ -304,7 +304,7 @@ class XrayTest extends XraySteps{
     @Test(priority=22, groups=["xray"], testName = "X-ray version")
     void xrayGetVersionTest(){
         Response response = xrayGetVersion(username, password, xrayBaseUrl)
-        response.then().statusCode(200)
+        response.then().log().ifValidationFails().statusCode(200)
                 .body("xray_version", notNullValue())
                 .body("xray_revision", notNullValue())
         def version = response.then().extract().path("xray_version")
