@@ -966,12 +966,10 @@ class SplunkTest extends DataAnalyticsSteps{
         if (results.size() == 0) {
             Reporter.log("- Splunk. Xray, Violations, Violation Types over Time (Stats). SPLUNK RETURNS NO RESULTS", true)
         } else {
-            if ("License" in results.first()) {
-                licenseViolationCount = results.stream().reduce(0, { (int count, data) -> count + Integer.parseInt(data["License"].toString()) })
-            }
-            if ("Security" in results.first()) {
-                securityViolationCount = results.stream().reduce(0, { (int count, data) -> count + Integer.parseInt(data["Security"].toString()) } )
-            }
+            results.forEach({ it ->
+                licenseViolationCount += ("License" in it ? Integer.parseInt(it["License"].toString()) : 0)
+                securityViolationCount += ("Security" in it ? Integer.parseInt(it["Security"].toString()) : 0)
+            })
         }
         def expected = XraySteps.getExpectedViolationCounts(license_issues, security_issues)
         def expectedSecurityViolations = expected.remove("security") ?: 0

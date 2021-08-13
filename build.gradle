@@ -64,7 +64,7 @@ task unified_test(type: Test) {
     }
 }
 
-task xray_test(type: Test) {
+task xray_generation_test(type: Test) {
     useTestNG() {
         useDefaultListeners = true
         suites 'src/test/groovy/testng.xml'
@@ -152,11 +152,23 @@ task splunk_siem_test_only(type: Test) {
     }
 }
 
+
 task xray_generation_and_splunk_siem_test(type: Test) {
     useTestNG() {
         useDefaultListeners = true
         suites 'src/test/groovy/testng.xml'
         includeGroups("xray_generate_data", "splunk_siem")
+    }
+    testLogging {
+        showStandardStreams = true
+    }
+}
+
+task xray_generation_and_datadog_siem_test(type: Test) {
+    useTestNG() {
+        useDefaultListeners = true
+        suites 'src/test/groovy/testng.xml'
+        includeGroups("xray_generate_data", "datadog_siem")
     }
     testLogging {
         showStandardStreams = true
