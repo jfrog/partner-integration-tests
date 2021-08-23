@@ -122,7 +122,7 @@ class PrometheusTest extends DataAnalyticsSteps{
         int calls = 10
         uploadIntoRepo(count, calls)
         Thread.sleep(10000)
-        def query = "sum by (remote_address) (increase(jfrog_rt_data_upload[5m])) > 0"
+        def query = "sum by (remote_address) (increase(jfrog_rt_data_upload_total[5m])) > 0"
 
         Response response = prometheus.postQuery(prometheusBaseURL, query)
         response.then().log().everything()
@@ -130,7 +130,7 @@ class PrometheusTest extends DataAnalyticsSteps{
         def IPv4andIPv6Regex = "((^\\s*((([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]))\\s*\$)|(^\\s*((([0-9A-Fa-f]{1,4}:){7}([0-9A-Fa-f]{1,4}|:))|(([0-9A-Fa-f]{1,4}:){6}(:[0-9A-Fa-f]{1,4}|((25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)(\\.(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)){3})|:))|(([0-9A-Fa-f]{1,4}:){5}(((:[0-9A-Fa-f]{1,4}){1,2})|:((25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)(\\.(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)){3})|:))|(([0-9A-Fa-f]{1,4}:){4}(((:[0-9A-Fa-f]{1,4}){1,3})|((:[0-9A-Fa-f]{1,4})?:((25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)(\\.(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){3}(((:[0-9A-Fa-f]{1,4}){1,4})|((:[0-9A-Fa-f]{1,4}){0,2}:((25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)(\\.(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){2}(((:[0-9A-Fa-f]{1,4}){1,5})|((:[0-9A-Fa-f]{1,4}){0,3}:((25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)(\\.(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){1}(((:[0-9A-Fa-f]{1,4}){1,6})|((:[0-9A-Fa-f]{1,4}){0,4}:((25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)(\\.(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)){3}))|:))|(:(((:[0-9A-Fa-f]{1,4}){1,7})|((:[0-9A-Fa-f]{1,4}){0,5}:((25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)(\\.(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)){3}))|:)))(%.+)?\\s*\$))"
         response.then().
                 body("data.result.metric.remote_address", hasItems(Matchers.matchesRegex(IPv4andIPv6Regex))).
-                body("data.result.value[1]", Matchers.notNullValue())
+                body("data.result[0].value[1]", Matchers.notNullValue())
 
         Reporter.log("- Prometheus. Top 10 IPs By Uploads verified", true)
     }
@@ -141,7 +141,7 @@ class PrometheusTest extends DataAnalyticsSteps{
         int calls = 10
         downloadArtifact(count, calls)
         Thread.sleep(10000)
-        def query = "sum by (remote_address) (increase(jfrog_rt_data_download[5m])) > 0"
+        def query = "sum by (remote_address) (increase(jfrog_rt_data_download_total[5m])) > 0"
 
         Response response = prometheus.postQuery(prometheusBaseURL, query)
         response.then().log().everything()
@@ -153,7 +153,7 @@ class PrometheusTest extends DataAnalyticsSteps{
         Reporter.log("- Prometheus. Top 10 IPs By Downloads verified", true)
     }
 
-    @Test(priority=5, groups=["prometheus"], dataProvider = "users", testName = "Artifcatory, Audit. Generate data with data provider")
+    @Test(priority=5, groups=["prometheus"], dataProvider = "users", testName = "Artifactory, Audit. Generate data with data provider")
     void generateDataTest(usernameRt, emailRt, passwordRt, incorrectPasswordRt) {
         // Deploy as non-existent users, 401
         deployArtifactAs(usernameRt, passwordRt, 401)
@@ -170,9 +170,9 @@ class PrometheusTest extends DataAnalyticsSteps{
         securitySteps.deleteUser(artifactoryURL, usernameRt)
     }
 
-    @Test(priority=6, groups=["prometheus"], testName = "Artifcatory, Audit. Audit Actions by Users")
+    @Test(priority=6, groups=["prometheus"], testName = "Artifactory, Audit. Audit Actions by Users")
     void rtAuditByUsersTest() throws Exception {
-        def query = "sum by (user) (increase(jfrog_rt_access_audit{user!=\"UNKNOWN\", user!=\"_system_\",user!=\"\"}[10m]))"
+        def query = "sum by (user) (increase(jfrog_rt_access_audit_total{user!=\"UNKNOWN\", user!=\"_system_\",user!=\"\"}[10m]))"
 
         Response response = prometheus.postQuery(prometheusBaseURL, query)
         response.then().log().everything()
@@ -185,33 +185,31 @@ class PrometheusTest extends DataAnalyticsSteps{
         Reporter.log("- Prometheus. Artifactory, Audit Actions by Users verification.", true)
     }
 
-    @Test(priority=7, groups=["prometheus"], testName = "Artifcatory, Audit. Denied Actions by Username")
+    @Test(priority=7, groups=["prometheus"], testName = "Artifactory, Audit. Denied Actions by Username")
     void rtDeniedActionByUsersTest() throws Exception {
-        def query = "sum by (user) (increase(jfrog_rt_access{user!=\"UNKNOWN\", user!=\"_system_\", action_response=~\"DENIED.*\"}[10m]) > 0)"
+        def query = "sum by (username) (increase(jfrog_rt_access_total{username!=\"UNKNOWN\", username!=\"_system_\", action_response=~\"DENIED.*\"}[10m]) > 0)"
 
         Response response = prometheus.postQuery(prometheusBaseURL, query)
         response.then().log().everything()
 
-        List<String> usernames = ["splunktest0", "splunktest1", "splunktest2"]
-        for(user in usernames) {
+        for(user in users()) {
             response.then().
-                    body("data.result.metric.user", hasItems(user))
+                    body("data.result.metric.username", hasItems("${user[0]} ".toString())) // has extra space
         }
 
         Reporter.log("- Prometheus. Artifactory, Denied Actions by Username verification.", true)
     }
 
-    @Test(priority=8, groups=["prometheus"], testName = "Artifcatory, Audit. Denied Logins By username and IP")
+    @Test(priority=8, groups=["prometheus"], testName = "Artifactory, Audit. Denied Logins By username and IP")
     void rtDeniedActionByUserIPTest() throws Exception {
-        def query = "sum by (user,ip) (increase(jfrog_rt_access{user!=\"UNKNOWN\", user!=\"_system_\", action_response=~\"DENIED.*\"}[10m]) > 0)"
+        def query = "sum by (username,ip) (increase(jfrog_rt_access_total{username!=\"UNKNOWN\", username!=\"_system_\", action_response=~\"DENIED.*\"}[10m]) > 0)"
 
         Response response = prometheus.postQuery(prometheusBaseURL, query)
         response.then().log().everything()
 
-        List<String> usernames = ["splunktest0", "splunktest1", "splunktest2"]
-        for(user in usernames) {
+        for(user in users()) {
             response.then().
-                    body("data.result.metric.user", hasItems(user))
+                    body("data.result.metric.username", hasItems("${user[0]} ".toString()))
         }
 
         response.then().
@@ -220,9 +218,9 @@ class PrometheusTest extends DataAnalyticsSteps{
         Reporter.log("- Prometheus. Artifactory, Denied Actions by Username verification.", true)
     }
 
-    @Test(priority=9, groups=["prometheus"], testName = "Artifcatory, Audit. Denied Logins by IP")
+    @Test(priority=9, groups=["prometheus"], testName = "Artifactory, Audit. Denied Logins by IP")
     void rtDeniedLoginsByIPTest() throws Exception {
-        def query = "sum by (ip) (increase(jfrog_rt_access{user!=\"UNKNOWN\", user!=\"_system_\", action_response=~\"DENIED LOGIN\"}[10m]) > 0)"
+        def query = "sum by (ip) (increase(jfrog_rt_access_total{username!=\"UNKNOWN\", username!=\"_system_\", action_response=~\"DENIED LOGIN\"}[10m]) > 0)"
 
         Response response = prometheus.postQuery(prometheusBaseURL, query)
         response.then().log().everything()
@@ -233,9 +231,9 @@ class PrometheusTest extends DataAnalyticsSteps{
         Reporter.log("- Prometheus. Artifactory, Denied Logins by IP verification.", true)
     }
 
-    @Test(priority=10, groups=["prometheus"], testName = "Artifcatory, Audit. Denied Actions by IP")
+    @Test(priority=10, groups=["prometheus"], testName = "Artifactory, Audit. Denied Actions by IP")
     void rtDeniedActionsByIPTest() throws Exception {
-        def query = "sum by (ip) (increase(jfrog_rt_access{user!=\"UNKNOWN\", user!=\"_system_\", action_response=~\"DENIED.*\"}[10m]) > 0)"
+        def query = "sum by (ip) (increase(jfrog_rt_access_total{username!=\"UNKNOWN\", username!=\"_system_\", action_response=~\"DENIED.*\"}[10m]) > 0)"
 
         Response response = prometheus.postQuery(prometheusBaseURL, query)
         response.then().log().everything()
@@ -248,17 +246,16 @@ class PrometheusTest extends DataAnalyticsSteps{
         Reporter.log("- Prometheus. Artifactory, Denied Actions by Username verification.", true)
     }
 
-    @Test(priority=11, groups=["prometheus"], testName = "Artifcatory, Audit. Accepted Deploys by Username")
+    @Test(priority=11, groups=["prometheus"], testName = "Artifactory, Audit. Accepted Deploys by Username")
     void rtAcceptedDeploysByUsernameTest() throws Exception {
-        def query = "sum by (user) (increase(jfrog_rt_access{user!=\"UNKNOWN\", user!=\"_system_\", action_response=~\"ACCEPTED DEPLOY\"}[10m]) > 0)"
+        def query = "sum by (username) (increase(jfrog_rt_access_total{username!=\"UNKNOWN\", username!=\"_system_\", action_response=~\"ACCEPTED DEPLOY\"}[10m]) > 0)"
 
         Response response = prometheus.postQuery(prometheusBaseURL, query)
         response.then().log().everything()
 
-        List<String> usernames = ["splunktest0", "splunktest1", "splunktest2"]
-        for(user in usernames) {
+        for(user in users()) {
             response.then().
-                    body("data.result.metric.user", hasItems(user))
+                    body("data.result.metric.username", hasItems("${user[0]} ".toString()))
         }
 
         Reporter.log("- Prometheus. Artifactory, Accepted Deploys by Username verification.", true)
@@ -323,7 +320,7 @@ class PrometheusTest extends DataAnalyticsSteps{
         for (int i=0;i<statusCodes.size();i++) {
             if (statusCodes[i] == "201" || statusCodes[i] == "500") {
                 def result = jsonPathEvaluator.get("data.result[${i}].value[1]").toString().toDouble()
-                Assert.assertTrue(result > 0)
+                Assert.assertTrue(result > 0, "For status code ${statusCodes[i]}")
             }
         }
 
