@@ -620,7 +620,7 @@ class XraySteps extends TestSetup{
                 .then()
                 .extract().response()
     }
-
+    // test was removed since Xray 3.29.2. It was breaking RabbitMQ cluster and Xray became non-functional
     def postSystemParameters(username, password, body, url) {
         return given()
                 .auth()
@@ -781,7 +781,7 @@ class XraySteps extends TestSetup{
                         "      \"system\": true,             \n" +
                         "      \"logs\":{ \n" +
                         "         \"include\": true,          \n" +
-                            "         \"start_date\":\"${startDate}\",\n" +
+                        "         \"start_date\":\"${startDate}\",\n" +
                         "         \"end_date\":\"${endDate}\"\n" +
                         "      },\n" +
                         "      \"thread_dump\":{ \n" +
