@@ -192,7 +192,7 @@ class GenerateXrayDataTest extends XraySteps{
     }
 
 
-    @Test(priority=8, groups=["xray_generate_data"], testName = "Get artifact summary")
+    /* @Test(priority=8, groups=["xray_generate_data"], testName = "Get artifact summary")
     void artifactSummaryTest(){
         def artifactPath = "default/docker-local/nginx/1.0.0/"
         Response post = artifactSummary(username, password, artifactPath, xrayBaseUrl)
@@ -200,7 +200,7 @@ class GenerateXrayDataTest extends XraySteps{
                 .body("artifacts[0].general.path", equalTo(artifactPath))
 
         Reporter.log("- Get artifact summary. Artifact summary has been returned successfully", true)
-    }
+    } */
 
 
     @Test(priority=9, groups=["xray_generate_data"], testName = "Get violations")
