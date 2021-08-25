@@ -172,7 +172,7 @@ class PrometheusTest extends DataAnalyticsSteps{
 
     @Test(priority=6, groups=["prometheus"], testName = "Artifactory, Audit. Audit Actions by Users")
     void rtAuditByUsersTest() throws Exception {
-        def query = "sum by (user) (increase(jfrog_rt_access_audit_total{user!=\"UNKNOWN\", user!=\"_system_\",user!=\"\"}[10m]))"
+        def query = "sum by (user) (increase(jfrog_rt_access_audit_total{user!=\"UNKNOWN\", user!=\"anonymous\", user!=\"_system_\",user!=\"\"}[10m]))"
 
         Response response = prometheus.postQuery(prometheusBaseURL, query)
         response.then().log().everything()
@@ -187,7 +187,7 @@ class PrometheusTest extends DataAnalyticsSteps{
 
     @Test(priority=7, groups=["prometheus"], testName = "Artifactory, Audit. Denied Actions by Username")
     void rtDeniedActionByUsersTest() throws Exception {
-        def query = "sum by (username) (increase(jfrog_rt_access_total{username!=\"UNKNOWN\", username!=\"_system_\", action_response=~\"DENIED.*\"}[10m]) > 0)"
+        def query = "sum by (username) (increase(jfrog_rt_access_total{username!=\"UNKNOWN \", username!=\"_system_ \", action_response=~\"DENIED.*\"}[10m]) > 0)"
 
         Response response = prometheus.postQuery(prometheusBaseURL, query)
         response.then().log().everything()
@@ -202,7 +202,7 @@ class PrometheusTest extends DataAnalyticsSteps{
 
     @Test(priority=8, groups=["prometheus"], testName = "Artifactory, Audit. Denied Logins By username and IP")
     void rtDeniedActionByUserIPTest() throws Exception {
-        def query = "sum by (username,ip) (increase(jfrog_rt_access_total{username!=\"UNKNOWN\", username!=\"_system_\", action_response=~\"DENIED.*\"}[10m]) > 0)"
+        def query = "sum by (username,ip) (increase(jfrog_rt_access_total{username!=\"UNKNOWN \", username!=\"_system_ \", action_response=~\"DENIED.*\"}[10m]) > 0)"
 
         Response response = prometheus.postQuery(prometheusBaseURL, query)
         response.then().log().everything()
@@ -220,7 +220,7 @@ class PrometheusTest extends DataAnalyticsSteps{
 
     @Test(priority=9, groups=["prometheus"], testName = "Artifactory, Audit. Denied Logins by IP")
     void rtDeniedLoginsByIPTest() throws Exception {
-        def query = "sum by (ip) (increase(jfrog_rt_access_total{username!=\"UNKNOWN\", username!=\"_system_\", action_response=~\"DENIED LOGIN\"}[10m]) > 0)"
+        def query = "sum by (ip) (increase(jfrog_rt_access_total{username!=\"UNKNOWN \", username!=\"_system_ \", action_response=~\"DENIED LOGIN\"}[10m]) > 0)"
 
         Response response = prometheus.postQuery(prometheusBaseURL, query)
         response.then().log().everything()
@@ -233,7 +233,7 @@ class PrometheusTest extends DataAnalyticsSteps{
 
     @Test(priority=10, groups=["prometheus"], testName = "Artifactory, Audit. Denied Actions by IP")
     void rtDeniedActionsByIPTest() throws Exception {
-        def query = "sum by (ip) (increase(jfrog_rt_access_total{username!=\"UNKNOWN\", username!=\"_system_\", action_response=~\"DENIED.*\"}[10m]) > 0)"
+        def query = "sum by (ip) (increase(jfrog_rt_access_total{username!=\"UNKNOWN \", username!=\"_system_ \", action_response=~\"DENIED.*\"}[10m]) > 0)"
 
         Response response = prometheus.postQuery(prometheusBaseURL, query)
         response.then().log().everything()
@@ -248,7 +248,7 @@ class PrometheusTest extends DataAnalyticsSteps{
 
     @Test(priority=11, groups=["prometheus"], testName = "Artifactory, Audit. Accepted Deploys by Username")
     void rtAcceptedDeploysByUsernameTest() throws Exception {
-        def query = "sum by (username) (increase(jfrog_rt_access_total{username!=\"UNKNOWN\", username!=\"_system_\", action_response=~\"ACCEPTED DEPLOY\"}[10m]) > 0)"
+        def query = "sum by (username) (increase(jfrog_rt_access_total{username!=\"UNKNOWN \", username!=\"_system_ \", action_response=~\"ACCEPTED DEPLOY\"}[10m]) > 0)"
 
         Response response = prometheus.postQuery(prometheusBaseURL, query)
         response.then().log().everything()
