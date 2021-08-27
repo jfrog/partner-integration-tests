@@ -55,7 +55,7 @@ class DatadogTest extends DataAnalyticsSteps {
         createUsers401(count, calls)
         // Accepted Deploys by Username
         def emailRt = "testEmail@jfrog.com"
-        def passwordRt = "password123"
+        def passwordRt = "Password123!"
         for(user in testUsers) {
             createUsers(user, emailRt, passwordRt)
             addPermissions(user)
@@ -94,31 +94,11 @@ class DatadogTest extends DataAnalyticsSteps {
 
     @Test(priority=1, groups=["datadog", "datadog_xray"], testName = "Denied Actions by Username")
     void deniedActionsByUsernameTest(){
-        int count = 1
-        int calls = 5
-        def now = new Date()
-        def from_timestamp = (now.getTime()-1800000).toString().substring(0,10)
-        def to_timestamp = (now.getTime()).toString().substring(0,10)
-        def query = "sum:denied_actions_by_username{!username:na} by {username}.as_count()"
-        Response response = datadog.datadogQueryTimeSeriesPoints(datadogBaseURL,
-                datadogApiKey, datadogApplicationKey, from_timestamp, to_timestamp, query)
-        response.then().assertThat().log().ifValidationFails().statusCode(200).
-                body("series.pointlist", Matchers.notNullValue()).
-                body("query", Matchers.equalTo(query))
-        def userNames = []
-        while (count <= calls) {
-            userNames.add("username:fakeuser-${count},!username:na")
-            count++
+        def users = datadog.getMapOfCountLogAggregation(datadogBaseURL, datadogApiKey, datadogApplicationKey,"@log_source:jfrog.rt.artifactory.access @action_response:DENIED* -@username:'NA '", "@username")
+        for (count in 1..5) {
+            def user = "fakeuser-${count} ".toString()
+            Assert.assertTrue(users.getOrDefault(user, 0) > 0, "User ${user} in denied users?")
         }
-        println count
-        JsonPath jsonPathEvaluator = response.jsonPath()
-        def responseUserNames = jsonPathEvaluator.getList("series.scope")
-        println "Expected username list:"
-        println userNames.sort()
-        println "Actual username list:"
-        println responseUserNames.sort()
-        Assert.assertTrue(userNames.intersect(responseUserNames) as boolean)
-
         Reporter.log("- Datadog, Audit. Denied Actions by Username graph test passed", true)
 
     }

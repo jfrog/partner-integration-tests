@@ -90,12 +90,12 @@ class DataAnalyticsSteps extends TestSetup{
 
     def createUsers401(count, calls){
         def usernameRt = "dummyuser"
-        def emailRt = "email"
+        def emailRt = "email@example.com"
         def passwordRt = "Password1"
         def password = "Fakepassword1"
         while (count <= calls) {
             def username = "fakeuser-${count}"
-            Response response = createUser(usernameRt, emailRt, passwordRt)
+            Response response = securitySteps.createUser(artifactoryURL, username, password, usernameRt, emailRt, passwordRt)
             response.then().log().ifValidationFails().statusCode(401)
             count++
         }
