@@ -77,8 +77,7 @@ class PrometheusTest extends DataAnalyticsSteps{
         int calls = 20
         http500(count, calls)
         Thread.sleep(20000)
-        //def query = "sum(increase(jfrog_rt_req{return_status=~\"5.*\"}[1m]))" // old
-        def query = "increase(jfrog_rt_req_total{return_status=~\"5.*\"}[1m])" // new
+        def query = "sum(increase(jfrog_rt_req_total{return_status=~\"5.*\"}[1m]))"
         Response response = prometheus.postQuery(prometheusBaseURL, query)
         response.then().log().everything()
 
@@ -269,7 +268,7 @@ class PrometheusTest extends DataAnalyticsSteps{
         xray200(count, calls)
         xray500(count, calls)
         Thread.sleep(10000)
-        def query = "sum(increase(jfrog_xray_log_level{log_level=\"ERROR\"}[1m]))"
+        def query = "sum(increase(jfrog_xray_log_level{log_level=\"ERROR\"}[5m]))"
 
         Response response = prometheus.postQuery(prometheusBaseURL, query)
         response.then().log().everything()
