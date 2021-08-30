@@ -28,9 +28,6 @@ class DatadogTest extends DataAnalyticsSteps {
     def securitySteps = new SecuritytSteps()
     def datadog = new DatadogSteps("now-15m", "now")
     def testUsers = ["testuser1", "testuser2", "testuser3", "testuser4"]
-    def from_timestamp
-    def to_timestamp
-    def IPv4andIPv6Regex = "^((([0-9a-fA-F]{0,4}:){2,7}[0-9a-fA-F]{0,4})|((\\d{1,3}\\.){3}\\d{1,3}))\$"
     int count = 1
     int calls = 5
     def repos = ["docker-dev-local", "docker-local", "docker-prod-local", "docker-push"]
@@ -44,9 +41,6 @@ class DatadogTest extends DataAnalyticsSteps {
     @BeforeSuite(groups=["testing", "datadog", "datadog_xray", "datadog_siem"])
     def setUp() {
         RestAssured.useRelaxedHTTPSValidation()
-        def now = new Date()
-        from_timestamp = (now.getTime()-1800000).toString().substring(0,10)
-        to_timestamp = (now.getTime()).toString().substring(0,10)
     }
 
     @Test(priority=0, groups=["datadog", "datadog_xray"], testName = "Data generation for Datadog testing")
@@ -89,7 +83,7 @@ class DatadogTest extends DataAnalyticsSteps {
         http500(count, calls)
 
         // Wait for things to settle before testing further
-        sleep(30 * 1000)
+        Thread.sleep(90 * 1000)
     }
 
 
@@ -98,6 +92,7 @@ class DatadogTest extends DataAnalyticsSteps {
         def query = "@log_source:jfrog.rt.artifactory.access @action_response:DENIED* -@username:'NA '"
         def users = datadog.getMapOfCountLogAggregation(datadogBaseURL, datadogApiKey, datadogApplicationKey,query, "@username")
         // ensure all fake users are present
+        println users
         for (i in count..calls) {
             def user = "fakeuser-${i} ".toString()
             Assert.assertTrue(users.getOrDefault(user, 0) > 0, "User ${user} in denied users?")
@@ -114,7 +109,7 @@ class DatadogTest extends DataAnalyticsSteps {
         // at least one IP should exist and it should be a valid IP
         Assert.assertTrue(ips.size() > 0, "Denied IP contains values")
         for (IP in ips.keySet()) {
-            Assert.assertTrue(IP.strip().matches(IPv4andIPv6Regex), "IP ${IP.strip()} matches IPv4 or IPv6")
+            Assert.assertTrue(Utils.validateIPAddress(IP.strip()), "IP ${IP.strip()} matches IPv4 or IPv6")
         }
 
         Reporter.log("- Datadog, Audit. Denied Actions by IP graph test passed", true)
@@ -143,7 +138,7 @@ class DatadogTest extends DataAnalyticsSteps {
         // at least one IP should exist and it should be a valid IP
         Assert.assertTrue(ips.size() > 0, "Denied IP contains values")
         for (IP in ips.keySet()) {
-            Assert.assertTrue(IP.strip().matches(IPv4andIPv6Regex), "IP ${IP.strip()} matches IPv4 or IPv6")
+            Assert.assertTrue(Utils.validateIPAddress(IP.strip()), "IP ${IP.strip()} matches IPv4 or IPv6")
         }
 
         Reporter.log("- Datadog, Audit. Denied Logins By IP graph test passed", true)
@@ -248,7 +243,7 @@ class DatadogTest extends DataAnalyticsSteps {
         Assert.assertTrue(ips.size() > 0, "IP's have downloaded")
 
         for (IP in ips.keySet()) {
-            Assert.assertTrue(IP.strip().matches(IPv4andIPv6Regex), "IP ${IP.strip()} matches IPv4 or IPv6")
+            Assert.assertTrue(Utils.validateIPAddress(IP.strip()), "IP ${IP.strip()} matches IPv4 or IPv6")
         }
 
         Reporter.log("- Datadog, Request. Download IP's by Data Volume graph test passed", true)
@@ -265,7 +260,7 @@ class DatadogTest extends DataAnalyticsSteps {
         Assert.assertTrue(ips.size() > 0, "IP's have downloaded")
 
         for (IP in ips.keySet()) {
-            Assert.assertTrue(IP.strip().matches(IPv4andIPv6Regex), "IP ${IP.strip()} matches IPv4 or IPv6")
+            Assert.assertTrue(Utils.validateIPAddress(IP.strip()), "IP ${IP.strip()} matches IPv4 or IPv6")
         }
 
         Reporter.log("- Datadog, Request. Upload IP's by Data Volume graph test passed", true)
