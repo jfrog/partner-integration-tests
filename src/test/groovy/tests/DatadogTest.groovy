@@ -472,7 +472,7 @@ class DatadogTest extends DataAnalyticsSteps {
         def artifacts = datadog.topVulnerableArtifacts(datadogBaseURL, datadogApiKey, datadogApplicationKey, "@ip")
         def expectedArtifactCount = XraySteps.getExpectedComponentCounts(license_issues, security_issues).size()
 
-        Assert.assertEquals(artifacts.size(), expectedArtifactCount)
+        Assert.assertTrue(artifacts.size() >= expectedArtifactCount, "Actual ${artifacts.size()} >= expected ${expectedArtifactCount}")
         Reporter.log("- Datadog, Xray Violations. Top Vulnerable Artifact by Count of IP Download test passed.", true)
     }
 
@@ -481,7 +481,7 @@ class DatadogTest extends DataAnalyticsSteps {
         def artifacts = datadog.topVulnerableArtifacts(datadogBaseURL, datadogApiKey, datadogApplicationKey, "@username")
         def expectedArtifactCount = XraySteps.getExpectedComponentCounts(license_issues, security_issues).size()
 
-        Assert.assertEquals(artifacts.size(), expectedArtifactCount)
+        Assert.assertTrue(artifacts.size() >= expectedArtifactCount, "Actual ${artifacts.size()} >= expected ${expectedArtifactCount}")
         Reporter.log("- Datadog, Xray Violations. Top Vulnerable Artifact by Count of User Download test passed.", true)
     }
 
