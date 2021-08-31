@@ -1,9 +1,6 @@
 package tests
 
 import io.restassured.RestAssured
-import io.restassured.path.json.JsonPath
-import io.restassured.response.Response
-import org.hamcrest.Matchers
 import org.testng.Assert
 import org.testng.Reporter
 import org.testng.annotations.BeforeSuite
@@ -12,9 +9,8 @@ import steps.DataAnalyticsSteps
 import steps.RepositorySteps
 import steps.SecuritytSteps
 import steps.PrometheusSteps
+import utils.Utils
 
-import static org.hamcrest.Matchers.equalTo
-import static org.hamcrest.Matchers.hasItems
 
 class PrometheusTest extends DataAnalyticsSteps{
 
@@ -22,8 +18,20 @@ class PrometheusTest extends DataAnalyticsSteps{
     def repoSteps = new RepositorySteps()
     def securitySteps = new SecuritytSteps()
     def prometheus = new PrometheusSteps()
-    def since = "15m"
     def waitTimeMillis = 20 * 1000
+
+    def query_rtAuditByUsersTest = "sum by (user) (jfrog_rt_access_audit_total{user!=\"UNKNOWN\", user!=\"anonymous\", user!=\"_system_\",user!=\"\"})"
+    Map<List<String>, Double> initial_rtAuditByUsersTest
+    def query_rtDeniedActionByUsersTest = "sum by (username) (jfrog_rt_access_total{username!=\"UNKNOWN \", username!=\"_system_ \", action_response=~\"DENIED.*\"})"
+    Map<List<String>, Double> initial_rtDeniedActionByUsersTest
+    def query_rtDeniedActionByUserIPTest = "sum by (username,ip) (jfrog_rt_access_total{username!=\"UNKNOWN \", username!=\"_system_ \", action_response=~\"DENIED.*\"})"
+    Map<List<String>, Double> initial_rtDeniedActionByUserIPTest
+    def query_rtDeniedLoginsByIPTest = "sum by (ip) (jfrog_rt_access_total{username!=\"UNKNOWN \", username!=\"_system_ \", action_response=~\"DENIED LOGIN\"})"
+    Map<List<String>, Double> initial_rtDeniedLoginsByIPTest
+    def query_rtDeniedActionsByIPTest = "sum by (ip) (jfrog_rt_access_total{username!=\"UNKNOWN \", username!=\"_system_ \", action_response=~\"DENIED.*\"})"
+    Map<List<String>, Double> initial_rtDeniedActionsByIPTest
+    def query_rtAcceptedDeploysByUsernameTest = "sum by (username) (jfrog_rt_access_total{username!=\"UNKNOWN \", username!=\"_system_ \", action_response=~\"ACCEPTED DEPLOY\"})"
+    Map<List<String>, Double> initial_rtAcceptedDeploysByUsernameTest
 
     @BeforeSuite(groups=["prometheus", "prometheus_xray"])
     def setUp() {
@@ -122,42 +130,56 @@ class PrometheusTest extends DataAnalyticsSteps{
 
         // metric values should be valid IP address
         // at least one should have increased
+        def increased = false
 
         result.each {
-//            Assert.assertTrue()
-            println ("${it.key}, ${it.value}")
+            Assert.assertTrue(Utils.validateIPAddress(it.key[0].strip()), "Is IP address")
+            if (it.value > initial.getOrDefault(it.key, 0)) {
+                increased = true
+            }
         }
-//
-//        Response response = prometheus.postQuery(prometheusBaseURL, query)
-//        response.then().log().everything()
-//
-//        def IPv4andIPv6Regex = "((^\\s*((([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]))\\s*\$)|(^\\s*((([0-9A-Fa-f]{1,4}:){7}([0-9A-Fa-f]{1,4}|:))|(([0-9A-Fa-f]{1,4}:){6}(:[0-9A-Fa-f]{1,4}|((25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)(\\.(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)){3})|:))|(([0-9A-Fa-f]{1,4}:){5}(((:[0-9A-Fa-f]{1,4}){1,2})|:((25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)(\\.(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)){3})|:))|(([0-9A-Fa-f]{1,4}:){4}(((:[0-9A-Fa-f]{1,4}){1,3})|((:[0-9A-Fa-f]{1,4})?:((25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)(\\.(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){3}(((:[0-9A-Fa-f]{1,4}){1,4})|((:[0-9A-Fa-f]{1,4}){0,2}:((25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)(\\.(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){2}(((:[0-9A-Fa-f]{1,4}){1,5})|((:[0-9A-Fa-f]{1,4}){0,3}:((25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)(\\.(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){1}(((:[0-9A-Fa-f]{1,4}){1,6})|((:[0-9A-Fa-f]{1,4}){0,4}:((25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)(\\.(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)){3}))|:))|(:(((:[0-9A-Fa-f]{1,4}){1,7})|((:[0-9A-Fa-f]{1,4}){0,5}:((25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)(\\.(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)){3}))|:)))(%.+)?\\s*\$))"
-//        response.then().
-//                body("data.result.metric.remote_address", hasItems(Matchers.matchesRegex(IPv4andIPv6Regex))).
-//                body("data.result[0].value[1]", Matchers.notNullValue())
+        Assert.assertTrue(increased, "At least one IP address uploaded")
 
         Reporter.log("- Prometheus. Top 10 IPs By Uploads verified", true)
     }
 
     @Test(priority=6, groups=["prometheus"], testName = "Artifactory. Top 10 IPs By Downloads")
     void top10ipDownloadTest() throws Exception {
+        def query = "sum by (remote_address) (jfrog_rt_data_download_total)"
+        def initial = prometheus.getMapValues(prometheusBaseURL, query, ["remote_address"])
+
         int count = 1
         int calls = 10
         downloadArtifact(count, calls)
-        Thread.sleep(10000)
-        def query = "sum by (remote_address) (increase(jfrog_rt_data_download_total[${since}])) > 0"
+        Thread.sleep(waitTimeMillis)
+        def result = prometheus.getMapValues(prometheusBaseURL, query, ["remote_address"])
 
-        Response response = prometheus.postQuery(prometheusBaseURL, query)
-        response.then().log().everything()
+        // metric values should be valid IP address
+        // at least one should have increased
+        def increased = false
 
-        def IPv4andIPv6Regex = "((^\\s*((([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]))\\s*\$)|(^\\s*((([0-9A-Fa-f]{1,4}:){7}([0-9A-Fa-f]{1,4}|:))|(([0-9A-Fa-f]{1,4}:){6}(:[0-9A-Fa-f]{1,4}|((25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)(\\.(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)){3})|:))|(([0-9A-Fa-f]{1,4}:){5}(((:[0-9A-Fa-f]{1,4}){1,2})|:((25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)(\\.(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)){3})|:))|(([0-9A-Fa-f]{1,4}:){4}(((:[0-9A-Fa-f]{1,4}){1,3})|((:[0-9A-Fa-f]{1,4})?:((25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)(\\.(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){3}(((:[0-9A-Fa-f]{1,4}){1,4})|((:[0-9A-Fa-f]{1,4}){0,2}:((25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)(\\.(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){2}(((:[0-9A-Fa-f]{1,4}){1,5})|((:[0-9A-Fa-f]{1,4}){0,3}:((25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)(\\.(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){1}(((:[0-9A-Fa-f]{1,4}){1,6})|((:[0-9A-Fa-f]{1,4}){0,4}:((25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)(\\.(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)){3}))|:))|(:(((:[0-9A-Fa-f]{1,4}){1,7})|((:[0-9A-Fa-f]{1,4}){0,5}:((25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)(\\.(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)){3}))|:)))(%.+)?\\s*\$))"
-        response.then().
-                body("data.result.metric.remote_address", hasItems(Matchers.matchesRegex(IPv4andIPv6Regex))).
-                body("data.result[0].value[1]", Matchers.notNullValue())
+        result.each {
+            Assert.assertTrue(Utils.validateIPAddress(it.key[0].strip()), "Is IP address")
+            if (it.value > initial.getOrDefault(it.key, 0)) {
+                increased = true
+            }
+        }
+        Assert.assertTrue(increased, "At least one IP address downloaded")
+
         Reporter.log("- Prometheus. Top 10 IPs By Downloads verified", true)
     }
 
-    @Test(priority=7, groups=["prometheus"], dataProvider = "users", testName = "Artifactory, Audit. Generate data with data provider")
+    @Test(priority=7, groups=["prometheus"], testName = "Artifactory, Audit. Get initial values for tests")
+    void rtInitialUserStats() {
+        initial_rtAuditByUsersTest = prometheus.getMapValues(prometheusBaseURL, query_rtAuditByUsersTest, ["user"])
+        initial_rtDeniedActionByUsersTest = prometheus.getMapValues(prometheusBaseURL, query_rtDeniedActionByUsersTest, ["username"])
+        initial_rtDeniedActionByUserIPTest = prometheus.getMapValues(prometheusBaseURL, query_rtDeniedActionByUserIPTest, ["username", "ip"])
+        initial_rtDeniedLoginsByIPTest = prometheus.getMapValues(prometheusBaseURL, query_rtDeniedLoginsByIPTest, ["ip"])
+        initial_rtDeniedActionsByIPTest = prometheus.getMapValues(prometheusBaseURL, query_rtDeniedActionsByIPTest, ["ip"])
+        initial_rtAcceptedDeploysByUsernameTest = prometheus.getMapValues(prometheusBaseURL, query_rtAcceptedDeploysByUsernameTest, ["username"])
+    }
+
+    @Test(priority=8, groups=["prometheus"], dataProvider = "users", testName = "Artifactory, Audit. Generate data with data provider")
     void generateDataTest(usernameRt, emailRt, passwordRt, incorrectPasswordRt) {
         // Deploy as non-existent users, 401
         deployArtifactAs(usernameRt, passwordRt, 401)
@@ -172,159 +194,157 @@ class PrometheusTest extends DataAnalyticsSteps{
         deployArtifactAs(usernameRt, passwordRt, 201)
         // Delete users
         securitySteps.deleteUser(artifactoryURL, usernameRt)
+        Thread.sleep(waitTimeMillis)
     }
-    @Test(priority=8, groups=["prometheus"], testName = "Artifactory, Audit. Audit Actions by Users")
-    void rtAuditByUsersTest() throws Exception {
-        def query = "sum by (user) (increase(jfrog_rt_access_audit_total{user!=\"UNKNOWN\", user!=\"anonymous\", user!=\"_system_\",user!=\"\"}[${since}]))"
 
-        Response response = prometheus.postQuery(prometheusBaseURL, query)
-        response.then().log().everything()
-        response.then().assertThat().statusCode(200)
-                .body("data.result.metric.user[0]", equalTo(username))
-        JsonPath jsonPathEvaluator = response.jsonPath()
-        def count = jsonPathEvaluator.get("data.result[0].value[1]").toString().toDouble()
-        Assert.assertTrue((count >= 1))
+
+
+    @Test(priority=9, groups=["prometheus"], testName = "Artifactory, Audit. Audit Actions by Users")
+    void rtAuditByUsersTest() throws Exception {
+        // query_rtAuditByUsersTest
+        // initial_rtAuditByUsersTest
+
+        def result = prometheus.getMapValues(prometheusBaseURL, query_rtAuditByUsersTest, ["user"])
+
+        Assert.assertTrue(result.getOrDefault([username], 0) > initial_rtAuditByUsersTest.getOrDefault([username], 0))
 
         Reporter.log("- Prometheus. Artifactory, Audit Actions by Users verification.", true)
     }
 
-    @Test(priority=9, groups=["prometheus"], testName = "Artifactory, Audit. Denied Actions by Username")
+    @Test(priority=10, groups=["prometheus"], testName = "Artifactory, Audit. Denied Actions by Username")
     void rtDeniedActionByUsersTest() throws Exception {
-        def query = "sum by (username) (increase(jfrog_rt_access_total{username!=\"UNKNOWN \", username!=\"_system_ \", action_response=~\"DENIED.*\"}[${since}]) > 0)"
+        // query_rtDeniedActionByUsersTest
+        // initial_rtDeniedActionByUsersTest
 
-        Response response = prometheus.postQuery(prometheusBaseURL, query)
-        response.then().log().everything()
+        def result = prometheus.getMapValues(prometheusBaseURL, query_rtDeniedActionByUsersTest, ["username"])
 
         for(user in users()) {
-            response.then().
-                    body("data.result.metric.username", hasItems("${user[0]} ".toString())) // has extra space
+            def username = "${user[0]} ".toString()  // has extra space
+            Assert.assertTrue(result.getOrDefault([username], 0) > initial_rtDeniedActionByUsersTest.getOrDefault([username], 0))
         }
 
         Reporter.log("- Prometheus. Artifactory, Denied Actions by Username verification.", true)
     }
 
-    @Test(priority=10, groups=["prometheus"], testName = "Artifactory, Audit. Denied Logins By username and IP")
+    @Test(priority=11, groups=["prometheus"], testName = "Artifactory, Audit. Denied Logins By username and IP")
     void rtDeniedActionByUserIPTest() throws Exception {
-        def query = "sum by (username,ip) (increase(jfrog_rt_access_total{username!=\"UNKNOWN \", username!=\"_system_ \", action_response=~\"DENIED.*\"}[${since}]) > 0)"
+        // query_rtDeniedActionByUserIPTest
+        // initial_rtDeniedActionByUserIPTest
+        def result = prometheus.getMapValues(prometheusBaseURL, query_rtDeniedActionByUserIPTest, ["username", "ip"])
 
-        Response response = prometheus.postQuery(prometheusBaseURL, query)
-        response.then().log().everything()
-
-        for(user in users()) {
-            response.then().
-                    body("data.result.metric.username", hasItems("${user[0]} ".toString()))
+        // we already know usernames are valid from last test, lets just check that IPs are indeed IPs
+        result.each {
+            Assert.assertTrue(Utils.validateIPAddress(it.key[1].strip()), "Is IP address")
+            Assert.assertTrue(!it.key[0].startsWith("testuser") || it.value > initial_rtDeniedActionByUserIPTest.getOrDefault(it.key, 0))
         }
 
-        response.then().
-            body("data.result.metric.ip", hasItems(Matchers.notNullValue()))
-
         Reporter.log("- Prometheus. Artifactory, Denied Actions by Username verification.", true)
     }
 
-    @Test(priority=11, groups=["prometheus"], testName = "Artifactory, Audit. Denied Logins by IP")
+    @Test(priority=12, groups=["prometheus"], testName = "Artifactory, Audit. Denied Logins by IP")
     void rtDeniedLoginsByIPTest() throws Exception {
-        def query = "sum by (ip) (increase(jfrog_rt_access_total{username!=\"UNKNOWN \", username!=\"_system_ \", action_response=~\"DENIED LOGIN\"}[${since}]) > 0)"
-
-        Response response = prometheus.postQuery(prometheusBaseURL, query)
-        response.then().log().everything()
-
-        response.then().
-                body("data.result.metric.ip", hasItems(Matchers.notNullValue()))
+        // query_rtDeniedLoginsByIPTest
+        // initial_rtDeniedLoginsByIPTest
+        def result = prometheus.getMapValues(prometheusBaseURL, query_rtDeniedLoginsByIPTest, ["ip"])
+        def increased = false
+        result.each {
+            Assert.assertTrue(Utils.validateIPAddress(it.key[0].strip()), "Is IP address")
+            if (it.value > initial_rtDeniedLoginsByIPTest.getOrDefault(it.key, 0)) {
+                increased = true
+            }
+        }
+        Assert.assertTrue(increased, "At least one IP increased")
 
         Reporter.log("- Prometheus. Artifactory, Denied Logins by IP verification.", true)
     }
 
-    @Test(priority=12, groups=["prometheus"], testName = "Artifactory, Audit. Denied Actions by IP")
+    @Test(priority=13, groups=["prometheus"], testName = "Artifactory, Audit. Denied Actions by IP")
     void rtDeniedActionsByIPTest() throws Exception {
-        def query = "sum by (ip) (increase(jfrog_rt_access_total{username!=\"UNKNOWN \", username!=\"_system_ \", action_response=~\"DENIED.*\"}[${since}]) > 0)"
-
-        Response response = prometheus.postQuery(prometheusBaseURL, query)
-        response.then().log().everything()
-
-        response.then().
-                body("data.result.metric.ip", hasItems(Matchers.notNullValue()))
+        // query_rtDeniedActionsByIPTest
+        // initial_rtDeniedActionsByIPTest
+        def result = prometheus.getMapValues(prometheusBaseURL, query_rtDeniedActionsByIPTest, ["ip"])
+        def increased = false
+        result.each {
+            Assert.assertTrue(Utils.validateIPAddress(it.key[0].strip()), "Is IP address")
+            if (it.value > initial_rtDeniedActionsByIPTest.getOrDefault(it.key, 0)) {
+                increased = true
+            }
+        }
+        Assert.assertTrue(increased, "At least one IP increased")
 
         Reporter.log("- Prometheus. Artifactory, Denied Logins by IP verification.", true)
-
-        Reporter.log("- Prometheus. Artifactory, Denied Actions by Username verification.", true)
     }
 
-    @Test(priority=13, groups=["prometheus"], testName = "Artifactory, Audit. Accepted Deploys by Username")
+    @Test(priority=14, groups=["prometheus"], testName = "Artifactory, Audit. Accepted Deploys by Username")
     void rtAcceptedDeploysByUsernameTest() throws Exception {
-        def query = "sum by (username) (increase(jfrog_rt_access_total{username!=\"UNKNOWN \", username!=\"_system_ \", action_response=~\"ACCEPTED DEPLOY\"}[${since}]) > 0)"
+        // query_rtAcceptedDeploysByUsernameTest
+        // initial_rtAcceptedDeploysByUsernameTest
 
-        Response response = prometheus.postQuery(prometheusBaseURL, query)
-        response.then().log().everything()
+        def result = prometheus.getMapValues(prometheusBaseURL, query_rtAcceptedDeploysByUsernameTest, ["username"])
 
         for(user in users()) {
-            response.then().
-                    body("data.result.metric.username", hasItems("${user[0]} ".toString()))
+            def username = "${user[0]} ".toString()  // has extra space
+            println "${username} initial ${initial_rtAcceptedDeploysByUsernameTest.getOrDefault([username], 0)} final ${result.getOrDefault([username], 0)}"
+            Assert.assertTrue(!username.startsWith("testuser") || result.getOrDefault([username], 0) > initial_rtAcceptedDeploysByUsernameTest.getOrDefault([username], 0))
         }
 
         Reporter.log("- Prometheus. Artifactory, Accepted Deploys by Username verification.", true)
     }
 
-    @Test(priority=14, groups=["prometheus_xray"], testName = "Xray. HTTP Response Codes")
+
+    @Test(priority=15, groups=["prometheus_xray"], testName = "Xray. HTTP Response Codes")
     void xrayLogErrorsTest() throws Exception {
+        def query = "sum(jfrog_xray_log_level{log_level=\"ERROR\"})"
+        def initial = prometheus.getSingleValue(prometheusBaseURL, query)
+
         int count = 1
         int calls = 20
         // Generate xray calls
         xray200(count, calls)
         xray500(count, calls)
-        Thread.sleep(10000)
-        def query = "sum(increase(jfrog_xray_log_level{log_level=\"ERROR\"}[${since}]))"
+        Thread.sleep(waitTimeMillis)
+        def result = prometheus.getSingleValue(prometheusBaseURL, query)
 
-        Response response = prometheus.postQuery(prometheusBaseURL, query)
-        response.then().log().everything()
-
-        JsonPath jsonPathEvaluator = response.jsonPath()
-        def result = jsonPathEvaluator.get("data.result[0].value[1]").toString().toDouble()
-        Assert.assertTrue((result > 0))
+        Assert.assertTrue(result > initial)
 
         Reporter.log("- Prometheus. Xray, Log errors verification. Prometheus shows response codes generated by Xray" +
                 " during the test", true)
     }
 
-    @Test(priority=15, groups=["prometheus_xray"], testName = "Xray. HTTP 500 Errors")
+    @Test(priority=16, groups=["prometheus_xray"], testName = "Xray. HTTP 500 Errors")
     void xrayHttp500ErrorsTest() throws Exception {
+        def query = "sum(jfrog_xray_req{return_status=~\"5.*\"})"
+        def initial = prometheus.getSingleValue(prometheusBaseURL, query)
+
         int count = 1
         int calls = 20
         // Generate xray calls
         xray500(count, calls)
-        Thread.sleep(30000)
-        def query = "sum(increase(jfrog_xray_req{return_status=~\"5.*\"}[${since}]))"
+        Thread.sleep(waitTimeMillis)
+        def result = prometheus.getSingleValue(prometheusBaseURL, query)
 
-        Response response = prometheus.postQuery(prometheusBaseURL, query)
-        response.then().log().everything()
-
-        JsonPath jsonPathEvaluator = response.jsonPath()
-        def result = jsonPathEvaluator.get("data.result[0].value[1]").toString().toDouble()
-        Assert.assertTrue(result > 0)
+        Assert.assertTrue(result > initial)
 
         Reporter.log("- Prometheus. Xray, HTTP 500 Errors verification. Prometheus shows errors generated by Xray" +
                 " during the test", true)
     }
 
-    @Test(priority=16, groups=["prometheus_xray"], testName = "Xray. HTTP Response Codes")
+    @Test(priority=17, groups=["prometheus_xray"], testName = "Xray. HTTP Response Codes")
     void xrayHttpResponseCodesTest() throws Exception {
+        def query = "sum by (return_status) (jfrog_xray_req)"
+        def initial = prometheus.getMapValues(prometheusBaseURL, query, ["return_status"])
+
         int count = 1
         int calls = 20
         // Generate xray calls
         xray201(count, calls)
         xray500(count, calls)
-        Thread.sleep(30000)
-        def query = "sum by (return_status) (increase(jfrog_xray_req[${since}]))"
+        Thread.sleep(waitTimeMillis)
+        def result = prometheus.getMapValues(prometheusBaseURL, query, ["return_status"])
 
-        Response response = prometheus.postQuery(prometheusBaseURL, query)
-        response.then().log().everything()
-
-        JsonPath jsonPathEvaluator = response.jsonPath()
-        List<String> statusCodes = jsonPathEvaluator.getList("data.result.metric.return_status")
-        for (int i=0;i<statusCodes.size();i++) {
-            if (statusCodes[i] == "201" || statusCodes[i] == "500") {
-                def result = jsonPathEvaluator.get("data.result[${i}].value[1]").toString().toDouble()
-                Assert.assertTrue(result > 0, "For status code ${statusCodes[i]}")
-            }
+        for (String statusCode in ["201", "500"]) {
+            Assert.assertTrue(result.getOrDefault([statusCode], 0) >= initial.getOrDefault([statusCode], 0) + calls,
+                    "Error ${statusCode} increased by count")
         }
 
         Reporter.log("- Prometheus. Xray, HTTP Response Codes verification. Prometheus shows responses generated by Xray" +
