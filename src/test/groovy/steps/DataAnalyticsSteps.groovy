@@ -131,11 +131,6 @@ class DataAnalyticsSteps extends TestSetup{
 
     def uploadIntoRepo(count, calls){
         def body = repoListHA
-        def configFile = new File("./src/test/resources/testenv.yaml")
-        Yaml yaml = new Yaml()
-        def config = yaml.load(configFile.text)
-        def username = config.artifactory.rt_username
-        def password = config.artifactory.rt_password
         Response create = repoSteps.createRepositories(artifactoryURL, body, username, password)
         create.then().statusCode(200)
         def repoName = "generic-dev-local"
