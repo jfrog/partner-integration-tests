@@ -2,11 +2,14 @@ package steps
 
 import io.restassured.path.json.JsonPath
 import io.restassured.response.Response
+import org.awaitility.Awaitility
 import org.testng.Assert
 import org.testng.annotations.DataProvider
 import org.yaml.snakeyaml.Yaml
 import tests.TestSetup
 import utils.Utils
+
+import java.util.concurrent.TimeUnit
 
 class DataAnalyticsSteps extends TestSetup{
 
@@ -90,13 +93,15 @@ class DataAnalyticsSteps extends TestSetup{
 
     def createUsers401(count, calls){
         def usernameRt = "dummyuser"
-        def emailRt = "email"
+        def emailRt = "email@example.com"
         def passwordRt = "Password1"
         def password = "Fakepassword1"
         while (count <= calls) {
             def username = "fakeuser-${count}"
-            Response response = createUser(usernameRt, emailRt, passwordRt)
-            response.then().log().ifValidationFails().statusCode(401)
+            // In case we are rejected (too many incorrect credential requests), wait and try again.
+            Awaitility.await().atMost(65, TimeUnit.SECONDS).until(() ->
+                    securitySteps.createUser(artifactoryURL, username, password, usernameRt, emailRt, passwordRt).then().
+                            extract().statusCode() == 401)
             count++
         }
     }

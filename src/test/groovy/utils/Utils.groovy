@@ -1,5 +1,6 @@
 package utils
 
+import org.apache.commons.validator.routines.InetAddressValidator
 import org.testng.Assert
 
 import java.security.DigestInputStream
@@ -117,6 +118,11 @@ class Utils {
         zipFile.write(buffer, 0, buffer.length)
         zipFile.closeEntry()
         zipFile.close()
+    }
+
+    static boolean validateIPAddress(String IPAddress){
+        InetAddressValidator validator = InetAddressValidator.getInstance()
+        return validator.isValid(IPAddress)
     }
 
 }

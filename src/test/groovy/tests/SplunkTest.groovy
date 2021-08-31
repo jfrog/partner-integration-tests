@@ -131,7 +131,7 @@ class SplunkTest extends DataAnalyticsSteps{
         JsonPath jsonPathEvaluator = response.jsonPath()
         List<String> IPAddresses = jsonPathEvaluator.getList("results.remote_address")
         for(ip in IPAddresses){
-            Assert.assertTrue(splunk.validateIPAddress(ip.replaceAll("\\s","")))
+            Assert.assertTrue(Utils.validateIPAddress(ip.replaceAll("\\s","")))
         }
 
         Reporter.log("- Splunk. Top 10 IPs By Uploads verified", true)
@@ -157,7 +157,7 @@ class SplunkTest extends DataAnalyticsSteps{
         JsonPath jsonPathEvaluator = response.jsonPath()
         List<String> IPAddresses = jsonPathEvaluator.getList("results.remote_address")
         for(ip in IPAddresses){
-            Assert.assertTrue(splunk.validateIPAddress(ip.replaceAll("\\s","")))
+            Assert.assertTrue(Utils.validateIPAddress(ip.replaceAll("\\s","")))
         }
 
 
@@ -327,7 +327,7 @@ class SplunkTest extends DataAnalyticsSteps{
             JsonPath jsonPathEvaluator = response.jsonPath()
             List<String> IPAddresses = jsonPathEvaluator.getList("results.ip")
             for(ip in IPAddresses){
-                Assert.assertTrue(splunk.validateIPAddress(ip.replaceAll("\\s","")))
+                Assert.assertTrue(Utils.validateIPAddress(ip.replaceAll("\\s","")))
             }
         }
         Reporter.log("- Splunk. Top 10 IPs By Docker Pulls verified", true)
@@ -574,7 +574,7 @@ class SplunkTest extends DataAnalyticsSteps{
 
         List<String> IPAddresses = jsonPathEvaluator.getList("results.ip")
         for(ip in IPAddresses){
-            Assert.assertTrue(splunk.validateIPAddress(ip.replaceAll("\\s","")))
+            Assert.assertTrue(Utils.validateIPAddress(ip.replaceAll("\\s","")))
         }
         List<String> usernames = ["testuser0 ", "testuser1 ", "testuser2 "]
         for(user in usernames) {
@@ -599,7 +599,7 @@ class SplunkTest extends DataAnalyticsSteps{
         List<Integer> errorCount = jsonPathEvaluator.getList("results.count", Integer.class)
         List<String> IPAddresses = jsonPathEvaluator.getList("results.ip")
         for(ip in IPAddresses){
-            Assert.assertTrue(splunk.validateIPAddress(ip.replaceAll("\\s","")))
+            Assert.assertTrue(Utils.validateIPAddress(ip.replaceAll("\\s","")))
         }
         Assert.assertTrue((errorCount.sum()) >= 1)
 
@@ -622,7 +622,7 @@ class SplunkTest extends DataAnalyticsSteps{
         Assert.assertTrue((errorCount.sum()) >= 1)
         List<String> IPAddresses = jsonPathEvaluator.getList("results.ip")
         for(ip in IPAddresses){
-            Assert.assertTrue(splunk.validateIPAddress(ip.replaceAll("\\s","")))
+            Assert.assertTrue(Utils.validateIPAddress(ip.replaceAll("\\s","")))
         }
 
         Reporter.log("- Splunk. Artifactory, Denied Actions by Username verification.", true)

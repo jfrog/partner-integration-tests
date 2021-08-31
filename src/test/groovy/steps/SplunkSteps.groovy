@@ -78,16 +78,6 @@ class SplunkSteps {
         return getSearchResults(splunk_username, splunk_password, splunkBaseURL, searchID)
     }
 
-    def validateIPAddress(IPAddress){
-        InetAddressValidator validator = InetAddressValidator.getInstance()
-        if (validator.isValid(IPAddress)) {
-            return true
-        }
-        else {
-            return false
-        }
-    }
-
     static Map<String, Integer> getSeverities(Response response) {
         return response.jsonPath().getList("results").stream().collect(
                 Collectors.toMap(

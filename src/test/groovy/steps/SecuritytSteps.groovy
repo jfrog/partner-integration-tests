@@ -240,7 +240,7 @@ class SecuritytSteps extends TestSetup{
                 .header("Content-Type", "application/json;charset=UTF-8")
                 .body("{\"user\":\"${usernameRt}\",\"password\":\"${passwordRt}\",\"type\":\"login\"}")
                 .when()
-                .post("http://${url}/ui/api/v1/ui/auth/login?_spring_security_remember_me=false")
+                .post("${url}/ui/api/v1/ui/auth/login?_spring_security_remember_me=false")
                 .then()
                 .extract().response()
     }
