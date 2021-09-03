@@ -32,8 +32,6 @@ test {
 }
 
 task artifactory_common(type: Test) {
-    // systemProperty needed to pass new password value to the tests
-    //systemProperty "new.password", project.getProperty("new.password")
     useTestNG() {
         useDefaultListeners = true
         suites 'src/test/groovy/testng.xml'
