@@ -9,7 +9,8 @@ class TestSetup {
     protected final ip = System.env.RT_URL ?: config.artifactory.external_ip
     protected final distribution = System.env.RT_DISTRIBUTION ?: config.artifactory.distribution
     protected final username = System.env.RT_USERNAME ?: config.artifactory.rt_username
-    protected final password = System.env.RT_PASSWORD ?: config.artifactory.rt_password
+    protected final default_password = System.env.RT_PASSWORD ?: config.artifactory.rt_password
+    protected final password = System.env.NEW_RT_PASSWORD ?: config.artifactory.rt_password
     protected final dockerURL = System.env.RT_DOCKER_URL ?: config.artifactory.url
     protected final artifactoryBaseURL = "${protocol}${ip}"
 

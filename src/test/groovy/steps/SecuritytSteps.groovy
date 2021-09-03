@@ -26,6 +26,25 @@ class SecuritytSteps extends TestSetup{
                 .extract().response()
     }
 
+    def changePassword(artifactoryURL, username, password, newPassword) {
+        return given().log().uri()
+                .auth()
+                .preemptive()
+                .basic("${username}", "${password}")
+                .header("Cache-Control", "no-cache")
+                .header("content-Type", "application/json")
+                .body("{\n" +
+                        "  \"userName\": \"${username}\",\n" +
+                        "  \"oldPassword\": \"${password}\",\n" +
+                        "  \"newPassword1\": \"${newPassword}\",\n" +
+                        "  \"newPassword2\": \"${newPassword}\"\n" +
+                        "}")
+                .when()
+                .post("${artifactoryURL}/api/security/users/authorization/changePassword")
+                .then()
+                .extract().response()
+    }
+
     def getUserDetails(artifactoryURL, usernameRt) {
         return given()
                 .header("Cache-Control", "no-cache")

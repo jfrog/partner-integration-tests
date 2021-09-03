@@ -31,11 +31,24 @@ test {
 
 }
 
+task artifactory_common(type: Test) {
+    // systemProperty needed to pass new password value to the tests
+    //systemProperty "new.password", project.getProperty("new.password")
+    useTestNG() {
+        useDefaultListeners = true
+        suites 'src/test/groovy/testng.xml'
+        includeGroups ('common')
+    }
+    testLogging {
+        showStandardStreams = true
+    }
+}
+
 task artifactory_jcr_test(type: Test) {
     useTestNG() {
         useDefaultListeners = true
         suites 'src/test/groovy/testng.xml'
-        includeGroups ('common', 'jcr')
+        includeGroups ('common','jcr')
     }
     testLogging {
         showStandardStreams = true
@@ -101,7 +114,7 @@ task terraform_provider_test(type: Test) {
     useTestNG() {
         useDefaultListeners = true
         suites 'src/test/groovy/testng.xml'
-        includeGroups('terraform')
+        includeGroups('common','terraform')
     }
     testLogging {
         showStandardStreams = true
@@ -112,7 +125,7 @@ task splunk_test(type: Test) {
     useTestNG() {
         useDefaultListeners = true
         suites 'src/test/groovy/testng.xml'
-        includeGroups('splunk','splunk_xray')
+        includeGroups('common','splunk','splunk_xray')
     }
     testLogging {
         showStandardStreams = true
@@ -123,7 +136,7 @@ task prometheus_test(type: Test) {
     useTestNG() {
         useDefaultListeners = true
         suites 'src/test/groovy/testng.xml'
-        includeGroups('prometheus', 'prometheus_xray')
+        includeGroups('common','prometheus','prometheus_xray')
     }
     testLogging {
         showStandardStreams = true
@@ -134,7 +147,7 @@ task datadog_test(type: Test) {
     useTestNG() {
         useDefaultListeners = true
         suites 'src/test/groovy/testng.xml'
-        includeGroups("datadog", "datadog_xray")
+        includeGroups('common','datadog','datadog_xray')
     }
     testLogging {
         showStandardStreams = true
@@ -145,7 +158,7 @@ task splunk_siem_test_only(type: Test) {
     useTestNG() {
         useDefaultListeners = true
         suites 'src/test/groovy/testng.xml'
-        includeGroups("splunk_siem")
+        includeGroups('splunk_siem')
     }
     testLogging {
         showStandardStreams = true
@@ -154,10 +167,12 @@ task splunk_siem_test_only(type: Test) {
 
 
 task xray_generation_and_splunk_siem_test(type: Test) {
+    // systemProperty needed to pass new password value to the tests
+//    systemProperty "new.password", project.getProperty("new.password")
     useTestNG() {
         useDefaultListeners = true
         suites 'src/test/groovy/testng.xml'
-        includeGroups("xray_generate_data", "splunk_siem")
+        includeGroups('common','xray_generate_data','splunk_siem')
     }
     testLogging {
         showStandardStreams = true
@@ -165,10 +180,12 @@ task xray_generation_and_splunk_siem_test(type: Test) {
 }
 
 task xray_generation_and_datadog_siem_test(type: Test) {
+    // systemProperty needed to pass new password value to the tests
+//    systemProperty "new.password", project.getProperty("new.password")
     useTestNG() {
         useDefaultListeners = true
         suites 'src/test/groovy/testng.xml'
-        includeGroups("xray_generate_data", "datadog_siem")
+        includeGroups('common','xray_generate_data','datadog_siem')
     }
     testLogging {
         showStandardStreams = true
@@ -176,10 +193,12 @@ task xray_generation_and_datadog_siem_test(type: Test) {
 }
 
 task datadog_siem_test_only(type: Test) {
+    // systemProperty needed to pass new password value to the tests
+//    systemProperty "new.password", project.getProperty("new.password")
     useTestNG() {
         useDefaultListeners = true
         suites 'src/test/groovy/testng.xml'
-        includeGroups("datadog_siem")
+        includeGroups('common','datadog_siem')
     }
     testLogging {
         showStandardStreams = true
