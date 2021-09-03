@@ -31,6 +31,10 @@ Run the container with a set of environment variables:
 ```
 docker run -it -e RT_URL=<your_artifactory_uri> -e RT_PROTOCOL=<http:// or https://> -e RT_USERNAME=<username> -e RT_PASSWORD=<password> partnership-partner-integration-tests.jfrog.io/jfrog-tester:0.0.1 <task_name>
 ```
+NOTE: if default password needs to be changed, set NEW_RT_PASSWORD variable.
+New password should meet security requirements.  
+If the variable set, the password will be changed during a `common` test group run. 
+
 
 ### Tasks for Artifactory testing
 ```
