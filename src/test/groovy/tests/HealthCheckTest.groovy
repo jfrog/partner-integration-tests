@@ -42,10 +42,9 @@ class HealthCheckTest extends RepositorySteps{
     void changeDefaultPassword() {
         if (System.env.NEW_RT_PASSWORD != null) {
             Response response = securitySteps.changePassword(artifactoryURL, username, default_password, password)
-            if(response.then().assertThat().statusCode(401) || response.then().assertThat().statusCode(400)){
+            if(response.getStatusCode()==401 || response.getStatusCode()==400){
                 Reporter.log("- This Artifactory instance doesn't use default password for admin user", true)
-            } else if(response.then().assertThat().log().ifValidationFails().statusCode(200).
-                    body(Matchers.hasToString("Password has been successfully changed"))){
+            } else if(response.getStatusCode()==200){
                     Reporter.log("- Default password has been changed with NEW_RT_PASSWORD value", true)
             }
         } else {Reporter.log("- NEW_RT_PASSWORD env var was not set. " +
