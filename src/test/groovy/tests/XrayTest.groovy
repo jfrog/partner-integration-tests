@@ -185,6 +185,8 @@ class XrayTest extends XraySteps{
         Reporter.log("- Force reindex repo. Artifact was sent to reindex", true)
     }
 
+    // Commented out due to inconsistency on the new instances
+    /*
     @Test(priority=12, groups=["xray"], testName = "Start scan")
     void startScanTest() throws Exception{
         def artifactPath = "default/generic-dev-local/test-directory/artifact.zip"
@@ -200,6 +202,7 @@ class XrayTest extends XraySteps{
 
         Reporter.log("- Start scan. Scan of ${componentID} has been started successfully", true)
     }
+    */
 
     @Test(priority=13, groups=["xray"], testName = "Create and get integration configuration")
     void integrationConfigurationTest(){
