@@ -8,7 +8,7 @@ import org.testng.annotations.Test
 import steps.RepositorySteps
 import steps.SecuritytSteps
 
-class HealthCheckTest extends RepositorySteps{
+class HealthCheckTest extends RepositorySteps {
     def artifactoryURL = "${artifactoryBaseURL}/artifactory"
     def securitySteps = new SecuritytSteps()
 
@@ -47,12 +47,35 @@ class HealthCheckTest extends RepositorySteps{
             } else if(response.getStatusCode()==200){
                     Reporter.log("- Default password has been changed with NEW_RT_PASSWORD value", true)
             }
-        } else {Reporter.log("- NEW_RT_PASSWORD env var was not set. " +
+        } else { Reporter.log("- NEW_RT_PASSWORD env var was not set. " +
                 "Default password has not been changed! Please change it in the UI", true)
         }
     }
 
-    @Test(priority=3, groups=["jcr"], testName = "Accept EULA before testing")
+    @Test(priority=3, groups=["pro"], testName = "Check number of licenses/nodes")
+    void checkLicensesTest() throws AssertionError {
+        Response licenses = securitySteps.getLicenseInformation(artifactoryURL, username, password)
+        licenses.then().log().ifValidationFails().statusCode(200)
+        def body = licenses.then().extract().path("licenses")
+        if (body == null){
+            def licensedTo = licenses.then().extract().path("licensedTo")
+            Reporter.log("- Get license information. Non-HA installation, licensed to ${licensedTo}", true)
+        } else {
+            def totalNumber = licenses.then().extract().path("licenses.size()")
+            List nodeIDs = licenses.jsonPath().getList("licenses.nodeId")
+            def numberNotInUse = nodeIDs.findAll {it == "Not in use"}.size()
+            def numberInUse = nodeIDs.findAll {it != "Not in use"}.size()
+            if (numberInUse > 1){
+                Reporter.log("- Get license information. Installation is HA, more than one license installed and used." +
+                        " Number of licenses installed: ${totalNumber}, not used: ${numberNotInUse}", true)
+            } else if (numberInUse == 1){
+                Reporter.log("- Get license information. Number of licenses installed: ${totalNumber}}. " +
+                        "Installation in HA, but only one node is up and has a license installed", true)
+            }
+        }
+    }
+
+    @Test(priority=4, groups=["jcr"], testName = "Accept EULA before testing")
     void acceptEULATest() {
         Response response = acceptEula(artifactoryURL, username, password)
         response.then().assertThat().log().ifValidationFails().statusCode(200)

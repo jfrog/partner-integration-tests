@@ -264,6 +264,15 @@ class SecuritytSteps extends TestSetup{
                 .extract().response()
     }
 
+    def getLicenseInformation(artifactoryURL, username, password) {
+        return given()
+                .header("Cache-Control", "no-cache")
+                .header("content-Type", "application/json")
+                .when()
+                .get("${artifactoryURL}/api/system/licenses")
+                .then()
+                .extract().response()
+    }
 
     // Data providers
 

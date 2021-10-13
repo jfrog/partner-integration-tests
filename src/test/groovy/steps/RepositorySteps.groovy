@@ -4,7 +4,7 @@ import tests.TestSetup
 
 import static io.restassured.RestAssured.given
 
-class RepositorySteps extends TestSetup{
+class RepositorySteps extends TestSetup {
 
     def acceptEula(artifactoryURL, username, password) {
         return given()
@@ -61,6 +61,7 @@ class RepositorySteps extends TestSetup{
 
 
     }
+
     def getReposWithUser(artifactoryURL, username, password) {
         return given()
                 .auth()
@@ -162,7 +163,6 @@ class RepositorySteps extends TestSetup{
     }
 
 
-
     def addChecksumToArtifact(artifactoryURL, repoName, directoryName, filename) {
         return given()
                 .header("Cache-Control", "no-cache")
@@ -256,5 +256,32 @@ class RepositorySteps extends TestSetup{
 
     }
 
+    def buildUpload(artifactoryURL, username, password, File body) {
+        return given()
+                .header("Cache-Control", "no-cache")
+                .header("Content-Type", "application/json")
+                .auth()
+                .preemptive()
+                .basic(username, password)
+                .body(body)
+                .when()
+                .put("${artifactoryURL}/api/build")
+                .then()
+                .extract().response()
 
+    }
+
+    def getBuildInfo(artifactoryURL, username, password, buildName, buildNumber) {
+        return given()
+                .header("Cache-Control", "no-cache")
+                .header("Content-Type", "application/json")
+                .auth()
+                .preemptive()
+                .basic(username, password)
+                .when()
+                .get("${artifactoryURL}/api/build/${buildName}/${buildNumber}")
+                .then()
+                .extract().response()
+
+    }
 }

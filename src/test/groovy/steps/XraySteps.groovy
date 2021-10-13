@@ -704,7 +704,7 @@ class XraySteps extends TestSetup{
     }
 
 
-    def forceReindex(username, password, url) {
+    def forceReindex(username, password, url, repository, directoryName, filename) {
         return given()
                 .auth()
                 .preemptive()
@@ -715,8 +715,8 @@ class XraySteps extends TestSetup{
                         "\"artifactory_id\": \"default\",\n" +
                         "    \"artifacts\": [\n" +
                         "        {\n" +
-                        "            \"repository\": \"generic-dev-local\",\n" +
-                        "            \"path\": \"test-directory/artifact.zip\" \n" +
+                        "            \"repository\": \"${repository}\",\n" +
+                        "            \"path\": \"${directoryName}/${filename}\" \n" +
                         "        }\n" +
                         "    ]\n" +
                         "}")
