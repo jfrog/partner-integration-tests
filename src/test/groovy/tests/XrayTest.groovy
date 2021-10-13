@@ -7,7 +7,9 @@ import org.testng.Assert
 import org.testng.Reporter
 import org.testng.annotations.BeforeSuite
 import org.testng.annotations.Test
+import steps.RepositorySteps
 import steps.XraySteps
+import utils.Utils
 
 import java.time.LocalDate
 import java.util.concurrent.TimeUnit
@@ -18,7 +20,10 @@ import static org.hamcrest.Matchers.notNullValue
 
 
 class XrayTest extends XraySteps{
+    def artifact = new File("./src/test/resources/repositories/artifact_go_vuln.zip")
+    def repoSteps = new RepositorySteps()
     def xrayBaseUrl
+    def artifactoryURL
     def randomIndex
     def policyName
     def watchName
@@ -26,6 +31,7 @@ class XrayTest extends XraySteps{
     @BeforeSuite(groups=["xray"])
     def setUp() {
         xrayBaseUrl = "${artifactoryBaseURL}/xray/api"
+        artifactoryURL = "${artifactoryBaseURL}/artifactory"
         RestAssured.authentication = RestAssured.basic(username, password)
         RestAssured.useRelaxedHTTPSValidation()
         Random random = new Random()
@@ -178,27 +184,44 @@ class XrayTest extends XraySteps{
 
     @Test(priority=11, groups=["xray"], testName = "Force reindex repo")
     void forceReindexTest(){
-        // TODO: make test independent of Artifactory tests
-        Response response = forceReindex(username, password, xrayBaseUrl )
-        response.then().log().ifValidationFails().statusCode(200)
+        // Make sure artifact exists
+        def repoName = "generic-dev-local"
+        def directoryName = "test-directory"
+        def filename = "artifact_go_vuln.zip"
+        def sha256 = Utils.generateSHA256(artifact)
+        def sha1 = Utils.generateSHA1(artifact)
+        def md5 = Utils.generateMD5(artifact)
+        Response response = repoSteps.deployArtifact(artifactoryURL, username, password, repoName, directoryName, artifact, filename, sha256, sha1, md5)
+        response.then().assertThat().log().ifValidationFails().statusCode(201)
+        // Force index the artifact
+        Response reindex = forceReindex(username, password, xrayBaseUrl, repoName, directoryName, filename)
+        reindex.then().log().ifValidationFails().statusCode(200)
 
         Reporter.log("- Force reindex repo. Artifact was sent to reindex", true)
     }
 
-    // Commented out due to inconsistency on the new instances
+    // Commented out due to inconsistency on the new instances, scan starts async
     /*
-    @Test(priority=12, groups=["xray"], testName = "Start scan")
+    @Test(priority=12, timeOut = 300000, groups=["xray"], testName = "Start scan")
     void startScanTest() throws Exception{
-        def artifactPath = "default/generic-dev-local/test-directory/artifact.zip"
-        Response getSha = artifactSummary(username, password, artifactPath, xrayBaseUrl)
-        def componentID = getSha.then().extract().path("artifacts[0].licenses[0].components[0]")
-
-        Response scan = startScan(username, password, componentID, xrayBaseUrl)
-        Awaitility.await().atMost(180, TimeUnit.SECONDS).until(() ->
-                (scan).then().extract().statusCode() == 200)
-        scan.then().log().ifValidationFails().statusCode(200)
-                .body("info",
-                        equalTo(("Scan of artifact is in progress").toString()))
+        // Make sure artifact exists
+        def repoName = "generic-dev-local"
+        def directoryName = "test-directory"
+        def filename = "artifact_go_vuln22.zip"
+        def sha256 = Utils.generateSHA256(artifact)
+        def sha1 = Utils.generateSHA1(artifact)
+        def md5 = Utils.generateMD5(artifact)
+        Response response = repoSteps.deployArtifact(artifactoryURL, username, password, repoName, directoryName, artifact, filename, sha256, sha1, md5)
+        response.then().assertThat().log().ifValidationFails().statusCode(201)
+        def artifactPath = "default/${repoName}/${directoryName}/${filename}"
+        def componentID = artifactSummary(username, password, artifactPath, xrayBaseUrl)
+                .then().extract().path("artifacts[0].licenses[0].components[0]")
+        Awaitility.await().atMost(600, TimeUnit.SECONDS).pollInSameThread()
+                .pollDelay(60, TimeUnit.SECONDS)
+                .pollInterval(10, TimeUnit.SECONDS).untilAsserted(() ->
+                startScan(username, password, componentID, xrayBaseUrl).then().log().everything()
+                        .body("info",
+                                equalTo(("Scan of artifact is in progress").toString())))
 
         Reporter.log("- Start scan. Scan of ${componentID} has been started successfully", true)
     }
@@ -258,13 +281,27 @@ class XrayTest extends XraySteps{
         Reporter.log("- Update repo indexing configuration. Successfully updated", true)
     }
 
-    //TODO: make test independent of Artifactory tests
     @Test(priority=18, groups=["xray"], testName = "Get artifact summary")
     void artifactSummaryTest(){
-        def artifactPath = "default/generic-dev-local/test-directory/artifact.zip"
-        Response post = artifactSummary(username, password, artifactPath, xrayBaseUrl)
-        post.then().log().ifValidationFails().statusCode(200)
-                .body("artifacts[0].general.path", equalTo(artifactPath))
+        // Make sure artifact exists
+        def repoName = "generic-dev-local"
+        def directoryName = "test-directory"
+        def filename = "artifact_go_vuln11.zip"
+        def sha256 = Utils.generateSHA256(artifact)
+        def sha1 = Utils.generateSHA1(artifact)
+        def md5 = Utils.generateMD5(artifact)
+        Response response = repoSteps.deployArtifact(artifactoryURL, username, password, repoName, directoryName, artifact, filename, sha256, sha1, md5)
+        response.then().assertThat().log().ifValidationFails().statusCode(201)
+        // Artifact should be indexed by Xray before retrieving the summary
+        def artifactPath = "default/${repoName}/${directoryName}/${filename}"
+        Awaitility.await().atMost(240, TimeUnit.SECONDS)
+                .pollDelay(20, TimeUnit.SECONDS)
+                .pollInterval(20, TimeUnit.SECONDS).untilAsserted(() ->
+                         artifactSummary(username, password, artifactPath, xrayBaseUrl).then()
+                        .body("artifacts[0].general.path", equalTo(artifactPath.toString())))
+        artifactSummary(username, password, artifactPath, xrayBaseUrl).then().log().ifValidationFails()
+            .statusCode(200)
+            .body("artifacts[0].general.path", equalTo(artifactPath.toString()))
 
         Reporter.log("- Get artifact summary. Artifact summary has been returned successfully", true)
     }

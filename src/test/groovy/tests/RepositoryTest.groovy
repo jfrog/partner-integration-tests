@@ -1,5 +1,7 @@
 package tests
 
+import groovy.json.JsonBuilder
+import groovy.json.JsonSlurper
 import io.restassured.RestAssured
 import io.restassured.path.json.JsonPath
 import io.restassured.response.Response
@@ -41,8 +43,8 @@ class RepositoryTest extends RepositorySteps{
         Response getRepoResponse = getRepos(artifactoryURL, username, password)
         JsonPath jsonPathEvaluator = getRepoResponse.jsonPath()
         List<String> repoNames = jsonPathEvaluator.getList("key", String.class)
-        for (int i = 0; i < repoNames.size(); i ++){
-            Response delete = deleteRepository(artifactoryURL, repoNames[i], username, password)
+        for (repo in repoNames) {
+            Response delete = deleteRepository(artifactoryURL, repo, username, password)
             delete.then().statusCode(200)
         }
 
@@ -54,8 +56,8 @@ class RepositoryTest extends RepositorySteps{
         Response getRepoResponse = getRepos(artifactoryURL, username, password)
         JsonPath jsonPathEvaluator = getRepoResponse.jsonPath()
         List<String> repoNames = jsonPathEvaluator.getList("key", String.class)
-        for (int i = 0; i < repoNames.size(); i ++){
-            Response delete = deleteRepository(artifactoryURL, repoNames[i], username, password)
+        for (repo in repoNames) {
+            Response delete = deleteRepository(artifactoryURL, repo, username, password)
             delete.then().statusCode(400).body("errors[0].message",
                     containsStringIgnoringCase("This REST API is available only in Artifactory Pro"))
         }
@@ -191,7 +193,7 @@ class RepositoryTest extends RepositorySteps{
         Reporter.log("- Delete item. File has been deleted successfully", true)
     }
 
-    @Test(priority=9, groups=["pro"], testName = "Create support bundle")
+    @Test(priority=9, groups=["pro"], testName = "Create support bundle, Pro")
     void createSupportBundleHATest(){
         def name = "Support Bundle"
         LocalDate startDate = LocalDate.now().minusDays(5)
@@ -203,7 +205,7 @@ class RepositoryTest extends RepositorySteps{
         Reporter.log("- Create support bundle. Successfully created", true)
     }
 
-    @Test(priority=9, groups=["jcr"], testName = "Create support bundle")
+    @Test(priority=9, groups=["jcr"], testName = "Create support bundle, JCR")
     void createSupportBundleJCATest(){
         def name = "Support Bundle"
         LocalDate startDate = LocalDate.now().minusDays(5)
@@ -299,7 +301,7 @@ class RepositoryTest extends RepositorySteps{
     @Test(priority=14, groups=["jcr","pro"], testName = "Deploy file to generic repo")
     void reDeployArtifactToGenericTest(){
         def repoName = "generic-dev-local"
-        def directoryName = "test-directory"
+        def directoryName = "test-directory1"
         def filename = "artifact.zip"
         def sha256 = Utils.generateSHA256(artifact)
         def sha1 = Utils.generateSHA1(artifact)
@@ -320,16 +322,39 @@ class RepositoryTest extends RepositorySteps{
         Reporter.log("- Deploy artifact. Artifact successfully deployed", true)
     }
 
-    @Test(priority=15, groups=["docker"], testName = "Docker login")
+    @Test(priority=15, groups=["jcr", "pro"], testName = "Build upload (idempotent)")
+    void uploadBuildTest(){
+        def buildinfo = new File("src/test/resources/repositories/build.json")
+        for (i in 1..5) {
+            //Create buildingo
+            JsonSlurper slurper = new JsonSlurper()
+            def json = slurper.parse(buildinfo)
+            json.number = "${i}"
+            def updatedBuildInfo = new File ("src/test/resources/repositories/build${i}.json")
+            updatedBuildInfo.write(new JsonBuilder(json).toPrettyString())
+            Response uploadBuildIngo = buildUpload(artifactoryURL, username, password, updatedBuildInfo)
+            uploadBuildIngo.then().log().ifValidationFails().statusCode(204)
+            //Verify buildinfo
+            def buildName = json.name
+            Response getBuildInfo = getBuildInfo(artifactoryURL, username, password, buildName, i)
+            getBuildInfo.then().assertThat().log().ifValidationFails().statusCode(200)
+                    .body("buildInfo.number", equalTo(i.toString()))
+                    .body("buildInfo.name", equalTo(buildName))
+            updatedBuildInfo.delete()
+        }
+
+        Reporter.log("- Build upload. Build information has been uploaded successfully", true)
+    }
+
+    @Test(priority=16, groups=["docker"], testName = "Docker login")
     void dockerLoginTest(){
         def proc = "docker login -u=${username} -p=${password} ${dockerURL}".execute()
         proc.waitForProcessOutput(System.out, System.err)
         Assert.assertTrue(proc.exitValue().equals(0))
-
         Reporter.log("- Docker login. Succeeded", true)
     }
 
-    @Test(priority=16, groups=["docker"], testName = "Docker push")
+    @Test(priority=17, groups=["docker"], testName = "Docker push")
     void dockerPushTest (){
         def pull = "docker pull busybox".execute()
         pull.waitForProcessOutput(System.out, System.err)
@@ -349,7 +374,7 @@ class RepositoryTest extends RepositorySteps{
         Reporter.log("- Docker push. ${numberOfImages} images were pushed successfully", true)
     }
 
-    @Test(priority=17, groups=["docker"], testName = "Verify all the images were pushed successfully")
+    @Test(priority=18, groups=["docker"], testName = "Verify all the images were pushed successfully")
     void verifyDockerImagesTest(){
         def path = "docker-dev-local"
         Response response = getInfo(artifactoryURL, path)
@@ -360,7 +385,7 @@ class RepositoryTest extends RepositorySteps{
         Reporter.log("- Verify docker images. Images were successfully pushed", true)
     }
 
-    @Test(priority=18, groups=["docker"], testName = "List docker tags")
+    @Test(priority=19, groups=["docker"], testName = "List docker tags")
     void listDockerTagsTest(){
         def repoKey = "docker-dev-local"
         def imageName = "busybox"
