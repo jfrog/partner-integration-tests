@@ -29,9 +29,10 @@ Test project can use environment variables to substitute values in testenv.yaml 
 Build the image or pull the image ``partnership-partner-integration-tests.jfrog.io/jfrog-tester``
 Run the container with a set of environment variables:
 ```
-docker run -it -e RT_URL=<your_artifactory_uri> -e RT_PROTOCOL=<http:// or https://> -e RT_USERNAME=<username> -e RT_PASSWORD=<password> partnership-partner-integration-tests.jfrog.io/jfrog-tester:0.0.1 <task_name>
+docker run -it -e RT_URL=<your_artifactory_uri> -e RT_PROTOCOL=<http:// or https://> -e RT_USERNAME=<username> -e NEW_RT_PASSWORD=<password> partnership-partner-integration-tests.jfrog.io/jfrog-tester:0.0.3 <task_name>
 ```
-NOTE: if default password needs to be changed, set NEW_RT_PASSWORD variable.
+NOTE: if default password needs to be changed on the new instance, set NEW_RT_PASSWORD variable.
+If you already changed the password manually, please use NEW_RT_PASSWORD variable to set the password.
 New password should meet security requirements.  
 If the variable set, the password will be changed during a `common` test group run. 
 
