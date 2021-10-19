@@ -6,7 +6,7 @@ import static io.restassured.RestAssured.given
 
 class RepositorySteps extends TestSetup {
 
-    def acceptEula(artifactoryURL, username, password) {
+    static def acceptEula(artifactoryURL, username, password) {
         return given()
                 .auth()
                 .preemptive()
@@ -17,7 +17,7 @@ class RepositorySteps extends TestSetup {
                 .extract().response()
     }
 
-    def getHealthCheckResponse(artifactoryURL) {
+    static def getHealthCheckResponse(artifactoryURL) {
         return given()
                 .when()
                 .get("${artifactoryURL}/router/api/v1/system/health")
@@ -25,7 +25,7 @@ class RepositorySteps extends TestSetup {
                 .extract().response()
     }
 
-    def ping(artifactoryURL) {
+    static def ping(artifactoryURL) {
         return given()
                 .when()
                 .get("${artifactoryURL}/api/system/ping")
@@ -33,7 +33,21 @@ class RepositorySteps extends TestSetup {
                 .extract().response()
     }
 
-    def createRepositories(artifactoryURL, File body, username, password) {
+    static def setBaseUrl(artifactoryURL, username, password, String baseUrl) {
+        return given()
+                .auth()
+                .preemptive()
+                .basic(username, password)
+                .header("Cache-Control", "no-cache")
+                .header("content-Type", "text/plain")
+                .body(baseUrl)
+                .when()
+                .put("${artifactoryURL}/api/system/configuration/baseUrl")
+                .then()
+                .extract().response()
+    }
+
+    static def createRepositories(artifactoryURL, File body, username, password) {
         return given()
                 .auth()
                 .preemptive()
@@ -47,7 +61,7 @@ class RepositorySteps extends TestSetup {
                 .extract().response()
     }
     // https://www.jfrog.com/confluence/display/JFROG/Artifactory+REST+API#ArtifactoryRESTAPI-GetRepositories
-    def getRepos(artifactoryURL, username, password) {
+    static def getRepos(artifactoryURL, username, password) {
         return given()
                 .auth()
                 .preemptive()
@@ -62,7 +76,7 @@ class RepositorySteps extends TestSetup {
 
     }
 
-    def getReposWithUser(artifactoryURL, username, password) {
+    static def getReposWithUser(artifactoryURL, username, password) {
         return given()
                 .auth()
                 .preemptive()
@@ -76,7 +90,7 @@ class RepositorySteps extends TestSetup {
 
     }
     // https://www.jfrog.com/confluence/display/JFROG/Artifactory+REST+API#ArtifactoryRESTAPI-RepositoryConfiguration
-    def getRepoConfig(artifactoryURL, repoName) {
+    static def getRepoConfig(artifactoryURL, repoName) {
         return given()
                 .header("Cache-Control", "no-cache")
                 .when()
@@ -86,7 +100,7 @@ class RepositorySteps extends TestSetup {
 
     }
     // https://www.jfrog.com/confluence/display/JFROG/Artifactory+REST+API#ArtifactoryRESTAPI-DeleteRepository
-    def deleteRepository(artifactoryURL, repoName, username, password) {
+    static def deleteRepository(artifactoryURL, String repoName, username, password) {
         return given()
                 .auth()
                 .preemptive()
@@ -100,7 +114,7 @@ class RepositorySteps extends TestSetup {
 
     }
 
-    def createDirectory(artifactoryURL, repoName, directoryName) {
+    static def createDirectory(artifactoryURL, repoName, directoryName) {
         return given()
                 .header("Cache-Control", "no-cache")
                 .header("content-Type", "application/yaml")
@@ -111,7 +125,8 @@ class RepositorySteps extends TestSetup {
 
     }
 
-    def deployArtifact(artifactoryURL, username, password, repoName, directoryName, artifact, filename, sha256, sha1, md5) {
+    static def deployArtifact(artifactoryURL, username, password, repoName, directoryName,
+                              File artifact, filename, sha256, sha1, md5) {
         return given()
                 .auth()
                 .preemptive()
@@ -130,7 +145,8 @@ class RepositorySteps extends TestSetup {
 
     }
 
-    def deployArtifactAs(artifactoryURL, username, password, repoName, directoryName, artifact, filename, sha256, sha1, md5) {
+    static def deployArtifactAs(artifactoryURL, username, password, repoName, directoryName,
+                                File artifact, filename, sha256, sha1, md5) {
         return given()
                 .auth()
                 .preemptive()
@@ -149,7 +165,7 @@ class RepositorySteps extends TestSetup {
 
     }
 
-    def downloadArtifact(artifactoryURL, username, password, repoName, directoryName, filename) {
+    static def downloadArtifact(artifactoryURL, username, password, repoName, directoryName, filename) {
         return given()
                 .auth()
                 .preemptive()
@@ -163,7 +179,7 @@ class RepositorySteps extends TestSetup {
     }
 
 
-    def addChecksumToArtifact(artifactoryURL, repoName, directoryName, filename) {
+    static def addChecksumToArtifact(artifactoryURL, repoName, directoryName, filename) {
         return given()
                 .header("Cache-Control", "no-cache")
                 .header("Content-Type", "application/json")
@@ -178,7 +194,7 @@ class RepositorySteps extends TestSetup {
 
     }
 
-    def deleteItem(artifactoryURL, username, password, path) {
+    static def deleteItem(artifactoryURL, username, password, String path) {
         return given()
                 .auth()
                 .preemptive()
@@ -192,7 +208,7 @@ class RepositorySteps extends TestSetup {
 
     }
 
-    def getInfo(artifactoryURL, path) {
+    static def getInfo(artifactoryURL, String path) {
         return given()
                 .header("Cache-Control", "no-cache")
                 .header("Content-Type", "application/json")
@@ -203,7 +219,7 @@ class RepositorySteps extends TestSetup {
 
     }
 
-    def listDockerTags(artifactoryURL, username, password, repoKey, imageName, listSize, endTag) {
+    static def listDockerTags(artifactoryURL, username, password, repoKey, imageName, listSize, endTag) {
         return given()
                 .auth()
                 .preemptive()
@@ -217,7 +233,7 @@ class RepositorySteps extends TestSetup {
 
     }
     // https://www.jfrog.com/confluence/display/JFROG/Artifactory+REST+API#ArtifactoryRESTAPI-GetRepositoryReplicationConfiguration
-    def getReplicationConfig(artifactoryURL, repoName) {
+    static def getReplicationConfig(artifactoryURL, String repoName) {
         return given()
                 .header("Cache-Control", "no-cache")
                 .header("Content-Type", "application/json")
@@ -228,7 +244,7 @@ class RepositorySteps extends TestSetup {
 
     }
 
-    def createSupportBundle(artifactoryURL, name, startDate, endDate) {
+    static def createSupportBundle(artifactoryURL, name, startDate, endDate) {
         return given()
                 .header("Cache-Control", "no-cache")
                 .header("Content-Type", "application/json")
@@ -256,7 +272,7 @@ class RepositorySteps extends TestSetup {
 
     }
 
-    def buildUpload(artifactoryURL, username, password, File body) {
+    static def buildUpload(artifactoryURL, username, password, File body) {
         return given()
                 .header("Cache-Control", "no-cache")
                 .header("Content-Type", "application/json")
@@ -271,7 +287,7 @@ class RepositorySteps extends TestSetup {
 
     }
 
-    def getBuildInfo(artifactoryURL, username, password, buildName, buildNumber) {
+    static def getBuildInfo(artifactoryURL, username, password, buildName, buildNumber) {
         return given()
                 .header("Cache-Control", "no-cache")
                 .header("Content-Type", "application/json")
