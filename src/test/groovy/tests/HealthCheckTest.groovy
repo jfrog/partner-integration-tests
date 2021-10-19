@@ -52,7 +52,15 @@ class HealthCheckTest extends RepositorySteps {
         }
     }
 
-    @Test(priority=3, groups=["pro"], testName = "Check number of licenses/nodes")
+    @Test(priority=3, groups=["common"], testName = "Set base URL")
+    void setBaseURLTest() {
+        Response response = setBaseUrl(artifactoryURL, username, password, artifactoryBaseURL)
+        response.then().assertThat().log().ifValidationFails().statusCode(200).
+                body(Matchers.startsWith("URL base has been successfully updated to"))
+        Reporter.log("- Update Custom URL Base. Updated with ${artifactoryBaseURL}", true)
+    }
+
+    @Test(priority=4, groups=["pro"], testName = "Check number of licenses/nodes")
     void checkLicensesTest() throws AssertionError {
         Response licenses = securitySteps.getLicenseInformation(artifactoryURL, username, password)
         licenses.then().log().ifValidationFails().statusCode(200)
@@ -75,7 +83,7 @@ class HealthCheckTest extends RepositorySteps {
         }
     }
 
-    @Test(priority=4, groups=["jcr"], testName = "Accept EULA before testing")
+    @Test(priority=5, groups=["jcr"], testName = "Accept EULA before testing")
     void acceptEULATest() {
         Response response = acceptEula(artifactoryURL, username, password)
         response.then().assertThat().log().ifValidationFails().statusCode(200)
