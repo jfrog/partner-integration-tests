@@ -4,6 +4,7 @@ import io.restassured.path.json.JsonPath
 import io.restassured.response.Response
 import org.hamcrest.Matchers
 import org.testng.Reporter
+import org.testng.annotations.Ignore
 import org.testng.annotations.Test
 import steps.RepositorySteps
 import steps.SecuritytSteps
@@ -60,7 +61,7 @@ class HealthCheckTest extends RepositorySteps {
         Reporter.log("- Update Custom URL Base. Updated with ${artifactoryBaseURL}", true)
     }
 
-    @Test(priority=4, groups=["pro"], testName = "Check number of licenses/nodes")
+    @Test(priority=4, testName = "Check number of licenses/nodes")
     void checkLicensesTest() throws AssertionError {
         Response licenses = securitySteps.getLicenseInformation(artifactoryURL, username, password)
         licenses.then().log().ifValidationFails().statusCode(200)
