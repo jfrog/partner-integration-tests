@@ -83,8 +83,8 @@ class HealthCheckTest extends RepositorySteps {
             }
         }
     }
-
-    @Test(priority=5, groups=["jcr"], testName = "Accept EULA before testing")
+    // Deprecated after 7.33.12
+    @Test(priority=5, groups=["jcr-old"], testName = "Accept EULA before testing")
     void acceptEULATest() {
         Response response = acceptEula(artifactoryURL, username, password)
         response.then().assertThat().log().ifValidationFails().statusCode(200)
