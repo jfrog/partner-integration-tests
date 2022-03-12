@@ -205,7 +205,7 @@ class GenerateXrayDataTest extends XraySteps{
 
     @Test(priority=9, groups=["xray_generate_data"], testName = "Get violations")
     void getViolationsTest(){
-        Response post = xrayGetViolations("license",
+        Response post = xrayGetViolations("security",
                 username, password, xrayBaseUrl)
         post.then().log().body()
 

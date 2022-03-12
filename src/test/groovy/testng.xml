@@ -47,4 +47,9 @@
             <class name="tests.DatadogTest"/>
         </classes>
     </test>
+    <test name="tests.NewRelicTest">
+        <classes>
+            <class name="tests.NewRelicTest"/>
+        </classes>
+    </test>
 </suite>
