@@ -9,6 +9,7 @@ import org.testng.Reporter
 import org.testng.annotations.BeforeSuite
 import org.testng.annotations.Test
 import steps.DataAnalyticsSteps
+import steps.DatadogSteps
 import steps.NewRelicSteps
 import steps.RepositorySteps
 import steps.SecuritytSteps
@@ -321,7 +322,7 @@ class NewRelicTest  extends DataAnalyticsSteps {
     }
 
     @Test(priority=16, groups=["newrelic", "newrelic_artifactory"], testName = "Artifactory, Application. Artifactory Log Errors")
-    void logErrorsTest(){
+    void rtLogErrorsTest(){
         def query = "SELECT count(*) FROM Log WHERE log_source ='jfrog.rt.artifactory.service' AND log_level ='ERROR'"
         def results = newrelic.getListOfResultsLogAggregation(newrelicBaseURL, newrelicApiKey, newrelicAccountId, query)
         def errorCount = results[0]['count']
@@ -332,6 +333,275 @@ class NewRelicTest  extends DataAnalyticsSteps {
 
     }
 
+    @Test(priority=17, groups=["newrelic", "newrelic_xray"], testName = "Xray, Logs. Log Volume")
+    void xrayLogVolumeTest() throws Exception {
+        int count = 1
+        int calls = 5
+        def logCount = 0
+        // Generate artifactory calls
+        http200(count, calls)
+        http201(count, calls)
+        http204(count, calls)
+        http403(count, calls)
+        http404(count, calls)
+        http500(count, calls)
 
+        def query = "SELECT count(*) FROM Log FACET log_source WHERE log_source LIKE 'jfrog.xray.%' AND log_source!='NULL'"
+        def response = newrelic.getMapOfCountLogAggregation(newrelicBaseURL, newrelicApiKey, newrelicAccountId, query)
+
+        def logSources = ["jfrog.xray.router.request","jfrog.xray.xray.request","jfrog.xray.server.service"]
+        for (logSource in logSources) {
+            Assert.assertTrue(logSource in response.keySet(), "Log Source ${logSource} in the list of logSources")
+            logCount = response.get(logSource)
+            Assert.assertTrue(logCount >= calls)
+        }
+
+        Reporter.log("- NewRelic. Xray Logs, Log volume verification. Each log record has values", true)
+    }
+
+    @Test(priority=18, groups=["newrelic", "newrelic_xray"], testName = "Xray, Logs. Xray Log Errors")
+    void xrayLogErrorsTest(){
+        def query = "SELECT count(*) FROM Log FACET log_source WHERE log_source LIKE 'jfrog.xray.%.service' AND log_level ='ERROR'"
+        def results = newrelic.getListOfResultsLogAggregation(newrelicBaseURL, newrelicApiKey, newrelicAccountId, query)
+        def errorCount = results[0]['count']
+
+        Assert.assertTrue(errorCount >= 1, "Error count ${errorCount} >= 1")
+
+        Reporter.log("- NewRelic. Xray Logs, Log Errors graph test passed", true)
+
+    }
+
+    @Test(priority=19, groups=["newrelic", "newrelic_xray"], testName = "Xray, Logs. HTTP 500 Errors")
+    void xrayHttp500errorsTest(){
+        def errorCount = 0
+        def query = "SELECT count(*) as 'errors' FROM Log FACET return_status WHERE log_source = 'jfrog.xray.xray.request' AND return_status LIKE '5%%' AND return_status != 'undefined'"
+        def error_list = newrelic.getListOfResultsLogAggregation(newrelicBaseURL, newrelicApiKey, newrelicAccountId,query)
+
+        for (item in error_list) {
+            errorCount = item['errors']
+            Assert.assertTrue(errorCount >= calls, "Error count ${errorCount} >= expected ${calls}")
+        }
+
+        Reporter.log("- NewRelic, Xray. HTTP 500 Errors graph test passed", true)
+
+    }
+
+    @Test(priority=20, groups=["newrelic", "newrelic_xray"], testName = "Xray, Logs. HTTP Response Codes\n")
+    void xrayHttpResponseCodesTest(){
+        int count = 1
+        int calls = 5
+        def respCount = 0
+        // Generate HTTP responses in Xray
+        http200(count, calls)
+        http201(count, calls)
+        http204(count, calls)
+        http403(count, calls)
+        http404(count, calls)
+        http500(count, calls)
+        Thread.sleep(30000)
+
+        def query = "SELECT count(*) FROM Log WHERE log_source = 'jfrog.xray.xray.request' FACET return_status"
+        def response = newrelic.getMapOfCountLogAggregation(newrelicBaseURL, newrelicApiKey, newrelicAccountId, query)
+
+        def responseCodes = ["200","201","204","403","404","500"]
+        for (responseCode in responseCodes) {
+            println(responseCode, response.keySet())
+            Assert.assertTrue(responseCode in response.keySet(), "Response code ${responseCode} in the list of responseCodes")
+            respCount = response.get(responseCode)
+            Assert.assertTrue(respCount >= calls)
+        }
+
+        Reporter.log("- NewRelic, Xray. HTTP Response Codes test passed", true)
+
+    }
+
+    //==============VIOLATIONS======================
+
+    @Test(priority = 21, groups = ["newrelic", "newrelic_xray", "newrelic_siem"], testName = "NewRelic. Xray Violations, Watches")
+    void watchesCountTest() {
+        def query = "SELECT uniqueCount(signature) as 'watches' FROM Log WHERE log_source = 'jfrog.xray.siem.vulnerabilities'"
+        def response = newrelic.getListOfResultsLogAggregation(newrelicBaseURL, newrelicApiKey, newrelicAccountId, query)
+
+        def watchesCounts = response[0]['watches']
+        println(watchesCounts)
+        println(license_issues.size())
+        Assert.assertTrue(watchesCounts >= license_issues.size() + 1)
+        Reporter.log("- NewRelic, Xray Violations. Count of watches test passed.", true)
+    }
+
+    @Test(priority = 22, groups = ["newrelic", "newrelic_xray", "newrelic_siem"], testName = "NewRelic. Xray Violations, Vulnerabilities")
+    void securityIssuesCountTest() {
+        def query = "SELECT count(*) as 'Vulnerabilities' FROM Log WHERE log_source = 'jfrog.xray.siem.vulnerabilities' and category = 'Security'"
+        def response = newrelic.getListOfResultsLogAggregation(newrelicBaseURL, newrelicApiKey, newrelicAccountId, query)
+
+        def vulnerabilities = response[0]['Vulnerabilities']
+        def expected = XraySteps.getExpectedViolationCounts(license_issues, security_issues)
+
+        Assert.assertTrue(vulnerabilities >= expected['security'])
+
+        Reporter.log("- NewRelic, Xray Violations. Count of security issues test passed.", true)
+    }
+
+    @Test(priority = 23, groups = ["newrelic", "newrelic_xray", "newrelic_siem"], testName = "NewRelic. Xray Violations, License Issues")
+    void licenseIssuesCountTest() {
+        def query = "SELECT count(*) as 'License Issues' FROM Log WHERE log_source = 'jfrog.xray.siem.vulnerabilities' AND category = 'License'"
+        def response = newrelic.getListOfResultsLogAggregation(newrelicBaseURL, newrelicApiKey, newrelicAccountId, query)
+
+        def licenseIssues = response[0]['License Issues']
+        def expected = XraySteps.getExpectedViolationCounts(license_issues, security_issues)
+        expected.remove("security")
+        Assert.assertTrue(licenseIssues >= expected.values().sum())
+        Reporter.log("- NewRelic, Xray Violations. Count of License issues test passed.", true)
+
+    }
+
+    @Test(priority = 24, groups = ["newrelic", "newrelic_xray", "newrelic_siem"], testName = "NewRelic. Xray Violations, Violations")
+    void violationsCountTest() {
+        def query = "SELECT count(*) as 'Violations' FROM Log WHERE log_source = 'jfrog.xray.siem.vulnerabilities'"
+        def violations = newrelic.getListOfResultsLogAggregation(newrelicBaseURL, newrelicApiKey, newrelicAccountId, query)[0]['Violations']
+
+        def expected = XraySteps.getExpectedViolationCounts(license_issues, security_issues).values().sum()
+        Assert.assertTrue(violations >= expected)
+        Reporter.log("- NewRelic, Xray Violations. Count of violations test passed.", true)
+    }
+
+    @Test(priority = 25, groups = ["newrelic", "newrelic_xray", "newrelic_siem"], testName = "NewRelic. Xray Violations, Infected Components")
+    void infectedComponentsCountTest() {
+        def query = "SELECT uniqueCount(infected_components) as 'Infected Components' FROM Log WHERE log_source = 'jfrog.xray.siem.vulnerabilities' AND infected_components LIKE '%'"
+        def infectedComponentsCounts = newrelic.getListOfResultsLogAggregation(newrelicBaseURL, newrelicApiKey, newrelicAccountId, query)[0]['Infected Components']
+
+        def expected = XraySteps.getExpectedComponentCounts(license_issues, security_issues).size()
+        Assert.assertTrue(infectedComponentsCounts >= expected)
+        Reporter.log("- NewRelic, Xray Violations. Count of infected components test passed.", true)
+    }
+
+    @Test(priority = 26, groups = ["newrelic", "newrelic_xray", "newrelic_siem"], testName = "NewRelic. Xray Violations, Impacted Artifacts")
+    void impactedArtifactsCountTest() {
+        def query = "SELECT uniqueCount(impacted_artifacts) as 'Impacted Artifacts' FROM Log WHERE log_source = 'jfrog.xray.siem.vulnerabilities' AND impacted_artifacts LIKE '%'"
+        def impactedArtifactsCounts = newrelic.getListOfResultsLogAggregation(newrelicBaseURL, newrelicApiKey, newrelicAccountId, query)[0]['Impacted Artifacts']
+
+        def expected = XraySteps.getExpectedComponentCounts(license_issues, security_issues).size()
+        Assert.assertTrue(impactedArtifactsCounts >= expected)
+        Reporter.log("- NewRelic, Xray Violations. Count of impacted artifacts test passed.", true)
+    }
+
+    @Test(priority = 27, groups = ["newrelic", "newrelic_xray", "newrelic_siem"], testName = "NewRelic. Xray Violations, Violations per Watch")
+    void violationsPerWatchTest() {
+        def query = "SELECT count(*) FROM Log FACET signature WHERE log_source = 'jfrog.xray.siem.vulnerabilities'"
+        def violations = newrelic.getMapOfCountLogAggregation(newrelicBaseURL, newrelicApiKey, newrelicAccountId, query)
+
+        def expected = XraySteps.getExpectedViolationCounts(license_issues, security_issues)
+        def actual = DatadogSteps.renameMapKeysForWatches(violations)
+
+        Assert.assertTrue(actual.size() >= expected.size())
+        Reporter.log("- NewRelic, Xray Violations. Violations per watch test passed.", true)
+    }
+
+    @Test(priority = 28, groups = ["newrelic", "newrelic_xray", "newrelic_siem"], testName = "NewRelic. Xray Violations, Violations Severity")
+    void violationsSeverityCount() {
+        def query = "SELECT count(*) FROM Log FACET severity WHERE log_source = 'jfrog.xray.siem.vulnerabilities' and severity != 'Unknown'"
+        def violations = newrelic.getMapOfCountLogAggregation(newrelicBaseURL, newrelicApiKey, newrelicAccountId, query)
+
+        def expected = XraySteps.getExpectedSeverities(license_issues, security_issues)
+        def actual = DatadogSteps.renameMapKeysForWatches(violations)
+
+        Assert.assertTrue(actual.size() >= expected.size())
+        Reporter.log("- NewRelic, Xray Violations. Violations severities test passed.", true)
+    }
+
+    @Test(priority = 29, groups = ["newrelic", "newrelic_xray", "newrelic_siem"], testName = "NewRelic. Xray Violations, Violations by Policy")
+    void violationsByPolicyTest() {
+        def query = "SELECT count(*) FROM Log FACET policies WHERE log_source = 'jfrog.xray.siem.vulnerabilities'"
+        def violations = newrelic.getMapOfCountLogAggregation(newrelicBaseURL, newrelicApiKey, newrelicAccountId, query)
+
+        def expected = XraySteps.getExpectedViolationCounts(license_issues, security_issues)
+        def actual = DatadogSteps.renameMapKeysForWatches(violations)
+
+        Assert.assertTrue(actual.size() >= expected.size())
+        Reporter.log("- NewRelic, Xray Violations. Violations by Policy test passed.", true)
+    }
+
+    @Test(priority = 30, groups = ["newrelic", "newrelic_xray", "newrelic_siem"], testName = "NewRelic. Xray Violations, Violations by Rule")
+    void violationsByRuleTest() {
+        def query = "SELECT count(*) FROM Log FACET rules WHERE log_source = 'jfrog.xray.siem.vulnerabilities'"
+        def violations = newrelic.getMapOfCountLogAggregation(newrelicBaseURL, newrelicApiKey, newrelicAccountId, query)
+
+        def expected = XraySteps.getExpectedViolationCounts(license_issues, security_issues)
+        def actual = DatadogSteps.renameMapKeysForWatches(violations)
+
+        Assert.assertTrue(actual.size() >= expected.size())
+        Reporter.log("- NewRelic, Xray Violations. Violations by rule test passed.", true)
+    }
+
+    @Test(priority = 31, groups = ["newrelic", "newrelic_xray", "newrelic_siem"], testName = "NewRelic. Xray Violations, Violations over Time (By Type)")
+    void violationTypesOverTimeStatsTest() {
+        def query = "SELECT count(*) FROM Log FACET category WHERE log_source = 'jfrog.xray.siem.vulnerabilities'"
+        def response = newrelic.getMapOfCountLogAggregation(newrelicBaseURL, newrelicApiKey, newrelicAccountId, query)
+
+        def expected = XraySteps.getExpectedViolationCounts(license_issues, security_issues)
+        def expectedSecurityViolations = expected.remove("security") ?: 0
+        def expectedLicenseViolations = expected.values().sum()
+
+        Assert.assertTrue(response['License'] >= expectedLicenseViolations)
+        Assert.assertTrue(response['Security'] >= expectedSecurityViolations)
+        Reporter.log("- NewRelic, Xray Violations. Violations by type test passed.", true)
+    }
+
+    @Test(priority = 32, groups = ["newrelic", "newrelic_xray", "newrelic_siem"], testName = "NewRelic. Xray Violations, Violation over Time (By Severity)")
+    void violationOverTimeSeverityTest() {
+        violationsSeverityCount() // This widget is the exact same as "Violations Severity"
+    }
+
+    @Test(priority = 26, groups = ["newrelic", "newrelic_xray", "newrelic_siem"], testName = "NewRelic. Xray Violations, Top Infected Components")
+    void topInfectedComponentsTest() {
+        def query = "SELECT count(*) FROM Log FACET infected_components WHERE log_source = 'jfrog.xray.siem.vulnerabilities'"
+        def response = newrelic.getMapOfCountLogAggregation(newrelicBaseURL, newrelicApiKey, newrelicAccountId, query)
+
+        def infected = NewRelicSteps.extractArtifactNamesToMap(response)
+        def expected = XraySteps.getExpectedComponentCounts(license_issues, security_issues)
+        Assert.assertEquals(infected, expected)
+        Reporter.log("- NewRelic, Xray Violations. Top Infected Components test passed.", true)
+    }
+
+    @Test(priority = 27, groups = ["newrelic", "newrelic_xray", "newrelic_siem"], testName = "NewRelic. Xray Violations, Top Impacted Artifacts")
+    void topImpactedArtifactsTest() {
+        def query = "SELECT count(*) FROM Log FACET impacted_artifacts WHERE log_source = 'jfrog.xray.siem.vulnerabilities'"
+        def response = newrelic.getMapOfCountLogAggregation(newrelicBaseURL, newrelicApiKey, newrelicAccountId, query)
+
+        def impacted = NewRelicSteps.extractArtifactNamesToMap(response)
+        def expected = XraySteps.getExpectedComponentCounts(license_issues, security_issues)
+        Assert.assertEquals(impacted, expected)
+        Reporter.log("- NewRelic, Xray Violations. Top Impacted Artifacts test passed.", true)
+    }
+
+    @Test(priority = 28, groups = ["newrelic", "newrelic_xray", "newrelic_siem"], testName = "NewRelic. Xray Violations, Top Vulnerabilities")
+    void topVulnerabilitiesTest(){
+        def query = "SELECT count(*) FROM Log FACET cve WHERE log_source = 'jfrog.xray.siem.vulnerabilities'"
+        def cveCounts = newrelic.getMapOfCountLogAggregation(newrelicBaseURL, newrelicApiKey, newrelicAccountId, query)
+        def expectedCVECounts = XraySteps.getExpectedCVECounts(security_issues)
+
+        Assert.assertEquals(cveCounts, expectedCVECounts)
+        Reporter.log("- NewRelic, Xray Violations. Top vulnerabilities test passed.", true)
+    }
+
+    @Test(priority = 29, groups = ["newrelic", "newrelic_xray", "newrelic_siem"], testName = "NewRelic. Xray Violations, Top Vulnerable Artifact by Count of IP Download")
+    void topVulnerableArtifactsByIPDownloads() {
+        def query = "SELECT uniqueCount(ip) FROM Log FACET impacted_artifacts WHERE log_source = 'jfrog.rt.artifactory.access' AND action_response ='ACCEPTED DOWNLOAD'"
+        def artifacts = newrelic.getMapOfCountLogAggregation(newrelicBaseURL, newrelicApiKey, newrelicAccountId, query)
+        def expectedArtifactCount = XraySteps.getExpectedComponentCounts(license_issues, security_issues).size()
+
+        Assert.assertTrue(artifacts.size() >= expectedArtifactCount, "Actual ${artifacts.size()} >= expected ${expectedArtifactCount}")
+        Reporter.log("- NewRelic, Xray Violations. Top Vulnerable Artifact by Count of IP Download test passed.", true)
+    }
+
+    @Test(priority = 30, groups = ["newrelic", "newrelic_xray", "newrelic_siem"], testName = "NewRelic. Xray Violations, Top Vulnerable Artifact by Count of User Download")
+    void topVulnerableArtifactsByUserDownloads() {
+        def query = "SELECT uniqueCount(username) FROM Log FACET impacted_artifacts WHERE log_source = 'jfrog.rt.artifactory.access' AND action_response ='ACCEPTED DOWNLOAD'"
+        def artifacts = newrelic.getMapOfCountLogAggregation(newrelicBaseURL, newrelicApiKey, newrelicAccountId, query)
+        def expectedArtifactCount = XraySteps.getExpectedComponentCounts(license_issues, security_issues).size()
+
+        Assert.assertTrue(artifacts.size() >= expectedArtifactCount, "Actual ${artifacts.size()} >= expected ${expectedArtifactCount}")
+        Reporter.log("- NewRelic, Xray Violations. Top Vulnerable Artifact by Count of User Download test passed.", true)
+    }
 
 }

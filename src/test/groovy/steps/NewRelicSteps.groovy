@@ -58,13 +58,35 @@ class NewRelicSteps {
         return "{\"query\":\"{\\n" +
                 "  actor {\\n" +
                 "    account(id: ${account_id}) {\\n" +
-                "      nrql(query: \\\"${query} SINCE 24 hours ago\\\") {\\n" +
+                "      nrql(query: \\\"${query} SINCE 6 hours ago\\\") {\\n" +
                 "        results\\n" +
                 "      }\\n" +
                 "    }\\n" +
                 "  }\\n" +
                 "}\\n\", \"variables\":\"\"}"
 
+    }
+
+    static Map<String, Integer> renameMapKeysForWatches(Map<String, Integer> map) {
+        return map.collect().stream().collect(
+                Collectors.toMap(
+                        {Map.Entry<String, Integer> it -> it.key.contains("security") ? "security" : it.key.substring(it.key.lastIndexOf("_")+1)},
+                        {Map.Entry<String, Integer> it -> it.value},
+                        Integer::sum
+                )
+        )
+    }
+
+    static Map<String, Integer> extractArtifactNamesToMap(Map<String, Integer> map) {
+        return map.collect().stream().collect(
+                Collectors.toMap(
+                        {Map.Entry<String, Integer> it ->
+                            it.key.substring(it.key.lastIndexOf("/") + 1, it.key.length()-2)
+                        },
+                        {Map.Entry<String, Integer> it -> it.value},
+                        Integer::sum
+                )
+        )
     }
 
 }
