@@ -6,7 +6,21 @@ group 'org.example'
 version '1.0-SNAPSHOT'
 
 repositories {
-    mavenCentral()
+    //mavenCentral()
+    maven {
+        //url 'https://sivasjpd.jfrog.io/artifactory/urs-mvn'
+        //url = uri("https://${artifactory_for_maven}/${artifactory_repo_for_maven}")
+        url = uri("${artifactory_for_maven}/${artifactory_repo_for_maven}")
+        credentials {
+            username  "${artifactory_user}"
+            password  "${artifactory_password}"
+        }
+        metadataSources {
+            mavenPom()
+            artifact()
+            gradleMetadata()
+        }
+    }
 }
 
 dependencies {
@@ -68,6 +82,17 @@ task artifactory_ha_test(type: Test) {
         useDefaultListeners = true
         suites 'src/test/groovy/testng.xml'
         includeGroups('common','pro')
+    }
+    testLogging {
+        showStandardStreams = true
+    }
+}
+
+task artifactory_ha_test_with_rmRepos(type: Test) {
+    useTestNG() {
+        useDefaultListeners = true
+        suites 'src/test/groovy/testng.xml'
+        includeGroups('common','pro','rm_HARepos')
     }
     testLogging {
         showStandardStreams = true

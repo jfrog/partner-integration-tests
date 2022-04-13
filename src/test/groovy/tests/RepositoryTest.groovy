@@ -64,7 +64,7 @@ class RepositoryTest extends RepositorySteps{
         Reporter.log("- Delete sample HA repositories. All repositories were successfully deleted", true)
     }
 
-    @Test(priority=1, groups=["rm_HARepos"], testName = "Delete appbdd-* repositories")
+    @Test(priority=16, groups=["rm_HARepos"], testName = "Delete appbdd-* repositories")
     void deleteHARepos_afterTest(){
 
         def body
