@@ -1,53 +1,53 @@
 localRepositories:
-    tomcat-local:
+    appbdd-tomcat-local:
         type: generic
         description: "used by demo"
         repoLayout: simple-default
         xray:
             enabled: true
-    generic-prod-local:
+    appbdd-generic-prod-local:
         type: generic
         description: "production deployment"
         repoLayout: simple-default
         xray:
             enabled: true
-    generic-dev-local:
+    appbdd-generic-dev-local:
         type: generic
         description: "development deployment"
         repoLayout: simple-default
         xray:
             enabled: true
-    helm-prod-local:
+    appbdd-helm-prod-local:
         type: helm
         description: "production deployment"
         repoLayout: simple-default
         xray:
             enabled: true
-    helm-dev-local:
+    appbdd-helm-dev-local:
         type: helm
         description: "development deployment"
         repoLayout: simple-default
         xray:
             enabled: true
-    docker-generator:
+    appbdd-docker-generator:
         type: docker
         description: "docker generator repo for generation testing"
         repoLayout: simple-default
         xray:
             enabled: true
-    docker-prod-local:
+    appbdd-docker-prod-local:
         type: docker
         description: "production deployment"
         repoLayout: simple-default
         xray:
             enabled: true
-    docker-stage-local:
+    appbdd-docker-stage-local:
         type: docker
         description: "stage deployment"
         repoLayout: simple-default
         xray:
             enabled: true
-    docker-dev-local:
+    appbdd-docker-dev-local:
         type: docker
         description: "development deployment"
         repoLayout: simple-default
@@ -59,58 +59,58 @@ localRepositories:
         repoLayout: simple-default
         xray:
             enabled: true
-    docker-push:
+    appbdd-docker-push:
         type: docker
         description: "docker push repo for push replication testing"
         repoLayout: simple-default
         xray:
             enabled: true
 virtualRepositories:
-    generic-virtual:
+    appbdd-generic-virtual:
         type: generic
         repositories:
-            - generic-prod-local
-            - generic-dev-local
+            - appbdd-generic-prod-local
+            - appbdd-generic-dev-local
         description: "generic virtual"
-        defaultDeploymentRepo: generic-dev-local
-    helm-virtual:
+        defaultDeploymentRepo: appbdd-generic-dev-local
+    appbdd-helm-virtual:
         type: helm
         repositories:
-            - helm-prod-local
-            - helm-dev-local
-            - helm-remote
+            - appbdd-helm-prod-local
+            - appbdd-helm-dev-local
+            - appbdd-helm-remote
         description: "helm virtual"
-        defaultDeploymentRepo: helm-dev-local
-    docker-PLACEHOLDERFORBUILDSTEP:
+        defaultDeploymentRepo: appbdd-helm-dev-local
+    appbdd-docker-PLACEHOLDERFORBUILDSTEP:
         type: docker
         repositories:
-            - docker-local
-            - docker-remote
-            - docker-dev-local
-            - docker-prod-local
-            - docker-stage-local
-            - docker-push
+            - appbdd-docker-local
+            - appbdd-docker-remote
+            - appbdd-docker-dev-local
+            - appbdd-docker-prod-local
+            - appbdd-docker-stage-local
+            - appbdd-docker-push
         description: "docker virtual"
-        defaultDeploymentRepo: docker-stage-local
-    docker-virtual:
+        defaultDeploymentRepo: appbdd-docker-stage-local
+    appbdd-docker-virtual:
         type: docker
         repositories:
-            - docker-local
-            - docker-remote
-            - docker-dev-local
-            - docker-prod-local
-            - docker-stage-local
-            - docker-push
+            - appbdd-docker-local
+            - appbdd-docker-remote
+            - appbdd-docker-dev-local
+            - appbdd-docker-prod-local
+            - appbdd-docker-stage-local
+            - appbdd-docker-push
         description: "docker virtual"
-        defaultDeploymentRepo: docker-stage-local
+        defaultDeploymentRepo: appbdd-docker-stage-local
 remoteRepositories:
-    helm-remote:
+    appbdd-helm-remote:
         type: helm
         url: https://storage.googleapis.com/kubernetes-charts
         repoLayout: simple-default
         xray:
             enabled: true
-    docker-remote:
+    appbdd-docker-remote:
         type: docker
         url: https://registry-1.docker.io
         repoLayout: simple-default

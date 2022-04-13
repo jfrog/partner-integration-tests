@@ -185,7 +185,7 @@ class XrayTest extends XraySteps{
     @Test(priority=11, groups=["xray"], testName = "Force reindex repo")
     void forceReindexTest(){
         // Make sure artifact exists
-        def repoName = "generic-dev-local"
+        def repoName = "appbdd-generic-dev-local"
         def directoryName = "test-directory"
         def filename = "artifact_go_vuln.zip"
         def sha256 = Utils.generateSHA256(artifact)
@@ -267,7 +267,7 @@ class XrayTest extends XraySteps{
         Response response = getIndexingConfiguration(username, password, xrayBaseUrl)
         response.then().log().ifValidationFails().statusCode(200)
                 .body("bin_mgr_id", equalTo("default"))
-                .body("indexed_repos.name", hasItem("generic-dev-local"))
+                .body("indexed_repos.name", hasItem("appbdd-generic-dev-local"))
 
         Reporter.log("- Get repo indexing configuration.", true)
     }
@@ -284,7 +284,7 @@ class XrayTest extends XraySteps{
     @Test(priority=18, groups=["xray"], testName = "Get artifact summary")
     void artifactSummaryTest(){
         // Make sure artifact exists
-        def repoName = "generic-dev-local"
+        def repoName = "appbdd-generic-dev-local"
         def directoryName = "test-directory"
         def filename = "artifact_go_vuln11.zip"
         def sha256 = Utils.generateSHA256(artifact)

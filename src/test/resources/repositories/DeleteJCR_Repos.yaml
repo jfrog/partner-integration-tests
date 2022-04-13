@@ -1,0 +1,20 @@
+localRepositories:
+    appbdd-tomcat-local: null
+    appbdd-generic-prod-local: null
+    appbdd-generic-dev-local: null
+    appbdd-helm-prod-local: null
+    appbdd-helm-dev-local: null
+    appbdd-docker-generator: null
+    appbdd-docker-prod-local: null
+    appbdd-docker-stage-local: null
+    appbdd-docker-dev-local: null
+    docker-local: null
+    appbdd-docker-push: null
+virtualRepositories:
+    appbdd-generic-virtual: null
+    appbdd-helm-virtual: null
+    appbdd-docker-PLACEHOLDERFORBUILDSTEP: null
+    appbdd-docker-virtual: null
+remoteRepositories:
+    appbdd-helm-remote: null
+    appbdd-docker-remote: null
