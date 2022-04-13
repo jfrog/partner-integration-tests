@@ -296,9 +296,9 @@ class RepositoryTest extends RepositorySteps{
     void checkReposAreDeleted(){
         Response response = getRepos(artifactoryURL, username, password)
         def numberOfRepos = response.then().extract().path("size()")
-        def expectedReposNumber = 0
+        def expectedReposNumber = 1
         response.then().assertThat().statusCode(200)
-                .body("size()", equalTo(expectedReposNumber))
+                .body("size()", greaterThanOrEqualTo(expectedReposNumber))
 
         Reporter.log("- Verify repo were deleted. ${numberOfRepos} repositories remain", true)
     }
