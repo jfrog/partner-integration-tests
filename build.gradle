@@ -41,7 +41,17 @@ task artifactory_common(type: Test) {
         showStandardStreams = true
     }
 }
-
+//rm_HARepos
+task artifactory_rm_HARepos(type: Test) {
+    useTestNG() {
+        useDefaultListeners = true
+        suites 'src/test/groovy/testng.xml'
+        includeGroups ('rm_HARepos')
+    }
+    testLogging {
+        showStandardStreams = true
+    }
+}
 task artifactory_jcr_test(type: Test) {
     useTestNG() {
         useDefaultListeners = true

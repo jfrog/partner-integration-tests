@@ -64,6 +64,21 @@ class RepositoryTest extends RepositorySteps{
         Reporter.log("- Delete sample HA repositories. All repositories were successfully deleted", true)
     }
 
+    @Test(priority=1, groups=["rm_HARepos"], testName = "Delete appbdd-* repositories")
+    void deleteHARepos_afterTest(){
+
+        def body
+        def expectedMessage
+        body = repoListToDeleteHA
+        expectedMessage = "84 changes to config merged successfully"
+        Response response = createRepositories(artifactoryURL, body, username, password)
+        response.then().assertThat().log().ifValidationFails().statusCode(200)
+                .body(Matchers.hasToString(expectedMessage))
+                .log().body()
+
+        Reporter.log("- Delete sample HA repositories. All repositories were successfully deleted", true)
+    }
+
     @Test(priority=1, groups=["jcr",], testName = "Delete sample repositories JCR")
     void deleteDefaultJCRReposTest(){
 /*        Response getRepoResponse = getRepos(artifactoryURL, username, password)
