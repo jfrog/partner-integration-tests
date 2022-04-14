@@ -8,7 +8,7 @@ localRepositories:
     appbdd-docker-prod-local: null
     appbdd-docker-stage-local: null
     appbdd-docker-dev-local: null
-    docker-local: null
+    appbdd-docker-local: null
     appbdd-docker-push: null
 virtualRepositories:
     appbdd-generic-virtual: null

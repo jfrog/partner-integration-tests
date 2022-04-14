@@ -311,7 +311,7 @@ class RepositoryTest extends RepositorySteps{
     void checkReposAreDeleted(){
         Response response = getRepos(artifactoryURL, username, password)
         def numberOfRepos = response.then().extract().path("size()")
-        def expectedReposNumber = 1
+        def expectedReposNumber = 0
         response.then().assertThat().statusCode(200)
                 .body("size()", greaterThanOrEqualTo(expectedReposNumber))
 
@@ -348,7 +348,7 @@ class RepositoryTest extends RepositorySteps{
 
     @Test(priority=13, groups=["jcr","pro"], testName = "Create a directory in generic repo")
     void reCreateDirectoryTest(){
-        def repoName = "generic-dev-local"
+        def repoName = "appbdd-generic-dev-local"
         def directoryName = "test-directory/"
         Response response = createDirectory(artifactoryURL, repoName, directoryName)
         response.then().assertThat().log().ifValidationFails().statusCode(201)
@@ -361,7 +361,7 @@ class RepositoryTest extends RepositorySteps{
 
     @Test(priority=14, groups=["jcr","pro"], testName = "Deploy file to generic repo")
     void reDeployArtifactToGenericTest(){
-        def repoName = "generic-dev-local"
+        def repoName = "appbdd-generic-dev-local"
         def directoryName = "test-directory1"
         def filename = "artifact.zip"
         def sha256 = Utils.generateSHA256(artifact)
@@ -423,12 +423,12 @@ class RepositoryTest extends RepositorySteps{
 
         def numberOfImages = 20
         for (int i = 0; i < numberOfImages; i++) {
-            def tag = "docker tag busybox ${dockerURL}/docker-dev-local/busybox:1.${i}".execute()
+            def tag = "docker tag busybox ${dockerURL}/appbdd-docker-dev-local/busybox:1.${i}".execute()
             tag.waitForProcessOutput(System.out, System.err)
             Assert.assertTrue(tag.exitValue().equals(0))
         }
         for (int i = 0; i < numberOfImages; i++) {
-            def push = "docker push ${dockerURL}/docker-dev-local/busybox:1.${i}".execute()
+            def push = "docker push ${dockerURL}/appbdd-docker-dev-local/busybox:1.${i}".execute()
             push.waitForProcessOutput(System.out, System.err)
             Assert.assertTrue(push.exitValue().equals(0))
         }
@@ -437,7 +437,7 @@ class RepositoryTest extends RepositorySteps{
 
     @Test(priority=18, groups=["docker"], testName = "Verify all the images were pushed successfully")
     void verifyDockerImagesTest(){
-        def path = "docker-dev-local"
+        def path = "appbdd-docker-dev-local"
         Response response = getInfo(artifactoryURL, path)
         response.then().assertThat().statusCode(200)
                 .body("repo", equalTo(path))
@@ -448,7 +448,7 @@ class RepositoryTest extends RepositorySteps{
 
     @Test(priority=19, groups=["docker"], testName = "List docker tags")
     void listDockerTagsTest(){
-        def repoKey = "docker-dev-local"
+        def repoKey = "appbdd-docker-dev-local"
         def imageName = "busybox"
         def listSize = 20
         def endTag = 1

@@ -24,7 +24,7 @@ localRepositories:
   appbdd-npm-dev-local: null
   appbdd-bower-prod-local: null
   appbdd-bower-dev-local: null
-  debian-prod-local: null
+  appbdd-debian-prod-local: null
   appbdd-debian-dev-local: null
   appbdd-php-prod-local: null
   appbdd-php-dev-local: null

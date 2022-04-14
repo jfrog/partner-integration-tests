@@ -8,7 +8,7 @@ version '1.0-SNAPSHOT'
 repositories {
     //mavenCentral()
     maven {
-        //url 'https://sivasjpd.jfrog.io/artifactory/urs-mvn'
+        //url 'https://mytest.artifactory.com/artifactory/urs-mvn'
         //url = uri("https://${artifactory_for_maven}/${artifactory_repo_for_maven}")
         url = uri("${artifactory_for_maven}/${artifactory_repo_for_maven}")
         credentials {

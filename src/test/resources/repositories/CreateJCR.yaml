@@ -53,7 +53,7 @@ localRepositories:
         repoLayout: simple-default
         xray:
             enabled: true
-    docker-local:
+    appbdd-docker-local:
         type: docker
         description: "docker deployment"
         repoLayout: simple-default

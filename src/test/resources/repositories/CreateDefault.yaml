@@ -149,7 +149,7 @@ localRepositories:
       repoLayout: bower-default
       xray:
           enabled: true
-  debian-prod-local:
+  appbdd-debian-prod-local:
       type: debian
       description: "production deployment"
       repoLayout: simple-default

@@ -171,11 +171,11 @@ class SplunkTest extends DataAnalyticsSteps{
         def images = ["traefik", "alpine", "hello-world", "busybox"]
         Utils.dockerLogin(username, password, dockerURL)
         for(imageName in images) {
-            Utils.dockerPullImage("${dockerURL}" + "/docker-remote/" + imageName)
+            Utils.dockerPullImage("${dockerURL}" + "/appbdd-docker-remote/" + imageName)
         }
         // Clean up docker remote repository cache, to prevent Artifactory using it on the next run
         splunk.dockerCleanupCache(artifactoryBaseURL, username, password,
-                "artifactory/docker-remote-cache/library/", images)
+                "artifactory/appbdd-docker-remote-cache/library/", images)
         Thread.sleep(30000)
         def search_string = 'search=search "downloading" log_source="jfrog.rt.artifactory.service" "manifests/" "docker.io" |' +
                 ' spath message | search message !="*/manifests/sha256:*" | timechart count(message) span=6h as DockerPullRequests'
@@ -202,11 +202,11 @@ class SplunkTest extends DataAnalyticsSteps{
         // Run docker pull from the remote repository twice. First loop will use dockerhub, second - Artifactory cache
         2.times {
             for(imageName in images) {
-                Utils.dockerPullImage("${dockerURL}" + "/docker-remote/" + imageName)
+                Utils.dockerPullImage("${dockerURL}" + "/appbdd-docker-remote/" + imageName)
             }
         }
         splunk.dockerCleanupCache(artifactoryBaseURL, username, password,
-                "artifactory/docker-remote-cache/library/", images)
+                "artifactory/appbdd-docker-remote-cache/library/", images)
         Thread.sleep(30000)
         def startTime = "earliest_time=-6h"
         def search_string = 'search=search log_source="jfrog.rt.artifactory.access" action_response="ACCEPTED DOWNLOAD" ' +
@@ -232,10 +232,10 @@ class SplunkTest extends DataAnalyticsSteps{
         def images = ["traefik", "alpine", "hello-world", "busybox"]
         Utils.dockerLogin(username, password, dockerURL)
         for(imageName in images) {
-            Utils.dockerPullImage("${dockerURL}" + "/docker-remote/" + imageName)
+            Utils.dockerPullImage("${dockerURL}" + "/appbdd-docker-remote/" + imageName)
         }
         splunk.dockerCleanupCache(artifactoryBaseURL, username, password,
-                "artifactory/docker-remote-cache/library/", images)
+                "artifactory/appbdd-docker-remote-cache/library/", images)
         def startTime = "earliest_time=-6h"
         def search_string = 'search=search "downloading" log_source="jfrog.rt.artifactory.service" ' +
                 '"manifests/" "docker.io" ' + startTime + ' | spath message | search message !="*/manifests/sha256:*" | ' +
@@ -259,10 +259,10 @@ class SplunkTest extends DataAnalyticsSteps{
         def images = ["traefik", "alpine", "hello-world", "busybox"]
         Utils.dockerLogin(username, password, dockerURL)
         for(imageName in images) {
-            Utils.dockerPullImage("${dockerURL}" + "/docker-remote/" + imageName)
+            Utils.dockerPullImage("${dockerURL}" + "/appbdd-docker-remote/" + imageName)
         }
         splunk.dockerCleanupCache(artifactoryBaseURL, username, password,
-                "artifactory/docker-remote-cache/library/", images)
+                "artifactory/appbdd-docker-remote-cache/library/", images)
         def search_string = 'search=search "downloading" log_source="jfrog.rt.artifactory.service" ' +
                 '"manifests/" "docker.io" | spath message | search message !="*/manifests/sha256:*" | ' +
                 'timechart count(message) as Count'
@@ -285,10 +285,10 @@ class SplunkTest extends DataAnalyticsSteps{
         def images = ["traefik", "alpine", "hello-world", "busybox"]
         Utils.dockerLogin(username, password, dockerURL)
         for(imageName in images) {
-            Utils.dockerPullImage("${dockerURL}" + "/docker-remote/" + imageName)
+            Utils.dockerPullImage("${dockerURL}" + "/appbdd-docker-remote/" + imageName)
         }
         splunk.dockerCleanupCache(artifactoryBaseURL, username, password,
-                "artifactory/docker-remote-cache/library/", images)
+                "artifactory/appbdd-docker-remote-cache/library/", images)
         def search_string = 'search=search log_source="jfrog.rt.artifactory.access" "list\\.manifest" "ACCEPTED DEPLOY" ' +
                 '| top limit=10 username'
         Response response = splunk.splunkSearchResults(splunk_username, splunk_password, splunkBaseURL, search_string)
@@ -310,10 +310,10 @@ class SplunkTest extends DataAnalyticsSteps{
         def images = ["traefik", "alpine", "hello-world", "busybox"]
         Utils.dockerLogin(username, password, dockerURL)
         for(imageName in images) {
-            Utils.dockerPullImage("${dockerURL}" + "/docker-remote/" + imageName)
+            Utils.dockerPullImage("${dockerURL}" + "/appbdd-docker-remote/" + imageName)
         }
         splunk.dockerCleanupCache(artifactoryBaseURL, username, password,
-                "artifactory/docker-remote-cache/library/", images)
+                "artifactory/appbdd-docker-remote-cache/library/", images)
         def search_string = 'search=search log_source="jfrog.rt.artifactory.access" "list\\.manifest" "ACCEPTED DEPLOY"' +
                 ' | top limit=10 ip'
         Response response = splunk.splunkSearchResults(splunk_username, splunk_password, splunkBaseURL, search_string)
