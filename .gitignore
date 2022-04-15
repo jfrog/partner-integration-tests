@@ -9,3 +9,4 @@ build/
 # Env file
 src/test/resources/testenv.yaml
 src/test/resources/repositories/artifact_*.zip
+gradle.properties
