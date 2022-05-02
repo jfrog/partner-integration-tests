@@ -28,6 +28,8 @@ class RepositoryTest extends RepositorySteps{
     Yaml yaml = new Yaml()
     def repoListHA = new File("./src/test/resources/repositories/CreateDefault.yaml")
     def repoListJCR = new File("./src/test/resources/repositories/CreateJCR.yaml")
+    def repoListToDeleteHA = new File("./src/test/resources/repositories/DeleteDefaultRepos.yaml")
+    def repoListToDeleteJCR = new File("./src/test/resources/repositories/DeleteJCR_Repos.yaml")
     def artifact = new File("./src/test/resources/repositories/artifact.zip")
     def artifactoryURL = "${artifactoryBaseURL}/artifactory"
 
@@ -40,7 +42,7 @@ class RepositoryTest extends RepositorySteps{
 
     @Test(priority=1, groups=["pro"], testName = "Delete sample repositories")
     void deleteReposTest(){
-        Response getRepoResponse = getRepos(artifactoryURL, username, password)
+/*        Response getRepoResponse = getRepos(artifactoryURL, username, password)
         JsonPath jsonPathEvaluator = getRepoResponse.jsonPath()
         List<String> repoNames = jsonPathEvaluator.getList("key", String.class)
         for (repo in repoNames) {
@@ -48,12 +50,38 @@ class RepositoryTest extends RepositorySteps{
             delete.then().statusCode(200)
         }
 
+        Reporter.log("- Delete sample HA repositories. All repositories were successfully deleted", true)*/
+
+        def body
+        def expectedMessage
+        body = repoListToDeleteHA
+        expectedMessage = "84 changes to config merged successfully"
+        Response response = createRepositories(artifactoryURL, body, username, password)
+        response.then().assertThat().log().ifValidationFails().statusCode(200)
+                .body(Matchers.hasToString(expectedMessage))
+                .log().body()
+
+        Reporter.log("- Delete sample HA repositories. All repositories were successfully deleted", true)
+    }
+
+    @Test(priority=16, groups=["rm_HARepos"], testName = "Delete appbdd-* repositories")
+    void deleteHARepos_afterTest(){
+
+        def body
+        def expectedMessage
+        body = repoListToDeleteHA
+        expectedMessage = "84 changes to config merged successfully"
+        Response response = createRepositories(artifactoryURL, body, username, password)
+        response.then().assertThat().log().ifValidationFails().statusCode(200)
+                .body(Matchers.hasToString(expectedMessage))
+                .log().body()
+
         Reporter.log("- Delete sample HA repositories. All repositories were successfully deleted", true)
     }
 
     @Test(priority=1, groups=["jcr",], testName = "Delete sample repositories JCR")
     void deleteDefaultJCRReposTest(){
-        Response getRepoResponse = getRepos(artifactoryURL, username, password)
+/*        Response getRepoResponse = getRepos(artifactoryURL, username, password)
         JsonPath jsonPathEvaluator = getRepoResponse.jsonPath()
         List<String> repoNames = jsonPathEvaluator.getList("key", String.class)
         for (repo in repoNames) {
@@ -61,6 +89,17 @@ class RepositoryTest extends RepositorySteps{
             delete.then().statusCode(400).body("errors[0].message",
                     containsStringIgnoringCase("This REST API is available only in Artifactory Pro"))
         }
+
+        Reporter.log("- Delete sample JCR repositories. " +
+                "Verified - this REST API is available only in Artifactory Pro", true)*/
+        def body
+        def expectedMessage
+        body = repoListToDeleteJCR
+        expectedMessage = "17 changes to config merged successfully"
+        Response response = createRepositories(artifactoryURL, body, username, password)
+        response.then().assertThat().statusCode(200)
+                .body(Matchers.hasToString(expectedMessage))
+                .log().body()
 
         Reporter.log("- Delete sample JCR repositories. " +
                 "Verified - this REST API is available only in Artifactory Pro", true)
@@ -119,7 +158,7 @@ class RepositoryTest extends RepositorySteps{
 
     @Test(priority=4, groups=["jcr","pro"], testName = "Create a directory in generic repo")
     void createDirectoryTest(){
-        def repoName = "generic-dev-local"
+        def repoName = "appbdd-generic-dev-local"
         def directoryName = "test-directory/"
         Response response = createDirectory(artifactoryURL, repoName, directoryName)
         response.then().assertThat().log().ifValidationFails().statusCode(201)
@@ -132,7 +171,7 @@ class RepositoryTest extends RepositorySteps{
 
     @Test(priority=5, groups=["jcr","pro"], testName = "Deploy file to generic repo")
     void deployArtifactToGenericTest(){
-        def repoName = "generic-dev-local"
+        def repoName = "appbdd-generic-dev-local"
         def directoryName = "test-directory"
         def filename = "artifact.zip"
         def sha256 = Utils.generateSHA256(artifact)
@@ -156,7 +195,7 @@ class RepositoryTest extends RepositorySteps{
 
     @Test(priority=6, groups=["jcr","pro"], testName = "Calculate checksum and add it to deployed artifact")
     void addChecksumToArtifactTest(){
-        def repoName = "generic-dev-local"
+        def repoName = "appbdd-generic-dev-local"
         def directoryName = "test-directory"
         def filename = "artifact.zip"
         Response response = addChecksumToArtifact(artifactoryURL, repoName, directoryName, filename)
@@ -167,7 +206,7 @@ class RepositoryTest extends RepositorySteps{
 
     @Test(priority=7, groups=["jcr", "pro"], testName = "Get the artifact info")
     void getArtifactinfoTest(){
-        def repoName = "generic-dev-local"
+        def repoName = "appbdd-generic-dev-local"
         def directoryName = "test-directory"
         def filename = "artifact.zip"
         def path = repoName + "/" + directoryName + "/" + filename
@@ -182,7 +221,7 @@ class RepositoryTest extends RepositorySteps{
 
     @Test(priority=8, groups=["jcr", "pro"], testName = "Delete item")
     void deleteArtifactTest(){
-        def path = "generic-dev-local/test-directory/artifact.zip"
+        def path = "appbdd-generic-dev-local/test-directory/artifact.zip"
         Response response = deleteItem(artifactoryURL, username, password, path)
         response.then().assertThat().log().ifValidationFails().statusCode(204)
 
@@ -221,7 +260,7 @@ class RepositoryTest extends RepositorySteps{
 
     @Test(priority=10, groups=["pro"], testName = "Delete created repositories")
     void deleteDefaultReposTest(){
-        Response getRepoResponse = getRepos(artifactoryURL, username, password)
+/*        Response getRepoResponse = getRepos(artifactoryURL, username, password)
         JsonPath jsonPathEvaluator = getRepoResponse.jsonPath()
         List<String> repoNames = jsonPathEvaluator.getList("key", String.class)
         for (int i = 0; i < repoNames.size(); i ++){
@@ -229,12 +268,24 @@ class RepositoryTest extends RepositorySteps{
             delete.then().statusCode(200)
         }
 
-        Reporter.log("- Delete HA repositories. All repositories were successfully deleted", true)
+        Reporter.log("- Delete HA repositories. All repositories were successfully deleted", true)*/
+
+        def body
+        def expectedMessage
+        body = repoListToDeleteHA
+        expectedMessage = "84 changes to config merged successfully"
+        Response response = createRepositories(artifactoryURL, body, username, password)
+        response.then().assertThat().log().ifValidationFails().statusCode(200)
+                .body(Matchers.hasToString(expectedMessage))
+                .log().body()
+
+        Reporter.log("- Delete sample HA repositories. All repositories were successfully deleted", true)
+
     }
 
     @Test(priority=10, groups=["jcr",], testName = "Delete sample repositories JCR")
     void deleteJCRReposTest(){
-        Response getRepoResponse = getRepos(artifactoryURL, username, password)
+/*        Response getRepoResponse = getRepos(artifactoryURL, username, password)
         JsonPath jsonPathEvaluator = getRepoResponse.jsonPath()
         List<String> repoNames = jsonPathEvaluator.getList("key", String.class)
         for (int i = 0; i < repoNames.size(); i ++){
@@ -242,6 +293,16 @@ class RepositoryTest extends RepositorySteps{
             delete.then().statusCode(400).body("errors[0].message",
                     containsStringIgnoringCase("This REST API is available only in Artifactory Pro"))
         }
+
+        Reporter.log("- Delete sample JCR repositories. All repositories were successfully deleted", true)*/
+        def body
+        def expectedMessage
+        body = repoListToDeleteJCR
+        expectedMessage = "17 changes to config merged successfully"
+        Response response = createRepositories(artifactoryURL, body, username, password)
+        response.then().assertThat().statusCode(200)
+                .body(Matchers.hasToString(expectedMessage))
+                .log().body()
 
         Reporter.log("- Delete sample JCR repositories. All repositories were successfully deleted", true)
     }
@@ -252,7 +313,7 @@ class RepositoryTest extends RepositorySteps{
         def numberOfRepos = response.then().extract().path("size()")
         def expectedReposNumber = 0
         response.then().assertThat().statusCode(200)
-                .body("size()", equalTo(expectedReposNumber))
+                .body("size()", greaterThanOrEqualTo(expectedReposNumber))
 
         Reporter.log("- Verify repo were deleted. ${numberOfRepos} repositories remain", true)
     }
@@ -287,7 +348,7 @@ class RepositoryTest extends RepositorySteps{
 
     @Test(priority=13, groups=["jcr","pro"], testName = "Create a directory in generic repo")
     void reCreateDirectoryTest(){
-        def repoName = "generic-dev-local"
+        def repoName = "appbdd-generic-dev-local"
         def directoryName = "test-directory/"
         Response response = createDirectory(artifactoryURL, repoName, directoryName)
         response.then().assertThat().log().ifValidationFails().statusCode(201)
@@ -300,7 +361,7 @@ class RepositoryTest extends RepositorySteps{
 
     @Test(priority=14, groups=["jcr","pro"], testName = "Deploy file to generic repo")
     void reDeployArtifactToGenericTest(){
-        def repoName = "generic-dev-local"
+        def repoName = "appbdd-generic-dev-local"
         def directoryName = "test-directory1"
         def filename = "artifact.zip"
         def sha256 = Utils.generateSHA256(artifact)
@@ -362,12 +423,12 @@ class RepositoryTest extends RepositorySteps{
 
         def numberOfImages = 20
         for (int i = 0; i < numberOfImages; i++) {
-            def tag = "docker tag busybox ${dockerURL}/docker-dev-local/busybox:1.${i}".execute()
+            def tag = "docker tag busybox ${dockerURL}/appbdd-docker-dev-local/busybox:1.${i}".execute()
             tag.waitForProcessOutput(System.out, System.err)
             Assert.assertTrue(tag.exitValue().equals(0))
         }
         for (int i = 0; i < numberOfImages; i++) {
-            def push = "docker push ${dockerURL}/docker-dev-local/busybox:1.${i}".execute()
+            def push = "docker push ${dockerURL}/appbdd-docker-dev-local/busybox:1.${i}".execute()
             push.waitForProcessOutput(System.out, System.err)
             Assert.assertTrue(push.exitValue().equals(0))
         }
@@ -376,7 +437,7 @@ class RepositoryTest extends RepositorySteps{
 
     @Test(priority=18, groups=["docker"], testName = "Verify all the images were pushed successfully")
     void verifyDockerImagesTest(){
-        def path = "docker-dev-local"
+        def path = "appbdd-docker-dev-local"
         Response response = getInfo(artifactoryURL, path)
         response.then().assertThat().statusCode(200)
                 .body("repo", equalTo(path))
@@ -387,7 +448,7 @@ class RepositoryTest extends RepositorySteps{
 
     @Test(priority=19, groups=["docker"], testName = "List docker tags")
     void listDockerTagsTest(){
-        def repoKey = "docker-dev-local"
+        def repoKey = "appbdd-docker-dev-local"
         def imageName = "busybox"
         def listSize = 20
         def endTag = 1

@@ -30,7 +30,7 @@ class DatadogTest extends DataAnalyticsSteps {
     def testUsers = ["testuser1", "testuser2", "testuser3", "testuser4"]
     int count = 1
     int calls = 5
-    def repos = ["docker-dev-local", "docker-local", "docker-prod-local", "docker-push"]
+    def repos = ["appbdd-docker-dev-local", "appbdd-docker-local", "appbdd-docker-prod-local", "appbdd-docker-push"]
     def imagePrefix = "busybox"
     def numberOfImages = 5
 

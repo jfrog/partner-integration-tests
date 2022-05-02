@@ -6,17 +6,31 @@ group 'org.example'
 version '1.0-SNAPSHOT'
 
 repositories {
-    mavenCentral()
+    //mavenCentral()
+    maven {
+        //url 'https://mytest.artifactory.com/artifactory/urs-mvn'
+        //url = uri("https://${artifactory_for_maven}/${artifactory_repo_for_maven}")
+        url = uri("${artifactory_for_maven}/${artifactory_repo_for_maven}")
+        credentials {
+            username  "${artifactory_user}"
+            password  "${artifactory_password}"
+        }
+        metadataSources {
+            mavenPom()
+            artifact()
+            gradleMetadata()
+        }
+    }
 }
 
 dependencies {
-    implementation 'org.codehaus.groovy:groovy-all:3.0.0'
+    implementation 'org.apache.groovy:groovy:4.0.1'
+    testImplementation 'junit:junit:4.3'
     testImplementation 'commons-validator:commons-validator:1.7'
-    testImplementation 'io.rest-assured:rest-assured:4.1.1'
-    testImplementation 'org.testng:testng:6.14.3'
-    testImplementation 'org.yaml:snakeyaml:1.17'
-    testImplementation 'org.awaitility:awaitility:3.0.0'
-
+    testImplementation 'io.rest-assured:rest-assured:5.0.1'
+    testImplementation 'org.testng:testng:7.5'
+    testImplementation 'org.yaml:snakeyaml:1.30'
+    testImplementation 'org.awaitility:awaitility:4.2.0'
 }
 
 test {
@@ -41,7 +55,17 @@ task artifactory_common(type: Test) {
         showStandardStreams = true
     }
 }
-
+//rm_HARepos
+task artifactory_rm_HARepos(type: Test) {
+    useTestNG() {
+        useDefaultListeners = true
+        suites 'src/test/groovy/testng.xml'
+        includeGroups ('rm_HARepos')
+    }
+    testLogging {
+        showStandardStreams = true
+    }
+}
 task artifactory_jcr_test(type: Test) {
     useTestNG() {
         useDefaultListeners = true
@@ -58,6 +82,17 @@ task artifactory_ha_test(type: Test) {
         useDefaultListeners = true
         suites 'src/test/groovy/testng.xml'
         includeGroups('common','pro')
+    }
+    testLogging {
+        showStandardStreams = true
+    }
+}
+
+task artifactory_ha_test_with_rmRepos(type: Test) {
+    useTestNG() {
+        useDefaultListeners = true
+        suites 'src/test/groovy/testng.xml'
+        includeGroups('common','pro','rm_HARepos')
     }
     testLogging {
         showStandardStreams = true

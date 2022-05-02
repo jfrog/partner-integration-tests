@@ -1,7 +1,7 @@
 artifactory:
-  protocol: http://
-  url: localhost:8082
-  external_ip: localhost:8082
+  protocol: https://
+  url: mytest.artifactory.com
+  external_ip: mytest.artifactory.com
   distribution: artifactory_ha
   rt_username: admin
   rt_password: password

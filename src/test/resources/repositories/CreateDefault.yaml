@@ -1,554 +1,554 @@
 localRepositories:
-  libs-release-local:
+  appbdd-libs-release-local:
       type: maven
       description: "production deployment"
       repoLayout: maven-2-default
       xray:
           enabled: true
-  libs-snapshot-local:
+  appbdd-libs-snapshot-local:
       type: maven
       description: "snapshot deployment"
       repoLayout: maven-2-default
       xray:
           enabled: true
-  maven-prod-local:
+  appbdd-maven-prod-local:
       type: maven
       description: "production release deployment"
       repoLayout: maven-2-default
       xray:
           enabled: true
-  maven-dev-local:
+  appbdd-maven-dev-local:
       type: maven
       description: "development release deployment"
       repoLayout: maven-2-default
       xray:
           enabled: true
-  maven-release-local:
+  appbdd-maven-release-local:
       type: maven
       description: "development release deployment"
       repoLayout: maven-2-default
       xray:
           enabled: true
-  maven-snapshot-local:
+  appbdd-maven-snapshot-local:
       type: maven
       description: "development release deployment"
       repoLayout: maven-2-default
       xray:
           enabled: true
-  gradle-prod-local:
+  appbdd-gradle-prod-local:
       type: gradle
       description: "production deployment"
       repoLayout: maven-2-default
       xray:
           enabled: true
-  gradle-dev-local:
+  appbdd-gradle-dev-local:
       type: gradle
       description: "development deployment"
       repoLayout: maven-2-default
       xray:
           enabled: true
-  tomcat-local:
+  appbdd-tomcat-local:
       type: generic
       description: "used by demo"
       repoLayout: simple-default
       xray:
           enabled: true
-  generic-prod-local:
+  appbdd-generic-prod-local:
       type: generic
       description: "production deployment"
       repoLayout: simple-default
       xray:
           enabled: true
-  generic-dev-local:
+  appbdd-generic-dev-local:
       type: generic
       description: "development deployment"
       repoLayout: simple-default
       xray:
           enabled: true
-  ivy-prod-local:
+  appbdd-ivy-prod-local:
       type: ivy
       description: "production deployment"
       repoLayout: "ivy-default"
       xray:
           enabled: true
-  ivy-dev-local:
+  appbdd-ivy-dev-local:
       type: ivy
       description: "development deployment"
       repoLayout: ivy-default
       xray:
           enabled: true
-  helm-prod-local:
+  appbdd-helm-prod-local:
       type: helm
       description: "production deployment"
       repoLayout: simple-default
       xray:
           enabled: true
-  helm-dev-local:
+  appbdd-helm-dev-local:
       type: helm
       description: "development deployment"
       repoLayout: simple-default
       xray:
           enabled: true
-  sbt-prod-local:
+  appbdd-sbt-prod-local:
       type: sbt
       description: "production deployment"
       repoLayout: sbt-default
       xray:
           enabled: true
-  sbt-dev-local:
+  appbdd-sbt-dev-local:
       type: sbt
       description: "development deployment"
       repoLayout: sbt-default
       xray:
           enabled: true
-  nuget-prod-local:
+  appbdd-nuget-prod-local:
       type: nuget
       description: "production deployment"
       repoLayout: nuget-default
       xray:
           enabled: true
-  nuget-dev-local:
+  appbdd-nuget-dev-local:
       type: nuget
       description: "development deployment"
       repoLayout: nuget-default
       xray:
           enabled: true
-  gems-prod-local:
+  appbdd-gems-prod-local:
         type: gems
         description: "production deployment"
         repoLayout: simple-default
         xray:
             enabled: true
-  gems-dev-local:
+  appbdd-gems-dev-local:
         type: gems
         description: "development deployment"
         repoLayout: simple-default
         xray:
             enabled: true
-  npm-prod-local:
+  appbdd-npm-prod-local:
       type: npm
       description: "production deployment"
       repoLayout: npm-default
       xray:
           enabled: true
-  npm-dev-local:
+  appbdd-npm-dev-local:
       type: npm
       description: "development deployment"
       repoLayout: npm-default
       xray:
           enabled: true
-  bower-prod-local:
+  appbdd-bower-prod-local:
       type: bower
       description: "production deployment"
       repoLayout: bower-default
       xray:
           enabled: true
-  bower-dev-local:
+  appbdd-bower-dev-local:
       type: bower
       description: "development deployment"
       repoLayout: bower-default
       xray:
           enabled: true
-  debian-prod-local:
+  appbdd-debian-prod-local:
       type: debian
       description: "production deployment"
       repoLayout: simple-default
       xray:
           enabled: true
-  debian-dev-local:
+  appbdd-debian-dev-local:
       type: debian
       description: "development deployment"
       repoLayout: simple-default
       xray:
           enabled: true
-  php-prod-local:
+  appbdd-php-prod-local:
       type: composer
       description: "production deployment"
       repoLayout: composer-default
       xray:
           enabled: true
-  php-dev-local:
+  appbdd-php-dev-local:
       type: composer
       description: "development deployment"
       repoLayout: composer-default
       xray:
           enabled: true
-  pypi-prod-local:
+  appbdd-pypi-prod-local:
       type: pypi
       description: "production deployment"
       repoLayout: simple-default
       xray:
           enabled: true
-  pypi-dev-local:
+  appbdd-pypi-dev-local:
       type: pypi
       description: "development deployment"
       repoLayout: simple-default
       xray:
           enabled: true
-  docker-prod-local:
+  appbdd-docker-prod-local:
       type: docker
       description: "production deployment"
       repoLayout: simple-default
       xray:
           enabled: true
-  docker-stage-local:
+  appbdd-docker-stage-local:
       type: docker
       description: "stage deployment"
       repoLayout: simple-default
       xray:
           enabled: true
-  docker-dev-local:
+  appbdd-docker-dev-local:
       type: docker
       description: "development deployment"
       repoLayout: simple-default
       xray:
           enabled: true
-  docker-local:
+  appbdd-docker-local:
       type: docker
       description: "docker deployment"
       repoLayout: simple-default
       xray:
           enabled: true
-  docker-push:
+  appbdd-docker-push:
         type: docker
         description: "docker push repo for push replication testing"
         repoLayout: simple-default
         xray:
             enabled: true
-  vagrant-prod-local:
+  appbdd-vagrant-prod-local:
       type: vagrant
       description: "production deployment"
       repoLayout: simple-default
       xray:
           enabled: true
-  vagrant-dev-local:
+  appbdd-vagrant-dev-local:
       type: vagrant
       description: "development deployment"
       repoLayout: simple-default
       xray:
           enabled: true
-  gitlfs-prod-local:
+  appbdd-gitlfs-prod-local:
       type: gitlfs
       description: "production deployment"
       repoLayout: simple-default
       xray:
           enabled: true
-  gitlfs-dev-local:
+  appbdd-gitlfs-dev-local:
       type: gitlfs
       description: "development deployment"
       repoLayout: simple-default
       xray:
           enabled: true
-  rpm-prod-local:
+  appbdd-rpm-prod-local:
       type: yum
       description: "production deployment"
       repoLayout: simple-default
       xray:
           enabled: true
-  rpm-dev-local:
+  appbdd-rpm-dev-local:
       type: yum
       description: "development deployment"
       repoLayout: simple-default
       xray:
           enabled: true
-  conan-prod-local:
+  appbdd-conan-prod-local:
       type: conan
       description: "production deployment"
       repoLayout: conan-default
       xray:
           enabled: true
-  conan-dev-local:
+  appbdd-conan-dev-local:
       type: conan
       description: "development deployment"
       repoLayout: conan-default
       xray:
           enabled: true
-  chef-prod-local:
+  appbdd-chef-prod-local:
       type: chef
       description: "production deployment"
       repoLayout: simple-default
       xray:
           enabled: true
-  chef-dev-local:
+  appbdd-chef-dev-local:
       type: chef
       description: "development deployment"
       repoLayout: simple-default
       xray:
           enabled: true
-  puppet-prod-local:
+  appbdd-puppet-prod-local:
       type: puppet
       description: "production deployment"
       repoLayout: puppet-default
       xray:
           enabled: true
-  puppet-dev-local:
+  appbdd-puppet-dev-local:
       type: puppet
       description: "development deployment"
       repoLayout: puppet-default
       xray:
           enabled: true
-  go-prod-local:
+  appbdd-go-prod-local:
       type: go
       description: "production deployment"
       repoLayout: go-default
       xray:
           enabled: true
-  go-staging-local:
+  appbdd-go-staging-local:
         type: go
         description: "production deployment"
         repoLayout: go-default
         xray:
             enabled: true
 remoteRepositories:
-  docker-remote:
+  appbdd-docker-remote:
       type: docker
       url: https://registry-1.docker.io
       repoLayout: simple-default
       enableTokenAuthentication: true
       xray:
         enabled: true
-  helm-remote:
+  appbdd-helm-remote:
       type: helm
       url: https://storage.googleapis.com/kubernetes-charts
       repoLayout: simple-default
       xray:
         enabled: true
-  jcenter:
+  appbdd-jcenter:
       type: maven
       url: https://jcenter.bintray.com
       repoLayout: maven-2-default
       xray:
         enabled: true
-  npm-remote:
+  appbdd-npm-remote:
       type: npm
       url: https://registry.npmjs.org
       repoLayout: npm-default
       xray:
         enabled: true
-  nuget-remote:
+  appbdd-nuget-remote:
       type: nuget
       url: https://www.nuget.org/
       repoLayout: nuget-default
       xray:
         enabled: true
-  bower-remote:
+  appbdd-bower-remote:
       type: bower
       url: https://github.com/
       repoLayout: bower-default
       xray:
         enabled: true
-  gems-remote:
+  appbdd-gems-remote:
       type: gems
       url: https://rubygems.org/
       repoLayout: simple-default
       xray:
         enabled: true
-  debian-remote:
+  appbdd-debian-remote:
       type: debian
       url: http://archive.ubuntu.com/ubuntu/
       repoLayout: simple-default
       xray:
         enabled: true
-  php-remote:
+  appbdd-php-remote:
       type: composer
       url: https://github.com/
       repoLayout: composer-default
       xray:
         enabled: true
-  pypi-remote:
+  appbdd-pypi-remote:
       type: pypi
       url: https://files.pythonhosted.org
       repoLayout: simple-default
       xray:
         enabled: true
-  rpm-remote:
+  appbdd-rpm-remote:
       type: yum
       url: http://mirror.centos.org/centos/
       repoLayout: simple-default
       xray:
         enabled: true
-  chef-remote:
+  appbdd-chef-remote:
       type: chef
       url: https://supermarket.chef.io
       repoLayout: simple-default
       xray:
         enabled: true
-  puppet-remote:
+  appbdd-puppet-remote:
       type: puppet
       url: https://forgeapi.puppetlabs.com/
       repoLayout: puppet-default
       xray:
         enabled: true
 virtualRepositories:
-  maven-release-virtual:
+  appbdd-maven-release-virtual:
       type: maven
       repositories:
-        - maven-prod-local
-        - jcenter
-        - maven-release-local
-        - libs-release-local
+        - appbdd-maven-prod-local
+        - appbdd-jcenter
+        - appbdd-maven-release-local
+        - appbdd-libs-release-local
       description: "maven release virtual repositories"
-      defaultDeploymentRepo: maven-release-local
-  maven-snapshot-virtual:
+      defaultDeploymentRepo: appbdd-maven-release-local
+  appbdd-maven-snapshot-virtual:
       type: maven
       repositories:
-        - maven-snapshot-local
-        - jcenter
-        - maven-dev-local
-        - libs-snapshot-local
+        - appbdd-maven-snapshot-local
+        - appbdd-jcenter
+        - appbdd-maven-dev-local
+        - appbdd-libs-snapshot-local
       description: "maven snapshot virtual repositories"
-      defaultDeploymentRepo: maven-snapshot-local
-  gradle-virtual:
+      defaultDeploymentRepo: appbdd-maven-snapshot-local
+  appbdd-gradle-virtual:
       type: gradle
       repositories:
-        - gradle-dev-local
-        - jcenter
-        - gradle-prod-local
-        - libs-release-local
+        - appbdd-gradle-dev-local
+        - appbdd-jcenter
+        - appbdd-gradle-prod-local
+        - appbdd-libs-release-local
       description: "gradle virtual repositories"
-      defaultDeploymentRepo: gradle-dev-local
-  docker-PLACEHOLDERFORBUILDSTEP:
+      defaultDeploymentRepo: appbdd-gradle-dev-local
+  appbdd-docker-PLACEHOLDERFORBUILDSTEP:
         type: docker
         repositories:
-          - docker-local
-          - docker-remote
-          - docker-dev-local
-          - docker-prod-local
-          - docker-stage-local
-          - docker-push
+          - appbdd-docker-local
+          - appbdd-docker-remote
+          - appbdd-docker-dev-local
+          - appbdd-docker-prod-local
+          - appbdd-docker-stage-local
+          - appbdd-docker-push
         description: "docker virtual"
-        defaultDeploymentRepo: docker-stage-local
-  docker-virtual:
+        defaultDeploymentRepo: appbdd-docker-stage-local
+  appbdd-docker-virtual:
       type: docker
       repositories:
-        - docker-local
-        - docker-remote
-        - docker-dev-local
-        - docker-prod-local
-        - docker-stage-local
-        - docker-push
+        - appbdd-docker-local
+        - appbdd-docker-remote
+        - appbdd-docker-dev-local
+        - appbdd-docker-prod-local
+        - appbdd-docker-stage-local
+        - appbdd-docker-push
       description: "docker virtual"
-      defaultDeploymentRepo: docker-stage-local
-  libs-release:
+      defaultDeploymentRepo: appbdd-docker-stage-local
+  appbdd-libs-release:
       type: maven
       repositories:
-        - libs-release-local
-        - jcenter
+        - appbdd-libs-release-local
+        - appbdd-jcenter
       description: "maven libraries virtual"
-      defaultDeploymentRepo: libs-release-local
-  libs-snapshot:
+      defaultDeploymentRepo: appbdd-libs-release-local
+  appbdd-libs-snapshot:
         type: maven
         repositories:
-          - libs-snapshot-local
-          - jcenter
+          - appbdd-libs-snapshot-local
+          - appbdd-jcenter
         description: "maven libraries virtual"
-        defaultDeploymentRepo: libs-snapshot-local
-  ivy-virtual:
+        defaultDeploymentRepo: appbdd-libs-snapshot-local
+  appbdd-ivy-virtual:
       type: ivy
       repositories:
-        - ivy-prod-local
-        - ivy-dev-local
-        - jcenter
+        - appbdd-ivy-prod-local
+        - appbdd-ivy-dev-local
+        - appbdd-jcenter
       description: "ivy virtual"
-      defaultDeploymentRepo: ivy-dev-local
-  generic-virtual:
+      defaultDeploymentRepo: appbdd-ivy-dev-local
+  appbdd-generic-virtual:
       type: generic
       repositories:
-        - generic-prod-local
-        - generic-dev-local
+        - appbdd-generic-prod-local
+        - appbdd-generic-dev-local
       description: "generic virtual"
-      defaultDeploymentRepo: generic-dev-local
-  helm-virtual:
+      defaultDeploymentRepo: appbdd-generic-dev-local
+  appbdd-helm-virtual:
       type: helm
       repositories:
-        - helm-prod-local
-        - helm-dev-local
-        - helm-remote
+        - appbdd-helm-prod-local
+        - appbdd-helm-dev-local
+        - appbdd-helm-remote
       description: "helm virtual"
-      defaultDeploymentRepo: helm-dev-local
-  nuget-virtual:
+      defaultDeploymentRepo: appbdd-helm-dev-local
+  appbdd-nuget-virtual:
       type: nuget
       repositories:
-        - nuget-prod-local
-        - nuget-dev-local
-        - nuget-remote
+        - appbdd-nuget-prod-local
+        - appbdd-nuget-dev-local
+        - appbdd-nuget-remote
       description: "nuget virtual"
-      defaultDeploymentRepo: nuget-dev-local
-  npm-virtual:
+      defaultDeploymentRepo: appbdd-nuget-dev-local
+  appbdd-npm-virtual:
       type: npm
       repositories:
-        - npm-dev-local
-        - npm-remote
-        - npm-prod-local
+        - appbdd-npm-dev-local
+        - appbdd-npm-remote
+        - appbdd-npm-prod-local
       description: "npm virtual"
-      defaultDeploymentRepo: npm-dev-local
-  chef-virtual:
+      defaultDeploymentRepo: appbdd-npm-dev-local
+  appbdd-chef-virtual:
       type: chef
       repositories:
-        - chef-dev-local
-        - chef-remote
-        - chef-prod-local
+        - appbdd-chef-dev-local
+        - appbdd-chef-remote
+        - appbdd-chef-prod-local
       description: "chef virtual"
-      defaultDeploymentRepo: chef-dev-local
-  puppet-virtual:
+      defaultDeploymentRepo: appbdd-chef-dev-local
+  appbdd-puppet-virtual:
       type: puppet
       repositories:
-        - puppet-dev-local
-        - puppet-remote
-        - puppet-prod-local
+        - appbdd-puppet-dev-local
+        - appbdd-puppet-remote
+        - appbdd-puppet-prod-local
       description: "puppet virtual"
-      defaultDeploymentRepo: puppet-dev-local
-  rpm-virtual:
+      defaultDeploymentRepo: appbdd-puppet-dev-local
+  appbdd-rpm-virtual:
       type: yum
       repositories:
-        - rpm-dev-local
-        - rpm-remote
-        - rpm-prod-local
+        - appbdd-rpm-dev-local
+        - appbdd-rpm-remote
+        - appbdd-rpm-prod-local
       description: "rpm virtual"
-      defaultDeploymentRepo: rpm-dev-local
-  gitlfs-virtual:
+      defaultDeploymentRepo: appbdd-rpm-dev-local
+  appbdd-gitlfs-virtual:
       type: gitlfs
       repositories:
-        - gitlfs-dev-local
-        - gitlfs-prod-local
+        - appbdd-gitlfs-dev-local
+        - appbdd-gitlfs-prod-local
       description: "gitlfs virtual"
-      defaultDeploymentRepo: gitlfs-dev-local
-  pypi-virtual:
+      defaultDeploymentRepo: appbdd-gitlfs-dev-local
+  appbdd-pypi-virtual:
       type: pypi
       repositories:
-        - pypi-dev-local
-        - pypi-prod-local
-        - pypi-remote
+        - appbdd-pypi-dev-local
+        - appbdd-pypi-prod-local
+        - appbdd-pypi-remote
       description: "pypi virtual"
-      defaultDeploymentRepo: pypi-dev-local
-  bower-virtual:
+      defaultDeploymentRepo: appbdd-pypi-dev-local
+  appbdd-bower-virtual:
       type: bower
       repositories:
-        - bower-dev-local
-        - bower-prod-local
-        - bower-remote
+        - appbdd-bower-dev-local
+        - appbdd-bower-prod-local
+        - appbdd-bower-remote
       description: "bower virtual"
-      defaultDeploymentRepo: bower-dev-local
-  gems-virtual:
+      defaultDeploymentRepo: appbdd-bower-dev-local
+  appbdd-gems-virtual:
       type: gems
       repositories:
-        - gems-dev-local
-        - gems-prod-local
-        - gems-remote
+        - appbdd-gems-dev-local
+        - appbdd-gems-prod-local
+        - appbdd-gems-remote
       description: "gems virtual"
-      defaultDeploymentRepo: gems-dev-local
-  sbt-virtual:
+      defaultDeploymentRepo: appbdd-gems-dev-local
+  appbdd-sbt-virtual:
       type: sbt
       repositories:
-        - sbt-dev-local
-        - sbt-prod-local
-        - jcenter
+        - appbdd-sbt-dev-local
+        - appbdd-sbt-prod-local
+        - appbdd-jcenter
       description: "sbt virtual"
-      defaultDeploymentRepo: sbt-dev-local
-  go-staging:
+      defaultDeploymentRepo: appbdd-sbt-dev-local
+  appbdd-go-staging:
       type: go
       repositories:
-        - go-staging-local
-        - go-prod-local
+        - appbdd-go-staging-local
+        - appbdd-go-prod-local
       description: "go virtual"
-      defaultDeploymentRepo: go-staging-local
+      defaultDeploymentRepo: appbdd-go-staging-local

@@ -1,11 +1,28 @@
-## Partnership Engineering Integration Testing Framework
+## Minimal Artifactory Functional Testing Framework
 
-The purpose of this framework is to test different Artifactory configurations deployed by various Partnership Engineering solutions.
-It can be used in the CI-CD process and in a single manual test run.
-NOTE: the test purpose is to test if deployment was correct and JFrog Deployment functioning as expected. 
-The test will delete all existing repositories and create a list of new repos. Do not run on live instance. 
+This test framework has been repurposed from the partner-integration-tests used internally in JFrog by the Partnership Engineering team.
 
-Test suites include Artifactory Pro, JCR and Xray tests as well as some Data analytics tests.    
+**NOTE:** the test purpose is to test if deployment was correct and JFrog Deployment is functioning as expected and not for running  on a Production live JFrog Deployment. 
+You can use this test framework **"as is"** and  it is not supported by JFrog.
+
+It has the following customizations to the original partner-integration-tests :
+a) It is upgraded to run with :
+
+```
+❯ gradle --version
+
+Gradle 7.4.2
+Kotlin:       1.5.31
+Groovy:       3.0.9
+Ant:          Apache Ant(TM) version 1.10.11 compiled on July 10 2021
+JVM:          18 (Oracle Corporation 18+36-2087)
+```
+
+b) It does not delete any existing repositories that are already in artifactory. Instead it creates new local, remote and virtual repos ( name prefixed with “appbdd-” ) and after the test is done it deletes only these appbdd-* repos.
+
+c) I disabled the setBaseURLTest() in src/test/groovy/tests/HealthCheckTest.groovy by changing the group name from "common" to "common-notneeded"
+
+Though the Test suites include Artifactory Pro, JCR and Xray tests as well as some Data analytics tests , I tested only the Artifactory tests.    
 
 ### How to run it locally
 Clone the repo. Open the file ```/src/test/resources/testenv.yaml``` and fill it with your environment values. Mandatory fields: 
@@ -23,23 +40,14 @@ Run Gradle wrapper to invoke Gradle task:
 ./gradlew <task_name>
 ```
 Test project can use environment variables to substitute values in testenv.yaml file. Check ```src/test/groovy/tests/TestSetup.groovy``` to see which variables are available. 
-
-
-### Run as a docker container
-Build the image or pull the image ``partnership-partner-integration-tests.jfrog.io/jfrog-tester``
-Run the container with a set of environment variables:
-```
-docker run -it -e RT_URL=<your_artifactory_uri> -e RT_PROTOCOL=<http:// or https://> -e RT_USERNAME=<username> -e NEW_RT_PASSWORD=<password> partnership-partner-integration-tests.jfrog.io/jfrog-tester:0.0.3 <task_name>
-```
-NOTE: if default password needs to be changed on the new instance, set NEW_RT_PASSWORD variable.
-If you already changed the password manually, please use NEW_RT_PASSWORD variable to set the password.
-New password should meet security requirements.  
-If the variable set, the password will be changed during a `common` test group run. 
+For examples of running the artifactory tests see "To rerun a test" section below.
 
 
 ### Tasks for Artifactory platform testing
 ```
 artifactory_common
+artifactory_ha_test_with_rmRepos
+artifactory_rm_HARepos
 artifactory_jcr_test
 artifactory_ha_test
 unified_test
@@ -79,3 +87,27 @@ Each new test class should be added to `testing.xml` file and should be assigned
  ~/.gradle/caches/
  ./gradlew clean
 ```
+
+### To rerun a test :
+1. First make sure gradlew can download the "**distributionUrl**" specified in gradle/wrapper/gradle-wrapper.properties. I used steps in https://stackoverflow.com/questions/68552674/gradle-distribution-remote-repo so  gradlew can resolve the **gradle-7.4.2-all.zip** from my Artifactory server  ( mytest.artifactory.com's gradle-dist generic remote repository).
+
+The artifactory username and password to connect to  my Artifactory server is set in 
+{user.home}/.gradle/gradle.properties as mentioned in https://stackoverflow.com/questions/45310011/how-do-i-provide-credentials-for-gradle-wrapper-without-embedding-them-in-my-pro
+
+2. Next for gradle to connect to artifactory and resolve  the maven dependencies specified in the **build.gradle** you can set this in the **gradle.properties** as mentioned in https://stackoverflow.com/questions/22352475/upload-artifact-to-artifactory-using-gradle
+
+3. Then run:
+```
+ ./gradlew clean
+ ./gradlew artifactory_ha_test_with_rmRepos
+ or
+ ./gradlew artifactory_ha_test
+```
+**Note:** **artifactory_ha_test_with_rmRepos** will create and delete the appbdd-* repos used in the test 
+vs
+**artifactory_ha_test** test will create but not delete the appbdd-* repos used in the test.
+
+The test  report is saved in partner-integration-tests/build/reports/tests/**artifactory_ha_test**/index.html or partner-integration-tests/build/reports/tests/**artifactory_ha_test_with_rmRepos**/classes/tests.RepositoryTest.html depending on the test you run
+![image](https://user-images.githubusercontent.com/7613305/163461564-d4225f88-0449-4b64-8ff1-24f8454425e5.png)
+
+![image](https://user-images.githubusercontent.com/7613305/163461626-78b5bbf2-5a33-4420-ab92-c2fbfce04fee.png)

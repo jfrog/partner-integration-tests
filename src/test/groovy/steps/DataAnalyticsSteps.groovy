@@ -56,8 +56,8 @@ class DataAnalyticsSteps extends TestSetup{
 
     def http204(count, calls){
         while (count <= calls) {
-            def path = "generic-dev-local/test-directory/artifact.zip"
-            def repoName = "generic-dev-local"
+            def path = "appbdd-generic-dev-local/test-directory/artifact.zip"
+            def repoName = "appbdd-generic-dev-local"
             def directoryName = "test-directory"
             def filename = "artifact.zip"
             def sha256 = Utils.generateSHA256(artifact)
@@ -73,7 +73,7 @@ class DataAnalyticsSteps extends TestSetup{
     }
 
     def http401(count, calls){
-        def repoName = "generic-dev-local"
+        def repoName = "appbdd-generic-dev-local"
         (count..calls) {
             repoSteps.deleteRepository(artifactoryURL, repoName, "user1", "Password1").then().log().ifValidationFails().statusCode(403)
         }
@@ -83,7 +83,7 @@ class DataAnalyticsSteps extends TestSetup{
 
     def http403(count, calls){
         while (count <= calls) {
-            def repoName = "generic-dev-local"
+            def repoName = "appbdd-generic-dev-local"
             Response http403 = repoSteps.deleteRepository(artifactoryURL, repoName, "user1", "Password1")
             http403.then().log().ifValidationFails().statusCode(403)
             count++
@@ -108,7 +108,7 @@ class DataAnalyticsSteps extends TestSetup{
 
     def http404(count, calls){
         while (count <= calls) {
-            def path = "generic-dev-local/test-directory/non-existing-artifact.zip"
+            def path = "appbdd-generic-dev-local/test-directory/non-existing-artifact.zip"
             Response http404 = repoSteps.deleteItem(artifactoryURL, username, password, path)
             http404.then().log().ifValidationFails().statusCode(404)
             count++
@@ -124,7 +124,7 @@ class DataAnalyticsSteps extends TestSetup{
     }
 
     def downloadArtifact(count, calls){
-        def repoName = "generic-dev-local"
+        def repoName = "appbdd-generic-dev-local"
         def directoryName = "test-directory"
         def filename = "1_artifact.zip"
         while (count <= calls) {
@@ -143,7 +143,7 @@ class DataAnalyticsSteps extends TestSetup{
         def password = config.artifactory.rt_password
         Response create = repoSteps.createRepositories(artifactoryURL, body, username, password)
         create.then().statusCode(200)
-        def repoName = "generic-dev-local"
+        def repoName = "appbdd-generic-dev-local"
         def directoryName = "test-directory"
         def sha256 = Utils.generateSHA256(artifact)
         def sha1 = Utils.generateSHA1(artifact)
@@ -213,7 +213,7 @@ class DataAnalyticsSteps extends TestSetup{
     }
 
     def deployArtifactAs(usernameRt, passwordRt, expectedResponseCode){
-            def repoName = "generic-dev-local"
+            def repoName = "appbdd-generic-dev-local"
             def directoryName = "test-directory"
             def filename = "artifact-test.zip"
             def sha256 = Utils.generateSHA256(artifact)
@@ -228,7 +228,7 @@ class DataAnalyticsSteps extends TestSetup{
 
     def addPermissions(usernameRt){
         def permissionName = "testPermission"
-        def repository = "generic-dev-local"
+        def repository = "appbdd-generic-dev-local"
         def user1 = usernameRt
         def action1 = "write"
         def action2 = "read"

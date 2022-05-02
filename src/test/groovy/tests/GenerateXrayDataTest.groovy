@@ -117,7 +117,7 @@ class GenerateXrayDataTest extends XraySteps{
 
     @Test(priority=4, groups=["xray_generate_data"], dataProvider = "artifacts", testName = "Deploy files to generic repo")
     void deployArtifactToGenericTest(artifactName){
-        def repoName = "generic-dev-local"
+        def repoName = "appbdd-generic-dev-local"
         def directoryName = "test-directory"
         def filename = artifactName
         def artifact = new File("${artifactsPath}${filename}")
@@ -183,7 +183,7 @@ class GenerateXrayDataTest extends XraySteps{
 
     @Test(priority=7, groups=["xray_generate_data"], dataProvider="artifacts", testName = "Download artifacts with vulnerabilities")
     void downloadArtifactsTest(artifactName){
-        def repoName = "generic-dev-local"
+        def repoName = "appbdd-generic-dev-local"
         def directoryName = "test-directory"
         Response response = repositorySteps.downloadArtifact(artifactoryURL, username, password, repoName,
                 directoryName, artifactName)
@@ -194,7 +194,7 @@ class GenerateXrayDataTest extends XraySteps{
 
     /* @Test(priority=8, groups=["xray_generate_data"], testName = "Get artifact summary")
     void artifactSummaryTest(){
-        def artifactPath = "default/docker-local/nginx/1.0.0/"
+        def artifactPath = "default/appbdd-docker-local/nginx/1.0.0/"
         Response post = artifactSummary(username, password, artifactPath, xrayBaseUrl)
         post.then().statusCode(200).log().body()
                 .body("artifacts[0].general.path", equalTo(artifactPath))

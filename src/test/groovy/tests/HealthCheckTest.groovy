@@ -53,7 +53,7 @@ class HealthCheckTest extends RepositorySteps {
         }
     }
 
-    @Test(priority=3, groups=["common"], testName = "Set base URL")
+    @Test(priority=3, groups=["common-notneeded"], testName = "Set base URL")
     void setBaseURLTest() {
         Response response = setBaseUrl(artifactoryURL, username, password, artifactoryBaseURL)
         response.then().assertThat().log().ifValidationFails().statusCode(200).
