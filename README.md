@@ -1,6 +1,6 @@
 ## Minimal Artifactory Functional Testing Framework
 
-This test framework has been repurposed form the partner-integration-tests used internally in JFrog by the Partnership Engineering team.
+This test framework has been repurposed from the partner-integration-tests used internally in JFrog by the Partnership Engineering team.
 
 **NOTE:** the test purpose is to test if deployment was correct and JFrog Deployment is functioning as expected and not for running  on a Production live JFrog Deployment. 
 You can use this test framework **"as is"** and  it is not supported by JFrog.
