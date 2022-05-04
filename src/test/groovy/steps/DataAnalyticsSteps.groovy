@@ -47,7 +47,7 @@ class DataAnalyticsSteps extends TestSetup{
         while (count <= calls) {
             def usernameRt = "user${count}"
             def emailRt = "email+${count}@server.com"
-            def passwordRt = "Password1"
+            def passwordRt = "Password1!"
             Response http201 = createUser(usernameRt, emailRt, passwordRt)
             http201.then().log().ifValidationFails().statusCode(201)
             count++
@@ -75,7 +75,7 @@ class DataAnalyticsSteps extends TestSetup{
     def http401(count, calls){
         def repoName = "generic-dev-local"
         (count..calls) {
-            repoSteps.deleteRepository(artifactoryURL, repoName, "user1", "Password1").then().log().ifValidationFails().statusCode(403)
+            repoSteps.deleteRepository(artifactoryURL, repoName, "user1", "Password1!").then().log().ifValidationFails().statusCode(403)
         }
     }
 
@@ -84,7 +84,7 @@ class DataAnalyticsSteps extends TestSetup{
     def http403(count, calls){
         while (count <= calls) {
             def repoName = "generic-dev-local"
-            Response http403 = repoSteps.deleteRepository(artifactoryURL, repoName, "user1", "Password1")
+            Response http403 = repoSteps.deleteRepository(artifactoryURL, repoName, "user1", "Password1!")
             http403.then().log().ifValidationFails().statusCode(403)
             count++
         }
@@ -94,7 +94,7 @@ class DataAnalyticsSteps extends TestSetup{
     def createUsers401(count, calls){
         def usernameRt = "dummyuser"
         def emailRt = "email@example.com"
-        def passwordRt = "Password1"
+        def passwordRt = "Password1!"
         def password = "Fakepassword1"
         while (count <= calls) {
             def username = "fakeuser-${count}"
@@ -279,11 +279,11 @@ class DataAnalyticsSteps extends TestSetup{
     @DataProvider(name="users")
     public Object[][] users() {
         return new Object[][]{
-                ["testuser0", "email0@jfrog.com", "Password1", "incorrectPassword"],
-                ["testuser1", "email1@jfrog.com", "Password1", "incorrectPassword"],
-                ["testuser2", "email2@jfrog.com", "Password1", "incorrectPassword"],
-                ["testuser3", "email3@jfrog.com", "Password1", "incorrectPassword"],
-                ["testuser4", "email4@jfrog.com", "Password1", "incorrectPassword"]
+                ["testuser0", "email0@jfrog.com", "Password1!", "incorrectPassword"],
+                ["testuser1", "email1@jfrog.com", "Password1!", "incorrectPassword"],
+                ["testuser2", "email2@jfrog.com", "Password1!", "incorrectPassword"],
+                ["testuser3", "email3@jfrog.com", "Password1!", "incorrectPassword"],
+                ["testuser4", "email4@jfrog.com", "Password1!", "incorrectPassword"]
 
         }
     }
