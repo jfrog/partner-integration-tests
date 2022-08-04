@@ -207,6 +207,7 @@ class XraySteps extends TestSetup{
                 .header("Cache-Control", "no-cache")
                 .header("content-Type", "application/json")
                 .body("{\n" +
+                        "    \"id\": \"${issueID}\",\n" +
                         "    \"type\": \"Security\",\n" +
                         "    \"provider\": \"JFrog\",\n" +
                         "    \"package_type\": \"maven\",\n" +
@@ -393,7 +394,7 @@ class XraySteps extends TestSetup{
                 .header("Cache-Control", "no-cache")
                 .header("content-Type", "application/json")
                 .when()
-                .get(url + "/v1/events/${issueID}")
+                .get(url + "/v2/events/${issueID}")
                 .then()
                 .extract().response()
     }
