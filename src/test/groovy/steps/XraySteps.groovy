@@ -863,6 +863,19 @@ class XraySteps extends TestSetup{
                 .extract().response()
     }
 
+    def getXrayMetrics(username, password, url) {
+        return given()
+                .auth()
+                .preemptive()
+                .basic("${username}", "${password}")
+                .header("Cache-Control", "no-cache")
+                .header("content-Type", "application/json")
+                .when()
+                .get(url + "/v1/metrics")
+                .then()
+                .extract().response()
+    }
+
     // Expected Results
 
     static Map<String, Integer> getExpectedSeverities(license_issues, security_issues) {
