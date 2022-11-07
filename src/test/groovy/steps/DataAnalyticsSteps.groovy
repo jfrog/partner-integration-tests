@@ -47,7 +47,7 @@ class DataAnalyticsSteps extends TestSetup{
         while (count <= calls) {
             def usernameRt = "user${count}"
             def emailRt = "email+${count}@server.com"
-            def passwordRt = "Password1@"
+            def passwordRt = "Password1!"
             Response http201 = createUser(usernameRt, emailRt, passwordRt)
             http201.then().log().ifValidationFails().statusCode(201)
             count++
@@ -84,7 +84,7 @@ class DataAnalyticsSteps extends TestSetup{
     def http403(count, calls){
         while (count <= calls) {
             def repoName = "generic-dev-local"
-            Response http403 = repoSteps.deleteRepository(artifactoryURL, repoName, "user1", "Password1@")
+            Response http403 = repoSteps.deleteRepository(artifactoryURL, repoName, "user1", "Password1!")
             http403.then().log().ifValidationFails().statusCode(403)
             count++
         }
