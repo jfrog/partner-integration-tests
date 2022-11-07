@@ -38,5 +38,12 @@ class TestSetup {
     protected final datadogApplicationKey = System.env.DATADOG_APPLICATION_KEY ?: config.datadog.application_key
     protected final datadogBaseURL = "${datadogProtocol}${datadogUri}"
 
+    protected final newrelicProtocol = System.env.NEWRELIC_PROTOCOL ?: config.newrelic.protocol
+    protected final newrelicUri = System.env.NEWRELIC_URI ?: config.newrelic.url
+    protected final newrelicPort = System.env.NEWRELIC_PORT ?: config.newrelic.port
+    protected final newrelicApiKey = System.env.NEWRELIC_API_KEY ?: config.newrelic.api_key
+    protected final newrelicAccountId = System.env.NEWRELIC_APPLICATION_KEY ?: config.newrelic.account_id
+    protected final newrelicBaseURL = "${newrelicProtocol}${newrelicUri}"
+
 
 }
