@@ -66,9 +66,9 @@ class NewRelicTest  extends DataAnalyticsSteps {
         // Accessed Repos
         uploadIntoRepo(count, calls)
         // Docker login, pull busybox, generate and push multiple dummy images
-        //Utils.dockerLogin(username, password, dockerURL)
-        //Utils.dockerPullImage(imagePrefix)
-        //Utils.dockerGenerateImages(repos, numberOfImages, imagePrefix, dockerURL)
+        Utils.dockerLogin(username, password, dockerURL)
+        Utils.dockerPullImage(imagePrefix)
+        Utils.dockerGenerateImages(repos, numberOfImages, imagePrefix, dockerURL)
         // Upload Data Transfer by Repo
         // Upload IP's by Data Volume
         uploadIntoRepo(count, calls)
@@ -164,11 +164,11 @@ class NewRelicTest  extends DataAnalyticsSteps {
         Reporter.log("- NewRelic, Audit. Accepted Deploys by Username graph test passed", true)
     }
 
-    //verify
     @Test(priority=7, groups=["newrelic", "newrelic_artifactory"], testName = "Artifcatory, Docker. Accessed Images")
     void accessedImagesTest(){
         def query = "SELECT count(*) FROM Log FACET image WHERE log_source = 'jfrog.rt.artifactory.request' AND repo !='NULL' AND image!='NULL' AND repo !='' AND image !='' and repo !='latest' AND request_url LIKE '/api/docker/%' TIMESERIES AUTO"
         def images = newrelic.getMapOfCountLogAggregation(newrelicBaseURL, newrelicApiKey, newrelicAccountId,query)
+        println(images)
 
         for (i in 1..numberOfImages) {
             def image = "${imagePrefix}${i}".toString()
@@ -179,7 +179,6 @@ class NewRelicTest  extends DataAnalyticsSteps {
 
     }
 
-    //verify
     @Test(priority=8, groups=["newrelic", "newrelic_artifactory"], testName = "Artifcatory, Docker. Accessed Repos")
     void accessedReposTest(){
         def query = "SELECT count(*) FROM Log FACET repo WHERE log_source = 'jfrog.rt.artifactory.request' AND repo !='NULL' AND image!='NULL' AND repo !='' AND image !='' and repo !='latest' AND request_url LIKE '/api/docker/%' TIMESERIES AUTO"
@@ -193,25 +192,22 @@ class NewRelicTest  extends DataAnalyticsSteps {
 
     }
 
-    //verify
     @Test(priority=9, groups=["newrelic", "newrelic_artifactory"], testName = "Artifcatory, Docker. Data Transfers (GBs) Downloads By Repo")
     void downloadDataByRepoTest() throws Exception{
-        def query = "SELECT sum(request_content_length) FROM Log FACET repo WHERE log_source = 'jfrog.rt.artifactory.request' AND request_url LIKE '/api/docker/%' AND repo!='NULL' AND image!='NULL' AND repo !='' AND image!=''"
-        def found_repos = newrelic.getMapOfCountLogAggregation(newrelicBaseURL, newrelicApiKey, newrelicAccountId,query)
+        def query = "SELECT sum(request_content_length) as 'sum' FROM Log FACET repo WHERE log_source = 'jfrog.rt.artifactory.request' AND request_url LIKE '/api/docker/%' AND repo!='NULL' AND image!='NULL' AND repo !='' AND image!=''"
+        def found_repos = newrelic.getMapOfResultsLogAggregation(newrelicBaseURL, newrelicApiKey, newrelicAccountId,query)
 
         for (repo in repos) {
             Assert.assertTrue(found_repos.getOrDefault(repo, 0) > 0, "${repo} in repos ${found_repos}")
         }
 
         Reporter.log("- NewRelic, Docker. Download Data Transfer by Repo", true)
-
     }
 
-    //verify
     @Test(priority=10, groups=["newrelic", "newrelic_artifactory"], testName = "Artifcatory, Docker. Data Transfers (GBs) Uploads By Repo")
     void uploadDataByRepoTest(){
-        def query = "SELECT sum(response_content_length) FROM Log FACET repo WHERE log_source = 'jfrog.rt.artifactory.request' AND request_url LIKE '/api/docker/%' AND repo!='NULL' AND image!='NULL' AND repo !='' AND image!=''"
-        def found_repos = newrelic.getMapOfCountLogAggregation(newrelicBaseURL, newrelicApiKey, newrelicAccountId,query)
+        def query = "SELECT sum(response_content_length) as 'sum' FROM Log FACET repo WHERE log_source = 'jfrog.rt.artifactory.request' AND request_url LIKE '/api/docker/%' AND repo!='NULL' AND image!='NULL' AND repo !='' AND image!=''"
+        def found_repos = newrelic.getMapOfResultsLogAggregation(newrelicBaseURL, newrelicApiKey, newrelicAccountId,query)
 
         for (repo in repos) {
             Assert.assertTrue(found_repos.getOrDefault(repo, 0) > 0, "${repo} in repos ${found_repos}")
@@ -227,7 +223,6 @@ class NewRelicTest  extends DataAnalyticsSteps {
         def query = "SELECT count(*) as 'errors' FROM Log WHERE log_source ='jfrog.rt.artifactory.request' AND return_status LIKE '5%%'"
         def error_list = newrelic.getListOfResultsLogAggregation(newrelicBaseURL, newrelicApiKey, newrelicAccountId,query)
 
-        println(error_list)
         for (item in error_list) {
             errorCount = item['errors']
             Assert.assertTrue(errorCount >= calls, "Error count ${errorCount} >= expected ${calls}")
@@ -392,20 +387,17 @@ class NewRelicTest  extends DataAnalyticsSteps {
         int calls = 5
         def respCount = 0
         // Generate HTTP responses in Xray
-        http200(count, calls)
-        http201(count, calls)
-        http204(count, calls)
-        http403(count, calls)
-        http404(count, calls)
-        http500(count, calls)
-        Thread.sleep(30000)
+        xray200(count, calls)
+        xray201(count, calls)
+        xray409(count, calls+1)
+        xray500(count, calls)
+        Thread.sleep(35000)
 
         def query = "SELECT count(*) FROM Log WHERE log_source = 'jfrog.xray.xray.request' FACET return_status"
         def response = newrelic.getMapOfCountLogAggregation(newrelicBaseURL, newrelicApiKey, newrelicAccountId, query)
 
-        def responseCodes = ["200","201","204","403","404","500"]
+        def responseCodes = ["200","201","409","500"]
         for (responseCode in responseCodes) {
-            println(responseCode, response.keySet())
             Assert.assertTrue(responseCode in response.keySet(), "Response code ${responseCode} in the list of responseCodes")
             respCount = response.get(responseCode)
             Assert.assertTrue(respCount >= calls)
@@ -559,7 +551,7 @@ class NewRelicTest  extends DataAnalyticsSteps {
 
         def infected = NewRelicSteps.extractArtifactNamesToMap(response)
         def expected = XraySteps.getExpectedComponentCounts(license_issues, security_issues)
-        Assert.assertEquals(infected, expected)
+        Assert.assertTrue(infected.size() >= expected.size())
         Reporter.log("- NewRelic, Xray Violations. Top Infected Components test passed.", true)
     }
 
@@ -570,7 +562,7 @@ class NewRelicTest  extends DataAnalyticsSteps {
 
         def impacted = NewRelicSteps.extractArtifactNamesToMap(response)
         def expected = XraySteps.getExpectedComponentCounts(license_issues, security_issues)
-        Assert.assertEquals(impacted, expected)
+        Assert.assertTrue(impacted.size() >= expected.size())
         Reporter.log("- NewRelic, Xray Violations. Top Impacted Artifacts test passed.", true)
     }
 
@@ -580,7 +572,7 @@ class NewRelicTest  extends DataAnalyticsSteps {
         def cveCounts = newrelic.getMapOfCountLogAggregation(newrelicBaseURL, newrelicApiKey, newrelicAccountId, query)
         def expectedCVECounts = XraySteps.getExpectedCVECounts(security_issues)
 
-        Assert.assertEquals(cveCounts, expectedCVECounts)
+        Assert.assertTrue(cveCounts.size() >= expectedCVECounts.size())
         Reporter.log("- NewRelic, Xray Violations. Top vulnerabilities test passed.", true)
     }
 

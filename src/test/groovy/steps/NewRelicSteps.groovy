@@ -35,6 +35,19 @@ class NewRelicSteps {
         return results
     }
 
+    //getmapofresultslogaggregation
+    def getMapOfResultsLogAggregation(newrelic_url, api_key, account_id, query){
+        Map<String, Integer> countsMap = new HashMap<>()
+        def results = []
+        results = getListOfResultsLogAggregation(newrelic_url, api_key, account_id, query)
+        results.forEach({ it ->
+            countsMap.put(it["facet"].toString(), it["sum"] as Integer)
+        })
+
+        return countsMap
+    }
+
+
     def getMapOfCountLogAggregation(newrelic_url, api_key, account_id, query){
         Map<String, Integer> countsMap = new HashMap<>()
         def results = []
